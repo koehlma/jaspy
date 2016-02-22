@@ -16,7 +16,7 @@
 define(function () {
     'use strict';
 
-    /* Helper Functions */
+    /* helper functions */
     function is_object(item) {
         return item instanceof Object;
     }
@@ -30,41 +30,29 @@ define(function () {
     }
 
 
-    function Exception() {
-        this.name = 'Exception';
-        this.message = 'an error occoured'
-    }
-    Exception.prototype = {
-        toString: function () {
-            return '[' + this.name + '] ' + this.message;
-        }
-    };
-
+    /* exceptions */
     function IndexError() {
-        this.name = 'IndexError';
-        this.message = 'list index out of range';
+        Error.call(this, '[IndexError] index out of range');
     }
-    IndexError.prototype = Object.create(Exception.prototype, {});
+    IndexError.prototype = Object.create(RangeError.prototype);
 
     function KeyError() {
-        this.name = 'KeyError';
-        this.message = 'key not in mapping';
+        Error.call(this, '[KeyError] key not found');
     }
-    IndexError.prototype = Object.create(Exception.prototype, {});
+    KeyError.prototype = Object.create(Error.prototype);
 
     function ValueError(message) {
-        this.name = 'ValueError';
-        this.message = message || 'invalid value'
+        Error.call(this, '[ValueError] ' + (message || 'invalid value'));
     }
-    ValueError.prototype = Object.create(Exception.prototype, {});
+    ValueError.prototype = Object.create(Error.prototype);
 
     function TypeError(message) {
-        this.name = 'TypeError';
-        this.message = message || 'invalid type'
+        Error.call(this, '[TypeError] ' + (message || 'invalid type'));
     }
-    TypeError.prototype = Object.create(Exception.prototype, {});
+    TypeError.prototype = Object.create(Error.prototype);
 
 
+    /* custom equals and hash functions */
     function equals(item1, item2) {
         if (is_object(item1) && is_function(item1.equals)) {
             return item1.equals(item2);
@@ -83,121 +71,96 @@ define(function () {
         }
     }
 
-    function iter(item) {
-        if (is_iterable(item)) {
-            return item.iter();
-        } else if (item instanceof Array) {
-            return new ArrayIterator(item);
-        } else {
-            throw new TypeError('item does not support iterable protocol')
-        }
-    }
 
-    function ArrayIterator(array) {
-        this.array = array;
-        this.position = 0;
-    }
-    ArrayIterator.prototype = {
-        has_next: function () {
-            return this.position < this.array.length;
-        },
-        next: function () {
-            if (this.has_next()) {
-                return this.array[this.position++];
-            }
-            return null;
-        }
-    };
-
-
+    /* array based list */
     function ListIterator(list) {
-        this.list = list;
-        this.position = 0;
+        this._list = list;
+        this.index = 0;
     }
     ListIterator.prototype = {
         has_next: function () {
-            return this.position < this.list.length;
+            return this.index < this._list.length;
         },
         next: function () {
             if (this.has_next()) {
-                return this.list.get(this.position++);
+                return this._list.get(this.index++);
             }
             return null;
         }
     };
 
     function List(initializer) {
+        this._array = new Array(4);
         var index;
-        this.array = new Array(4);
-        if (initializer == null) {
+        if (initializer == undefined) {
             this.length = 0;
         } else if (initializer instanceof Array) {
             this.length = initializer.length;
-            this.grow();
+            this._grow();
             for (index = 0; index < initializer.length; index++) {
-                this.array[index] = initializer[index];
+                this._array[index] = initializer[index];
             }
-        } else if (typeof initializer == 'number') {
-            this.length = initializer;
-            this.grow();
         } else if (is_iterable(initializer)){
             this.length = 0;
             var iterator = initializer.iter(), item;
             while (item = iterator.next()) {
                 this.append(item);
             }
+        } else if (typeof initializer == 'number') {
+            this.length = initializer;
+            this._grow();
         } else {
             throw new TypeError('invalid type of list initializer')
         }
     }
     List.prototype = {
         _check: function (index) {
-            if (index < 0 || index > this.length - 1) {
-                throw new IndexError();
-            }
-        },
-        grow: function () {
-            if (this.array.length <= this.length) {
-                var length = this.array.length * 2;
-                while (length <= this.length) {
-                    length = length * 2;
-                }
-                this.array.length = length;
-            }
-        },
-        shrink: function () {
-            if (this.array.length > 4 && this.array.length / 4 >= this.length) {
-                var length = this.array.length / 2;
-                while (length / 4 >= this.length && length > 4) {
-                    length = length / 2;
-                }
-                this.array.length = length;
-            }
-        },
-        get: function (index) {
             if (index < 0) {
                 index = this.length - index;
             }
-            this._check(index);
-            return this.array[index];
+            if (index < 0 || index > this.length - 1) {
+                throw new IndexError();
+            }
+            return index;
+        },
+        _grow: function () {
+            if (this._array.length <= this.length) {
+                var length = this._array.length * 2;
+                while (length <= this.length) {
+                    length = length * 2;
+                }
+                this._array.length = length;
+            }
+        },
+        _shrink: function () {
+            if (this._array.length > 4 && this._array.length / 4 >= this.length) {
+                var length = this._array.length / 2;
+                while (length / 4 >= this.length && length > 4) {
+                    length = length / 2;
+                }
+                this._array.length = length;
+            }
+        },
+        get: function (index) {
+            index = this._check(index);
+            return this._array[index];
         },
         set: function (index, item) {
-            this._check(index);
-            this.array[index] = item;
-            return item;
+            index = this._check(index);
+            return this._array[index] = item;
         },
         index: function (item, last) {
             var index;
             last = last || false;
             if (last) {
                 for (index = this.length - 1; index >= 0; index--) {
-                    if (equals(item, this.array[index])) {
+                    if (equals(item, this._array[index])) {
                         return index;
                     }
                 }
             } else {
                 for (index = 0; index < this.length; index++) {
-                    if (equals(item, this.array[index])) {
+                    if (equals(item, this._array[index])) {
                         return index;
                     }
                 }
@@ -207,7 +170,7 @@ define(function () {
         count: function (item) {
             var index, counter = 0;
             for (index = 0; index < this.length; index++) {
-                if (equals(item, this.array[index])) {
+                if (equals(item, this._array[index])) {
                     counter++;
                 }
             }
@@ -218,35 +181,20 @@ define(function () {
         },
         append: function (item) {
             this.length++;
-            this.grow();
-            this.array[this.length - 1] = item;
+            this._grow();
+            this._array[this.length - 1] = item;
             return item;
-        },
-        concat: function (list_or_array) {
-            var new_list, index, length;
-            if (!(list_or_array instanceof List || list_or_array instanceof Array)) {
-                throw new TypeError('can only concat list and list or list and array')
-            }
-            length = list_or_array.length;
-            if (list_or_array instanceof List) {
-                list_or_array = list_or_array.array;
-            }
-            new_list = new List(this.length + length);
-            for (index = 0; index < this.length; index++) {
-                new_list.array[index] = this.array[index];
-            }
-            for (index = 0; index < length; index++) {
-                new_list.array[index + this.length] = list_or_array[index];
-            }
-            return new_list;
         },
         insert: function (position, item) {
             var index;
+            if (position < 0) {
+                position = 0
+            }
             this.append(null);
             for (index = this.length - 1; index > position; index--) {
-                this.array[index] = this.array[index - 1];
+                this._array[index] = this._array[index - 1];
             }
-            this.array[index] = item;
+            this._array[index] = item;
         },
         pop: function (index) {
             this._check(index);
@@ -254,12 +202,12 @@ define(function () {
             if (index == null) {
                 index = this.length;
             }
-            var item = this.array[index];
+            var item = this._array[index];
             for (; index < this.length; index++) {
-                this.array[index] = this.array[index + 1];
+                this._array[index] = this._array[index + 1];
             }
-            this.array[index] = null;
-            this.shrink();
+            this._array[index] = null;
+            this._shrink();
             return item;
         },
         remove: function (item) {
@@ -273,15 +221,15 @@ define(function () {
         reverse: function () {
             var left = 0, right = this.length - 1, temp;
             while (right > left) {
-                temp = this.array[left];
-                this.array[left] = this.array[right];
-                this.array[right] = temp;
+                temp = this._array[left];
+                this._array[left] = this._array[right];
+                this._array[right] = temp;
                 left++;
                 right--;
             }
         },
         clear: function () {
-            this.array = new Array(4);
+            this._array = new Array(4);
             this.length = 0;
         },
         slice: function (start, stop, step) {
@@ -305,7 +253,7 @@ define(function () {
                     stop = this.length;
                 }
                 for (index = start; index < stop; index += step) {
-                    list.append(this.array[index]);
+                    list.append(this._array[index]);
                 }
             } else if (step < 0) {
                 if (start >= this.length) {
@@ -315,10 +263,28 @@ define(function () {
                     stop = 0;
                 }
                 for (index = start; index > stop; index += step) {
-                    list.append(this.array[index]);
+                    list.append(this._array[index]);
                 }
             } else {
                 throw new ValueError('slice step cannot be zero')
+            }
+            return list;
+        },
+        concat: function (list_or_array) {
+            var list, index, length;
+            if (!(list_or_array instanceof List || list_or_array instanceof Array)) {
+                throw new TypeError('can only concat with list or array')
+            }
+            length = list_or_array.length;
+            if (list_or_array instanceof List) {
+                list_or_array = list_or_array._array;
+            }
+            list = new List(this.length + length);
+            for (index = 0; index < this.length; index++) {
+                list._array[index] = this._array[index];
+            }
+            for (index = 0; index < length; index++) {
+                list._array[index + this.length] = list_or_array[index];
             }
             return list;
         },
@@ -328,70 +294,67 @@ define(function () {
         iter: function () {
             return new ListIterator(this);
         },
-        sort: function () {
-
+        map: function (callback) {
+            var result = new List(this.length), index;
+            for (index = 0; index < this.length; index++) {
+                result._array[index] = callback(this._array[index]);
+            }
+            return result;
+        },
+        filter: function (callback) {
+            var result = new List(), index;
+            for (index = 0; index < this.length; index++) {
+                if (callback(this._array[index])) {
+                    result.append(this._array[index]);
+                }
+            }
+            return result;
         }
     };
 
 
+    /* object based hash table */
     function DictItemsIterator(dict) {
-        var hash_code, bucket, index;
-        this.dict = dict;
-        this.items = new List();
-        for (hash_code in this.dict.buckets) {
-            if (this.dict.buckets.hasOwnProperty(hash_code)) {
-                bucket = this.dict.buckets[hash_code];
+        var items, hash_code, bucket, index;
+        items = new List();
+        for (hash_code in dict._buckets) {
+            if (dict._buckets.hasOwnProperty(hash_code)) {
+                bucket = dict._buckets[hash_code];
                 for (index = 0; index < bucket.length; index++) {
-                    this.items.append(bucket.get(index));
+                    items.append(bucket.get(index));
                 }
             }
         }
-        this.iterator = this.items.iter();
+        ListIterator.call(this, items);
     }
-    DictItemsIterator.prototype = {
-        has_next: function () {
-            return this.iterator.has_next();
-        },
-        next: function () {
-            return this.iterator.next();
-        }
-    };
+    DictItemsIterator.prototype = Object.create(ListIterator.prototype);
 
     function DictKeysIterator(dict) {
-        this.iterator = new DictItemsIterator(dict);
+        DictItemsIterator.call(this, dict);
     }
-    DictKeysIterator.prototype = {
-        has_next: function () {
-            return this.iterator.has_next();
-        },
-        next: function () {
-            var item = this.iterator.next();
-            if (item != null) {
-                return item.key;
-            }
-            return null;
+    DictKeysIterator.prototype = Object.create(DictItemsIterator.prototype);
+    DictKeysIterator.prototype.next = function () {
+        var item = DictItemsIterator.prototype.next.call(this);
+        if (item != null) {
+            return item.key;
         }
+        return null;
     };
 
     function DictValuesIterator(dict) {
-        this.iterator = new DictItemsIterator(dict);
+        DictItemsIterator.call(this, dict);
     }
-    DictValuesIterator.prototype = {
-        has_next: function () {
-            return this.iterator.has_next();
-        },
-        next: function () {
-            var item = this.iterator.next();
-            if (item != null) {
-                return item.value;
-            }
-            return null;
+    DictValuesIterator.prototype = Object.create(DictItemsIterator.prototype);
+    DictValuesIterator.prototype.next = function () {
+        var item = DictItemsIterator.prototype.next.call(this);
+        if (item != null) {
+            return item.value;
         }
+        return null;
     };
 
-
     function Dict(initializer) {
-        this.buckets = {};
+        this._buckets = {};
         this.length = 0;
         if (initializer != undefined) {
             this.update(initializer);
@@ -400,10 +363,10 @@ define(function () {
     Dict.prototype = {
         put: function (key, value) {
             var hash_code = hash(key), bucket, index, item;
-            if (this.buckets[hash_code] == undefined) {
-                this.buckets[hash_code] = new List();
+            if (this._buckets[hash_code] == undefined) {
+                this._buckets[hash_code] = new List();
             }
-            bucket = this.buckets[hash_code];
+            bucket = this._buckets[hash_code];
             for (index = 0; index < bucket.length; index++) {
                 item = bucket.get(index);
                 if (equals(item.key, key)) {
@@ -415,7 +378,7 @@ define(function () {
             bucket.append({'key': key, 'value': value});
         },
         get: function (key) {
-            var bucket = this.buckets[hash(key)];
+            var bucket = this._buckets[hash(key)];
             if (bucket != undefined) {
                 var index, item;
                 for (index = 0; index < bucket.length; index++) {
@@ -429,7 +392,7 @@ define(function () {
         },
         pop: function (key, default_value) {
             var hash_code = hash(key);
-            var bucket = this.buckets[hash_code];
+            var bucket = this._buckets[hash_code];
             if (bucket != undefined) {
                 var index, item;
                 for (index = 0; index < bucket.length; index++) {
@@ -437,7 +400,7 @@ define(function () {
                     if (equals(item.key, key)) {
                         bucket.remove(item);
                         if (bucket.length == 0) {
-                            delete this.buckets[hash_code];
+                            delete this._buckets[hash_code];
                         }
                         this.length--;
                         return item.value;
@@ -452,12 +415,12 @@ define(function () {
         },
         popitem: function () {
             if (this.length > 0) {
-                for (var hash_code in this.buckets) {
-                    if (this.buckets.hasOwnProperty(hash_code)) {
-                        var bucket = this.buckets[hash_code];
+                for (var hash_code in this._buckets) {
+                    if (this._buckets.hasOwnProperty(hash_code)) {
+                        var bucket = this._buckets[hash_code];
                         var item = bucket.pop();
                         if (bucket.length == 0) {
-                            delete this.buckets[hash_code];
+                            delete this._buckets[hash_code];
                         }
                         this.length--;
                         return item;
@@ -467,7 +430,7 @@ define(function () {
             throw new KeyError();
         },
         contains: function (key) {
-            var bucket = this.buckets[hash(key)];
+            var bucket = this._buckets[hash(key)];
             if (bucket != undefined) {
                 var index, item;
                 for (index = 0; index < bucket.length; index++) {
@@ -479,18 +442,6 @@ define(function () {
             }
             return false;
         },
-        items: function () {
-            return new DictItemsIterator(this);
-        },
-        keys: function () {
-            return new DictKeysIterator(this);
-        },
-        values: function () {
-            return new DictValuesIterator(this);
-        },
-        iter: function () {
-            return new DictItemsIterator(this);
-        },
         update: function (dict_or_object) {
             if (dict_or_object instanceof Dict) {
                 var iterator = dict_or_object.items(), item;
@@ -498,8 +449,7 @@ define(function () {
                     this.put(item.key, item.value)
                 }
             } else if (is_object(dict_or_object)) {
-                var key;
-                for (key in dict_or_object) {
+                for (var key in dict_or_object) {
                     if (dict_or_object.hasOwnProperty(key)) {
                         this.put(key, dict_or_object[key]);
                     }
@@ -512,12 +462,25 @@ define(function () {
             return new Dict(this);
         },
         clear: function () {
-            this.buckets = {};
+            this._buckets = {};
             this.length = 0;
+        },
+        items: function () {
+            return new DictItemsIterator(this);
+        },
+        keys: function () {
+            return new DictKeysIterator(this);
+        },
+        values: function () {
+            return new DictValuesIterator(this);
+        },
+        iter: function () {
+            return new DictItemsIterator(this);
         }
     };
 
 
+    /* shortcuts */
     function list(initializer) {
         return new List(initializer);
     }
@@ -527,13 +490,12 @@ define(function () {
     }
 
 
-
+    /* module interface */
     var module = {
         'is_object': is_object,
         'is_function': is_function,
         'is_iterable': is_iterable,
 
-        'Exception': Exception,
         'IndexError': IndexError,
         'KeyError': KeyError,
         'ValueError': ValueError,
@@ -541,7 +503,6 @@ define(function () {
 
         'equals': equals,
         'hash': hash,
-        'iter': iter,
 
         'List': List,
         'Dict': Dict,
@@ -550,6 +511,8 @@ define(function () {
         'dict': dict
     };
 
-    window.structures = module;
+
+    /* export */
+    window['structures'] = module;
     return module;
 });

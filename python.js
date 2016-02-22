@@ -1,105 +1,167 @@
+/*
+ * Copyright (C) 2016, Maximilian Koehl <mail@koehlma.de>
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 require(['structures'], function (structures) {
+    'use strict';
 
-    function assert(condition, message) {
-        if (!condition) {
-            throw new Error(message || 'assertion failed')
-        }
-    }
-
-    function is_object(item) {
-        if (typeof item == 'object') {
-            return item.__class__ != undefined;
-        } else {
-            return false;
-        }
-    }
-    function is_class(item) {
-        if (typeof item == 'object') {
-            return item.__bases__ != undefined;
-        } else {
-            return false;
-        }
-    }
-
-    function merge(linearizations) {
-        var result, iter1, item1, iter2, item2, head, good;
-        result = structures.list();
-        while (true) {
-            if (linearizations.length == 0) {
-                return result;
-            }
-
-            iter1 = linearizations.iter();
-            while (item1 = iter1.next()) {
-                head = item1.get(0);
+    /* c3 method resolution order */
+    function linearize(cls) {
+        var pending = cls.bases.map(linearize), mro = structures.list([cls]);
+        var iterator, item, head, good;
+        while (pending.length != 0) {
+            iterator = pending.iter();
+            while (item = iterator.next()) {
+                head = item.get(0);
                 good = true;
-                iter2 = linearizations.iter();
-                while (item2 = iter2.next()) {
-                    if (item2.slice(-1, 0, -1).contains(head)) {
-                        good = false;
-                        break;
-                    }
-                }
+                pending.map(function (base_mro) {
+                    good &= !base_mro.slice(-1, 0, -1).contains(head);
+                });
                 if (good) {
-                    result.append(head);
-                    iter2 = linearizations.iter();
-                    while (item2 = iter2.next()) {
-                        if (item2.contains(head)) {
-                            item2.remove(head);
-                            if (item2.length == 0) {
-                                linearizations.remove(item2);
-                                iter2.position -= 1;
-                            }
+                    mro.append(head);
+                    pending = pending.filter(function (base_mro) {
+                        if (base_mro.contains(head)) {
+                            base_mro.remove(head);
                         }
-                    }
+                        return base_mro.length > 0;
+                    });
                     break;
                 }
             }
             if (!good) {
-                throw new structures.ValueError('invalid linearization');
+                throw new structures.ValueError('unable to linearize hierarchy');
             }
         }
-
-    }
-    function linearize(cls) {
-        assert(is_class(cls));
-        var linearizations = structures.list();
-        for (var i = 0; i < cls.__bases__.length; i++) {
-            linearizations.append(linearize(cls.__bases__[i]));
-        }
-        return structures.list([cls]).concat(merge(linearizations));
+        return mro;
     }
 
-    var PyType = {
-        __new__: function (mcs, name, bases, attributes) {
-            return {
-                __class__: mcs,
-                __name__: name,
-                __bases__: bases,
-                __dict__: attributes
+    function PyObject(cls, instance) {
+        this.cls = cls;
+        this.instance = instance || {};
+    }
+    PyObject.prototype = {
+        lookup: function (name) {
+            if (this.instance.hasOwnProperty(name)) {
+                return this.instance[name];
             }
+            var index, value, cls;
+            for (index = 0; index < this.cls.mro.length; index++) {
+                cls = this.cls.mro.get(index);
+                if (cls != this) {
+                    value = cls.lookup(name);
+                    if (value != null) {
+                        return value;
+                    }
+                }
+            }
+            return null;
         }
     };
 
-    var PyObject = PyType.__new__(PyType, 'object', [], {});
-    PyType.__class__ = PyType;
-    PyType.__name__ = 'type';
-    PyType.__bases__ = [PyObject];
-    PyType.__dict__ = {};
-
-    var X = PyType.__new__(PyType, 'X', [PyObject], {});
-    var Y = PyType.__new__(PyType, 'Y', [PyObject], {});
-    var A = PyType.__new__(PyType, 'A', [X, Y], {});
-    var B = PyType.__new__(PyType, 'B', [Y, X], {});
+    function PyType(mcs, name, bases, attributes) {
+        PyObject.call(this, mcs, attributes);
+        this.name = name;
+        this.bases = structures.list(bases);
+        this.mro = linearize(this);
+    }
+    PyType.prototype = Object.create(PyObject.prototype);
 
 
-    console.log(linearize(A));
-    console.log(linearize(B));
+    function unpack_args(args, names) {
+        if (args.length != names.length) {
+            throw new Error('argument error');
+        }
+        var index, result = {};
+        for (index = 0; index < args.length; index++) {
+            result[names[index]] = args[index];
+        }
+        return result;
+    }
+
+
+    var py_type, py_object;
+    py_type = new PyType(null, 'type', [], {
+        __new__: function (frame, args) {
+            args = unpack_args(args, ['mcs', 'name', 'bases', 'attributes']);
+            return new PyType(args.mcs, args.name, args.bases, args.attributes);
+        }
+    });
+    py_type.cls = py_type;
+    py_object = new PyType(py_type, 'object', [], {
+        __new__: function (frame, args) {
+            return new PyObject(args[0]);
+        }
+    });
+
+
+
+    var X = new PyType(py_type, 'X', [py_object], {'a': 3});
+    var Y = new PyType(py_type, 'Y', [py_object], {});
+    var A = new PyType(py_type, 'A', [X, Y], {});
+    var B = new PyType(py_type, 'B', [Y, X], {});
+
     try {
-        console.log(linearize(PyType.__new__(PyType, 'C', [A, B], {})));
+        console.log(linearize(new PyType(py_type, 'C', [A, B], {})));
     } catch (error) {
         console.log(error);
     }
+
+
+    var Module = new PyType(py_type, 'ModuleType', [py_object], {});
+    var Code = new PyType(py_type, 'code', [py_object], {});
+
+
+    var FrameType = new PyType(py_type, 'frame', [py_object], {});
+
+    function PyFrame() {
+        PyObject.call(this, FrameType);
+        this.stack = [];
+        this.blocks = [];
+    }
+    PyFrame.prototype = Object.create(PyObject.prototype);
+    PyFrame.prototype.block_setup = function (type, handler, level) {
+        this.blocks.push({'type': type, 'handler': handler, 'level': level});
+    };
+    PyFrame.prototype.block_pop = function () {
+        this.blocks.pop();
+    }
+
+
+
+    function VM(module) {
+        this.frames = []
+        this.current = null;
+
+        this.return_value = null;
+        this.last_exception = null;
+    }
+    VM.prototype.make_frame = function () {
+
+    };
+
+
+    console.log(A.mro);
+    console.log(B.mro);
+    console.log(X.lookup('a'));
+    console.log((new PyObject(A)).lookup('a'));
+    try {
+        console.log(linearize(new PyType(py_type, 'C', [A, B], {})));
+    } catch (error) {
+        console.log(error);
+    }
+    console.log(Module);
+    console.log(py_type.lookup('__new__')(null, [py_type, 'Test', [X], {x: 'test'}]));
 
     /*
 
@@ -199,7 +261,7 @@ require(['structures'], function (structures) {
        }
     });
 
-    function getattr(object, name) {
+    function lookup(object, name) {
         if (object[name] != undefined) {
             return object[name]
         }
