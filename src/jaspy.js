@@ -38,6 +38,10 @@ window['jaspy'] = (function () {
         EXCEPT: 2,
         FINALLY: 3
     };
+    var UNWIND_CAUSES = {
+        RETURN: 0,
+        EXCEPTION: 1
+    };
 
     var OPCODES = {
         BEFORE_ASYNC_WITH: 52,
@@ -201,6 +205,10 @@ window['jaspy'] = (function () {
         return map;
     })();
     var OPCODES_ARGUMENT = 90;
+
+    var COMPARE_OPS = {
+        LT: 0, LE: 1, EQ: 2, NE: 3, GT: 4, GE: 5, IN: 6, NIN: 7, IS: 8, NIS: 9, EXC: 10
+    };
 
 
     function error(message) {
@@ -431,6 +439,7 @@ window['jaspy'] = (function () {
             }
             this.native = builtin;
         }
+        this.native = this.native || py_object;
     }
     PyType.prototype = new PyObject;
     PyType.prototype.is_subclass_of = function (cls) {
@@ -465,10 +474,24 @@ window['jaspy'] = (function () {
         this.define(name, new_native(func, signature, options));
     };
     PyType.prototype.call_classmethod = function (vm, name, args, kwargs) {
-        return vm.call_object(this.lookup(name), [this].concat(args || []), kwargs);
+        var method = this.lookup(name);
+        if (method) {
+            return vm.call_object(method, [this].concat(args || []), kwargs);
+        } else {
+            vm.return_value = null;
+            vm.last_exception = METHOD_NOT_FOUND;
+            return false;
+        }
     };
     PyType.prototype.call_staticmethod = function (vm, name, args, kwargs) {
-        return vm.call_object(this.lookup(name), args, kwargs);
+        var method = this.lookup(name);
+        if (method) {
+            return vm.call_object(method, args, kwargs);
+        } else {
+            vm.return_value = null;
+            vm.last_exception = METHOD_NOT_FOUND;
+            return false;
+        }
     };
 
 
@@ -880,6 +903,7 @@ window['jaspy'] = (function () {
         }
 
         this.state = options.state || 0;
+        this.raising = false;
     }
     PythonFrame.prototype = new Frame;
     PythonFrame.prototype.top_block = function () {
@@ -924,29 +948,34 @@ window['jaspy'] = (function () {
         }
         return {opcode: opcode, argument: argument};
     };
-    PythonFrame.prototype.unwind = function () {
+    PythonFrame.prototype.unwind = function (cause) {
+        console.log(cause);
         while (this.blocks.length > 0) {
-            var block = this.block();
-            if (block.running) {
+            var block = this.top_block();
+            if (block.active) {
                 this.blocks.pop();
                 continue;
             }
-            switch (this.action) {
-                case ACTIONS.RAISE:
-                    if (block.kind == BLOCK_KINDS.EXCEPT || block.kind == BLOCK_KINDS.FINALLY) {
+            switch (cause) {
+                case UNWIND_CAUSES.EXCEPTION:
+                    console.log('exc', block.type, block.type == BLOCK_TYPES.EXCEPT);
+                    if (block.type == BLOCK_TYPES.EXCEPT || block.type == BLOCK_TYPES.FINALLY) {
                         this.position = block.position;
-                        block.running = true;
+                        block.active = true;
+                        return;
+                    } else if (block.type == BLOCK_TYPES.BASE) {
+                        this.vm.frame = this.back;
                         return;
                     } else {
                         this.blocks.pop()
                     }
                     break;
-                case ACTIONS.RETURN:
-                    if (block.kind == BLOCK_KINDS.FINALLY) {
+                case UNWIND_CAUSES.RETURN:
+                    if (block.type == BLOCK_TYPES.FINALLY) {
                         this.position = block.position;
-                        block.running = true;
+                        block.active = true;
                         return;
-                    } else if (block.kind == BLOCK_KINDS.BASE) {
+                    } else if (block.type == BLOCK_TYPES.BASE) {
                         this.vm.frame = this.back;
                         return;
                     } else {
@@ -960,14 +989,20 @@ window['jaspy'] = (function () {
     };
     PythonFrame.prototype.step = function () {
         var top, value, low, high, mid, name, code, defaults, globals, index, slot, func;
-        var head, right, left, kwargs, args, kind, block;
+        var head, right, left, kwargs, args, type, block, temp;
         var exc_type, exc_traceback, exc_value;
+        if (vm.return_value === null && !this.raising) {
+            this.push(this.vm.last_exception.exc_tb);
+            this.push(this.vm.last_exception.exc_value);
+            this.push(this.vm.last_exception.exc_type);
+            console.log(this.vm.last_exception);
+            this.raising = true;
+            this.unwind(UNWIND_CAUSES.EXCEPTION);
+            return;
+        }
         var instruction = this.fetch();
         if (DEBUG) {
             console.log('executing instruction', instruction);
-        }
-        if (vm.return_value === null) {
-            error('exceptions are not supported');
         }
         switch (instruction.opcode) {
             case OPCODES.NOP:
@@ -988,7 +1023,7 @@ window['jaspy'] = (function () {
                 this.push(top[0]);
                 break;
             case OPCODES.DUP_TOP:
-                this.popn(this.top0());
+                this.push(this.top0());
                 break;
             case OPCODES.DUP_TOP_TWO:
                 this.push(this.top1());
@@ -1334,8 +1369,31 @@ window['jaspy'] = (function () {
             case OPCODES.SETUP_LOOP:
             case OPCODES.SETUP_EXCEPT:
             case OPCODES.SETUP_FINALLY:
-                kind = OPCODE_MAP[instruction.opcode];
-                this.blocks.push(new Block(kind, instruction.argument + this.position));
+                type = OPCODES_EXTRA[instruction.opcode];
+                this.push_block(type, instruction.argument + this.position);
+                break;
+
+            case OPCODES.END_FINALLY:
+                this.unwind(this.vm.return_value === null ? UNWIND_CAUSES.EXCEPTION : UNWIND_CAUSES.RETURN);
+                break;
+
+            case OPCODES.POP_EXCEPT:
+                block = this.blocks.pop();
+                assert(block.type == BLOCK_TYPES.EXCEPT);
+                this.vm.return_value = None;
+                break;
+
+            case OPCODES.COMPARE_OP:
+                switch (instruction.argument) {
+                    case COMPARE_OPS.EXC:
+                        exc_type = this.pop();
+                        console.log('comp-exc', this.top0(), exc_type);
+                        console.log(this.stack);
+                        this.push(this.pop().is_subclass_of(exc_type) ? True : False);
+                        break;
+                    default:
+                        error('unknown comparison operator')
+                }
                 break;
 
             case OPCODES.JUMP_FORWARD:
@@ -1365,11 +1423,7 @@ window['jaspy'] = (function () {
             case OPCODES.POP_BLOCK:
                 this.blocks.pop();
                 break;
-            case OPCODES.POP_EXCEPT:
-                block = this.blocks.pop();
-                assert(block.kind == BLOCK_KINDS.EXCEPT);
-                this.action = ACTIONS.RUN;
-                break;
+
 
             case OPCODES.RETURN_VALUE:
                 vm.return_value = this.pop();
@@ -1513,6 +1567,9 @@ window['jaspy'] = (function () {
                 } else {
                     this.raise(TypeError, 'invalid type of function code')
                 }
+            } else if (object instanceof PyObject) {
+                console.log(object);
+                return object.call_method(this, '__call__', args, kwargs);
             } else {
                 error('invalid callable');
             }
@@ -1576,15 +1633,15 @@ window['jaspy'] = (function () {
     py_type.define_method('__call__', function (vm, frame, args) {
         switch (frame.position) {
             case 0:
-                if (vm.c(args['cls'].lookup('__new__'), args['var_args'], args['var_kwargs'])) {
+                if (args['cls'].call_classmethod(vm, '__new__', args['var_args'], args['var_kwargs'])) {
                     return 1;
                 }
             case 1:
                 if (!vm.return_value) {
-                    return -1
+                    return null;
                 }
                 frame.store['instance'] = vm.return_value;
-                if (frame.store['instance'].c(vm, '__init__', args['var_args'], args['var_kwargs'])) {
+                if (frame.store['instance'].call_method(vm, '__init__', args['var_args'], args['var_kwargs'])) {
                     return 2;
                 }
             case 2:
@@ -1825,7 +1882,10 @@ window['jaspy'] = (function () {
                 return 1;
             case 1:
                 console.log(frame.store.namespace);
-                error('jo');
+                // FIXME: implement this the right way
+                var cls = new PyType(args.name.value, [py_object], frame.store.namespace, py_type);
+                console.log(cls);
+                return cls;
                 console.log(args);
                 return None;
         }
@@ -1850,7 +1910,10 @@ window['jaspy'] = (function () {
         'get_by_id': get_by_id,
 
         'type': py_type,
-        'int': py_int
+        'int': py_int,
+
+        'TypeError': TypeError,
+        'AttributeError': AttributeError
     };
 
 
