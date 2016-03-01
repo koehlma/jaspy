@@ -325,12 +325,27 @@ window['jaspy'] = (function () {
     PyObject.prototype.c = function (vm, name, args, kwargs) {
         return vm.c(this.cls.lookup(name), [this].concat(args || []), kwargs)
     };
+    PyObject.prototype.call_method = function (vm, name, args, kwargs) {
+        return vm.call_object(this.cls.lookup(name), [this].concat(args || []), kwargs);
+    };
 
     function PyType(name, bases, attributes, mcs) {
+        var index, builtin;
         PyObject.call(this, mcs || py_type, attributes || new PyDict());
         this.name = name;
         this.bases = bases || [py_object];
         this.mro = compute_mro(this);
+        this.builtin = null;
+        for (index = 0; index < this.mro.length; index++) {
+            builtin = this.mro[index].builtin;
+            if (builtin === py_object) {
+                continue;
+            }
+            if (this.builtin && this.builtin !== builtin && builtin) {
+                raise(TypeError, 'invalid builtin type hierarchy');
+            }
+            this.builtin = builtin;
+        }
     }
     PyType.prototype = new PyObject;
     PyType.prototype.lookup = function (name) {
@@ -363,6 +378,12 @@ window['jaspy'] = (function () {
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
         this.define(name, new_native(func, signature, options));
+    };
+    PyType.prototype.call_classmethod = function (vm, name, args, kwargs) {
+        return vm.call_object(this.lookup(name), [this].concat(args || []), kwargs);
+    };
+    PyType.prototype.call_staticmethod = function (vm, name, args, kwargs) {
+        return vm.call_object(this.lookup(name), args, kwargs);
     };
 
     function PyDict(cls) {
@@ -404,32 +425,43 @@ window['jaspy'] = (function () {
         this.table[key.value] = {key: key, value: value, next: this.table[key]}
     };
 
+    function new_builtin_type(name, bases, attributes, mcs) {
+        var type = new PyType(name, bases, attributes, mcs);
+        type.builtin = type;
+        return type;
+    }
 
-    var py_object = new PyType('object', []);
-    var py_type = new PyType('type', [py_object]);
-    var py_dict = new PyType('dict', [py_object]);
+    var py_object = new_builtin_type('object', []);
+    var py_type = new_builtin_type('type', [py_object]);
+    var py_dict = new_builtin_type('dict', [py_object]);
 
     py_object.cls = py_type.cls = py_dict.cls = py_type;
+    py_object.dict.cls = py_type.dict.cls = py_dict.dict.cls = py_dict;
 
-    py_object.dict = new PyDict();
-    py_type.dict = new PyDict();
-    py_dict.dict = new PyDict();
+    var py_int = new_builtin_type('int');
+    var py_bool = new_builtin_type('bool', [py_int]);
 
-    var py_int = new PyType('int');
-    var py_bool = new PyType('bool', [py_int]);
+    var py_float = new_builtin_type('float');
 
-    var py_float = new PyType('float');
+    var py_str = new_builtin_type('str');
+    var py_bytes = new_builtin_type('bytes');
 
-    var py_str = new PyType('str');
-    var py_bytes = new PyType('bytes');
+    var py_tuple = new_builtin_type('tuple');
 
-    var py_tuple = new PyType('tuple');
+    var py_code = new_builtin_type('code');
 
-    var py_code = new PyType('code');
+    var py_list = new_builtin_type('list');
+    var py_set = new_builtin_type('set');
 
-    var None = new PyObject(new PyType('NoneType'));
-    var NotImplemented = new PyObject(new PyType('NotImplemented'));
-    var Ellipsis = new PyObject(new PyType('Ellipsis'));
+    var py_function = new_builtin_type('function');
+    var py_method = new_builtin_type('method');
+    var py_generator = new_builtin_type('generator');
+
+    var py_frame = new_builtin_type('frame');
+    var py_traceback = new_builtin_type('traceback');
+
+    var py_module = new_builtin_type('ModuleType');
+
 
     function PyInt(value, cls) {
         PyObject.call(this, cls || py_int);
@@ -462,15 +494,16 @@ window['jaspy'] = (function () {
     }
     PyCode.prototype = new PyObject;
 
-    var small_ints = new Array(256 * 2);
-    for (var number = 0; number < small_ints.length; number++) {
-        small_ints[number] = new PyInt(number - 255);
-    }
+
+    var None = new PyObject(new_builtin_type('NoneType'));
+    var NotImplemented = new PyObject(new_builtin_type('NotImplemented'));
+    var Ellipsis = new PyObject(new_builtin_type('Ellipsis'));
+
+    var False = new PyInt(0, py_bool);
+    var True = new PyInt(1, py_bool);
+
 
     function new_int(value) {
-        if (value > -256 && value < 256) {
-            return small_ints[value + 255];
-        }
         return new PyInt(value);
     }
     function new_float(value) {
@@ -489,21 +522,6 @@ window['jaspy'] = (function () {
         return new PyCode(value);
     }
 
-    var False = new PyInt(0, py_bool);
-    var True = new PyInt(1, py_bool);
-
-
-    var py_list = new PyType('list');
-    var py_set = new PyType('set');
-
-    var py_function = new PyType('function');
-    var py_method = new PyType('method');
-    var py_generator = new PyType('generator');
-
-    var py_frame = new PyType('frame');
-    var py_traceback = new PyType('traceback');
-
-    var py_module = new PyType('ModuleType');
 
     var BaseException = new PyType('BaseException');
     var Exception = new PyType('Exception', [BaseException]);
@@ -813,9 +831,8 @@ window['jaspy'] = (function () {
                     case 0:
                         slot = OPCODES_EXTRA[instruction.opcode];
                         top = this.pop();
-                        func = top.cls.lookup('__' + slot + '__');
                         if (func) {
-                            if (vm.c(func, [top])) {
+                            if (top.call_method(this.vm, slot)) {
                                 this.state++;
                                 this.position--;
                                 break;
@@ -858,15 +875,10 @@ window['jaspy'] = (function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         left = this.top1();
                         right = this.top0();
-                        func = left.cls.lookup('__' + slot + '__');
-                        if (func) {
-                            if (vm.c(func, [left, right])) {
-                                this.state++;
-                                this.position--;
-                                break;
-                            }
-                        } else {
-                            vm.return_value = NotImplemented;
+                        if (left.call_method(this.vm, '__' + slot + '__', [right])) {
+                            this.state++;
+                            this.position--;
+                            break;
                         }
                     case 1:
                         if (!vm.return_value) {
@@ -1145,21 +1157,72 @@ window['jaspy'] = (function () {
         return func;
     }
 
-    py_object.define_method('__new__', function (vm, frame, args) {
+    py_type.define_method('__new__', function (args) {
+        if (!(args['mcs'] instanceof PyType)) {
+            raise(TypeError, 'invalid type of "mcs" argument');
+        }
+        if (!(args['name'] instanceof PyStr)) {
+            raise(TypeError, 'invalid type of "name" argument');
+        }
+        if (!(args['bases'] instanceof PyTuple)) {
+            raise(TypeError, 'invalid type of "bases" argument');
+        }
+        if (!(args['attributes'] instanceof PyDict)) {
+            raise(TypeError, 'invalid type of "attributes" argument')
+        }
+        var name = args['name'].value;
+        var bases = args['bases'].value;
+        return new PyType(name, bases, args['attributes'], args['mcs']);
+    }, ['mcs', 'name', 'bases', 'attributes'], {
+        simple: true
+    });
+
+    py_type.define_method('__call__', function (vm, frame, args) {
+        switch (frame.position) {
+            case 0:
+                if (vm.c(args['cls'].lookup('__new__'), args['var_args'], args['var_kwargs'])) {
+                    return 1;
+                }
+            case 1:
+                if (!vm.return_value) {
+                    return -1
+                }
+                frame.store['instance'] = vm.return_value;
+                if (frame.store['instance'].c(vm, '__init__', args['var_args'], args['var_kwargs'])) {
+                    return 2;
+                }
+            case 2:
+                return frame.store['instance'];
+        }
+    }, ['cls', 'var_args', 'var_kwargs'], {
+        flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS
+    });
+
+
+    py_object.define_method('__new__', function (args) {
         if (!(args.cls instanceof PyType)) {
             raise(TypeError, 'object.__new__(X): X is not a type object');
         }
-        if (args.cls.unsafe) {
-            var msg = 'object.__new__() is not safe, use ' + args.cls.name + '.__new__()';
-            raise(TypeError, msg);
+        if (args.cls.builtin !== py_object) {
+            raise(TypeError, 'object.__new__() is not safe, use ' + args.cls.builtin.cls + '.__new__()');
         }
-        vm.return_value = new PyObject(args.cls);
+        return new PyObject(args.cls);
     }, ['cls', 'var_args', 'var_kwargs'], {
-       flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS
+        flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
+        simple: true
     });
     py_object.define_method('__init__', function (vm, frame, self) {
 
     }, ['self']);
+
+    None.cls.define_method('__new__', function (args) {
+        return None;
+    }, ['self'], {simple: true});
+
+    None.cls.define_method('__str__', function () {
+        return new_str('None');
+    }, ['self'], {simple: true});
+
 
 
     var getattr = new_native(function (vm, frame, args) {
@@ -1360,7 +1423,7 @@ window['jaspy'] = (function () {
             globals: {'__name__': new_str('__main__')}
         });
     };
-    VM.prototype.c = function (object, args, kwargs, defaults) {
+    VM.prototype.call_object = VM.prototype.c = function (object, args, kwargs, defaults) {
         var code, result, frame;
         try {
             while (true) {
