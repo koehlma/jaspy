@@ -396,11 +396,21 @@ window['jaspy'] = (function () {
         }
         return this.id;
     };
+    PyObject.prototype.get_address = function () {
+        return ('0000000000000' + args.self.get_id().toString(16)).substr(-13);
+    };
     PyObject.prototype.is_instance_of = function (cls) {
         return this.cls.is_subclass_of(cls);
     };
     PyObject.prototype.call_method = function (vm, name, args, kwargs) {
-        return vm.call_object(this.cls.lookup(name), [this].concat(args || []), kwargs);
+        var method = this.cls.lookup(name);
+        if (method) {
+            return vm.call_object(method, [this].concat(args || []), kwargs);
+        } else {
+            vm.return_value = null;
+            vm.last_exception = METHOD_NOT_FOUND;
+            return false;
+        }
     };
 
 
@@ -680,11 +690,20 @@ window['jaspy'] = (function () {
     var ProcessLookupError = new PyType('ProcessLookupError', [OSError]);
     var TimeoutError = new PyType('TimeoutError', [OSError]);
 
+    var MethodNotFoundError = new PyType('MethodNotFoundError', [Exception]);
+    var METHOD_NOT_FOUND = {exc_type: MethodNotFoundError, exc_value: None, exc_tb: None};
 
     function new_exception(cls, message) {
         var exc_value = new PyObject(cls, new PyDict());
         exc_value.dict.set('args', new_tuple([new_str(message)]));
         return exc_value;
+    }
+
+
+    var Property = new PyType('property');
+
+    function new_property() {
+        return new PyObject(Property);
     }
 
 
@@ -947,6 +966,9 @@ window['jaspy'] = (function () {
         if (DEBUG) {
             console.log('executing instruction', instruction);
         }
+        if (vm.return_value === null) {
+            error('exceptions are not supported');
+        }
         switch (instruction.opcode) {
             case OPCODES.NOP:
                 break;
@@ -981,16 +1003,16 @@ window['jaspy'] = (function () {
                 switch (this.state) {
                     case 0:
                         if (this.pop().call_method(this.vm, OPCODES_EXTRA[instruction.opcode])) {
-                            this.state++;
+                            this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (vm.return_value) {
+                        if (vm.return_value == NotImplemented || vm.except(MethodNotFoundError)) {
+                            vm.raise(TypeError, 'unsupported operand type');
+                        } else if (vm.return_value) {
                             this.push(vm.return_value);
-                        } else {
-                            error('exception raised');
                         }
                         break;
                 }
@@ -1111,6 +1133,93 @@ window['jaspy'] = (function () {
                 break;
 
 
+            case OPCODES.POP_JUMP_IF_TRUE:
+                if (this.top0() instanceof PyInt) {
+                    if (this.pop().value) {
+                        this.position = instruction.argument;
+                    }
+                    break;
+                }
+                switch (this.state) {
+                    case 0:
+                        if (this.top0().call_method(this.vm, '__bool__')) {
+                            this.state = 1;
+                            this.position--;
+                            break;
+                        }
+                    case 1:
+                        if (this.vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method(this.vm, '__len__')) {
+                                this.state = 2;
+                                this.position--;
+                            }
+                        } else if (!this.vm.return_value) {
+                            this.pop();
+                            this.state = 0;
+                            break;
+                        }
+                    case 2:
+                        this.pop();
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            this.position = instruction.argument;
+                            break;
+                        }
+                        if (this.vm.return_value) {
+                            if (this.vm.return_value instanceof PyInt) {
+                                if (this.vm.return_value.value) {
+                                    this.position = instruction.argument;
+                                }
+                            } else {
+                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            }
+                        }
+                        break;
+                }
+                break;
+            case OPCODES.POP_JUMP_IF_FALSE:
+                if (this.top0() instanceof PyInt) {
+                    if (!this.pop().value) {
+                        this.position = instruction.argument;
+                    }
+                    break;
+                }
+                switch (this.state) {
+                    case 0:
+                        if (this.top0().call_method(this.vm, '__bool__')) {
+                            this.state = 1;
+                            this.position--;
+                            break;
+                        }
+                    case 1:
+                        if (this.vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method(this.vm, '__len__')) {
+                                this.state = 2;
+                                this.position--;
+                            }
+                        } else if (!this.vm.return_value) {
+                            this.pop();
+                            this.state = 0;
+                            break;
+                        }
+                    case 2:
+                        this.pop();
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            break;
+                        }
+                        if (this.vm.return_value) {
+                            if (this.vm.return_value instanceof PyInt) {
+                                if (!this.vm.return_value.value) {
+                                    this.position = instruction.argument;
+                                }
+                            } else {
+                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            }
+                        }
+                        break;
+                }
+                break;
 
 
 
@@ -1243,6 +1352,15 @@ window['jaspy'] = (function () {
                 this.unwind(vm);
                 break;
 
+
+            case OPCODES.LOAD_ATTR:
+                switch (this.state) {
+                    case 0:
+                        if (this.top().call_method(this.vm, '__getattribute__')) {
+
+                        }
+                }
+                break;
 
             case OPCODES.POP_BLOCK:
                 this.blocks.pop();
@@ -1475,6 +1593,14 @@ window['jaspy'] = (function () {
     }, ['cls', 'var_args', 'var_kwargs'], {
         flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS
     });
+    py_type.define_method('__str__', function (args) {
+        var module = args.cls.dict.get('__module__');
+        if (module instanceof PyStr) {
+            return new_str('<class \'' + module.value + '.' + args.cls.name + '\'>');
+        } else {
+            return new_str('<class \'' + args.cls.name + '\'>');
+        }
+    }, ['cls'], {simple: true});
 
 
     py_object.define_method('__new__', function (args) {
@@ -1489,9 +1615,34 @@ window['jaspy'] = (function () {
         flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
         simple: true
     });
-    py_object.define_method('__init__', function (vm, frame, self) {
+    py_object.define_method('__init__', function (vm, frame, args) {
 
     }, ['self']);
+    py_object.define_method('__getattribute__', function (vm, frame, args) {
+        switch (frame.position) {
+            case 0:
+                if (!(args.name instanceof PyStr)) {
+                    raise(TypeError, 'invalid type of \'name\' argument');
+                }
+                var value = args.self.dict.get(args.name);
+                if (value) {
+                    // TODO: bind if necessary
+                    return value;
+                } else {
+                    raise(AttributeError, '\'' + args.self.cls.name + '\' has no attribute \'' + args.name.value + '\'');
+                }
+        }
+    }, ['self', 'name']);
+
+    py_object.define_method('__str__', function (args) {
+        var module = args.self.cls.dict.get('__module__');
+        var address = ('0000000000000' + args.self.get_id().toString(16)).substr(-13);
+        if (module instanceof PyStr) {
+            return new_str('<' + module.value + '.' + args.self.cls.name + ' object at 0x' + address + '>');
+        } else {
+            return new_str('<' + args.self.cls.name + ' object at 0x' + address +'>');
+        }
+    }, ['self'], {simple: true});
 
     None.cls.define_method('__new__', function (args) {
         return None;
@@ -1501,6 +1652,8 @@ window['jaspy'] = (function () {
         return new_str('None');
     }, ['self'], {simple: true});
 
+
+    //py_function.define_method('__str__', )
 
 
     var getattr = new_native(function (vm, frame, args) {
@@ -1546,8 +1699,7 @@ window['jaspy'] = (function () {
                         if (object.cls == py_str) {
                             vm.return_value = object;
                         } else {
-                            slot = object.cls.lookup('__str__');
-                            if (vm.c(slot, [object])) return 1;
+                            if (object.call_method(vm, '__str__')) return 1;
                         }
                         frame.position = 1;
                     } else {
@@ -1695,7 +1847,10 @@ window['jaspy'] = (function () {
 
     var builtins = {
         'print': print,
-        'get_by_id': get_by_id
+        'get_by_id': get_by_id,
+
+        'type': py_type,
+        'int': py_int
     };
 
 
