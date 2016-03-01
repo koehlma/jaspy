@@ -157,11 +157,11 @@ window['jaspy'] = (function () {
     };
     var OPCODES_EXTRA = (function () {
         var map = new Array(200);
-        map[OPCODES.UNARY_POSITIVE] = 'pos';
-        map[OPCODES.UNARY_NEGATIVE] = 'neg';
-        map[OPCODES.UNARY_NOT] = 'not';
-        map[OPCODES.UNARY_INVERT] = 'invert';
-        map[OPCODES.GET_ITER] = 'iter';
+        map[OPCODES.UNARY_POSITIVE] = '__pos__';
+        map[OPCODES.UNARY_NEGATIVE] = '__neg__';
+        map[OPCODES.UNARY_NOT] = '__not__';
+        map[OPCODES.UNARY_INVERT] = '__invert__';
+        map[OPCODES.GET_ITER] = '__iter__';
 
         map[OPCODES.BINARY_POWER] = 'pow';
         map[OPCODES.BINARY_MULTIPLY] = 'mul';
@@ -178,21 +178,21 @@ window['jaspy'] = (function () {
         map[OPCODES.BINARY_XOR] = 'xor';
         map[OPCODES.BINARY_OR] = 'or';
 
-        map[OPCODES.INPLACE_POWER] = 'ipow';
-        map[OPCODES.INPLACE_MULTIPLY] = 'imul';
-        map[OPCODES.INPLACE_MATRIX_MULTIPLY] = 'imatmul';
-        map[OPCODES.INPLACE_FLOOR_DIVIDE] = 'ifloordiv';
-        map[OPCODES.INPLACE_TRUE_DIVIDE] = 'itruediv';
-        map[OPCODES.INPLACE_MODULO] = 'imod';
-        map[OPCODES.INPLACE_ADD] = 'iadd';
-        map[OPCODES.INPLACE_SUBTRACT] = 'isub';
-        map[OPCODES.INPLACE_LSHIFT] = 'ilshift';
-        map[OPCODES.INPLACE_RSHIFT] = 'irshift';
-        map[OPCODES.INPLACE_AND] = 'iand';
-        map[OPCODES.INPLACE_XOR] = 'ixor';
-        map[OPCODES.INPLACE_OR] = 'ior';
-        map[OPCODES.STORE_SUBSCR] = 'setitem';
-        map[OPCODES.DELETE_SUBSCR] = 'delitem';
+        map[OPCODES.INPLACE_POWER] = '__ipow__';
+        map[OPCODES.INPLACE_MULTIPLY] = '__imul__';
+        map[OPCODES.INPLACE_MATRIX_MULTIPLY] = '__imatmul__';
+        map[OPCODES.INPLACE_FLOOR_DIVIDE] = '__ifloordiv__';
+        map[OPCODES.INPLACE_TRUE_DIVIDE] = '__itruediv__';
+        map[OPCODES.INPLACE_MODULO] = '__imod__';
+        map[OPCODES.INPLACE_ADD] = '__iadd__';
+        map[OPCODES.INPLACE_SUBTRACT] = '__isub__';
+        map[OPCODES.INPLACE_LSHIFT] = '__ilshift__';
+        map[OPCODES.INPLACE_RSHIFT] = '__irshift__';
+        map[OPCODES.INPLACE_AND] = '__iand__';
+        map[OPCODES.INPLACE_XOR] = '__ixor__';
+        map[OPCODES.INPLACE_OR] = '__ior__';
+        map[OPCODES.STORE_SUBSCR] = '__setitem__';
+        map[OPCODES.DELETE_SUBSCR] = '__delitem__';
 
         map[OPCODES.SETUP_LOOP] = BLOCK_TYPES.LOOP;
         map[OPCODES.SETUP_EXCEPT] = BLOCK_TYPES.EXCEPT;
@@ -220,9 +220,10 @@ window['jaspy'] = (function () {
     }
 
 
-    function ArrayList() {
+    function ArrayList(size) {
         this.array = new Array(4);
-        this.size = 0;
+        this.size = size || 0;
+        this.grow();
     }
     ArrayList.prototype.check = function (index) {
         if (index < 0) {
@@ -279,6 +280,71 @@ window['jaspy'] = (function () {
         this.shrink();
         return item;
     };
+    ArrayList.prototype.clear = function () {
+        this.array = new Array(4);
+        this.size = 0;
+    };
+    ArrayList.prototype.slice = function (start, stop, step) {
+        var index, list = new ArrayList();
+        if (start == undefined) {
+            start = 0;
+        } else if (start < 0) {
+            start = this.size + start;
+        }
+        if (stop == undefined) {
+            stop = this.size;
+        } else if (stop < 0) {
+            stop = this.size + stop;
+        }
+        step = step || 1;
+        if (step > 0) {
+            if (start < 0) {
+                start = 0;
+            }
+            if (stop > this.size) {
+                stop = this.size;
+            }
+            for (index = start; index < stop; index += step) {
+                list.append(this.array[index]);
+            }
+        } else if (step < 0) {
+            if (start >= this.size) {
+                    start = this.size - 1;
+            }
+            if (stop < 0) {
+                stop = 0;
+            }
+            for (index = start; index > stop; index += step) {
+                list.append(this.array[index]);
+            }
+        } else {
+            raise(ValueError, 'slice step cannot be zero')
+        }
+        return list;
+    };
+    ArrayList.prototype.concat = function (list_or_array) {
+        var list, index, size;
+        if (list_or_array instanceof ArrayList) {
+            size = list_or_array.size;
+            list_or_array = list_or_array.array;
+        } else if (list_or_array instanceof Array) {
+            size = list_or_array.length;
+        } else {
+            raise(TypeError, 'invalid type of "list_or_array" argument');
+        }
+        list = new ArrayList(this.size + size);
+        for (index = 0; index < this.size; index++) {
+            list.array[index] = this.array[index];
+        }
+        for (index = 0; index < size; index++) {
+            list.array[index + this.size] = list_or_array[index];
+        }
+        return list;
+    };
+    ArrayList.prototype.copy = function () {
+        return this.concat([]);
+    };
+
 
     function get_mro(cls) {
         return cls.mro;
@@ -315,19 +381,28 @@ window['jaspy'] = (function () {
         return result;
     }
 
+
+    var object_id_counter = 0;
+
+
     function PyObject(cls, dict) {
         this.cls = cls;
         this.dict = dict || null;
+        this.id = null;
     }
+    PyObject.prototype.get_id = function () {
+        if (this.id === null) {
+            this.id = object_id_counter++;
+        }
+        return this.id;
+    };
     PyObject.prototype.is_instance_of = function (cls) {
         return this.cls.is_subclass_of(cls);
-    };
-    PyObject.prototype.c = function (vm, name, args, kwargs) {
-        return vm.c(this.cls.lookup(name), [this].concat(args || []), kwargs)
     };
     PyObject.prototype.call_method = function (vm, name, args, kwargs) {
         return vm.call_object(this.cls.lookup(name), [this].concat(args || []), kwargs);
     };
+
 
     function PyType(name, bases, attributes, mcs) {
         var index, builtin;
@@ -335,28 +410,19 @@ window['jaspy'] = (function () {
         this.name = name;
         this.bases = bases || [py_object];
         this.mro = compute_mro(this);
-        this.builtin = null;
+        this.native = null;
         for (index = 0; index < this.mro.length; index++) {
-            builtin = this.mro[index].builtin;
+            builtin = this.mro[index].native;
             if (builtin === py_object) {
                 continue;
             }
-            if (this.builtin && this.builtin !== builtin && builtin) {
-                raise(TypeError, 'invalid builtin type hierarchy');
+            if (this.native && this.native !== builtin && builtin) {
+                raise(TypeError, 'invalid native type hierarchy');
             }
-            this.builtin = builtin;
+            this.native = builtin;
         }
     }
     PyType.prototype = new PyObject;
-    PyType.prototype.lookup = function (name) {
-        var index, value;
-        for (index = 0; index < this.mro.length; index++) {
-            value = this.mro[index].dict.get(name);
-            if (value) {
-                return value;
-            }
-        }
-    };
     PyType.prototype.is_subclass_of = function (cls) {
         var index;
         if (cls === this) {
@@ -369,6 +435,15 @@ window['jaspy'] = (function () {
             }
         }
         return false;
+    };
+    PyType.prototype.lookup = function (name) {
+        var index, value;
+        for (index = 0; index < this.mro.length; index++) {
+            value = this.mro[index].dict.get(name);
+            if (value) {
+                return value;
+            }
+        }
     };
     PyType.prototype.define = function (name, item) {
         this.dict.set(name, item);
@@ -386,81 +461,109 @@ window['jaspy'] = (function () {
         return vm.call_object(this.lookup(name), args, kwargs);
     };
 
+
     function PyDict(cls) {
         PyObject.call(this, cls || py_dict);
         this.table = {};
     }
     PyDict.prototype = new PyObject;
-    PyDict.prototype.get = function (key) {
+    PyDict.prototype.get = function (str_key) {
         var current;
-        if (key instanceof PyStr) {
-            key = key.value;
-        } else if (typeof key != 'string') {
+        if (str_key instanceof PyStr) {
+            str_key = str_key.value;
+        } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid primitive key type');
         }
-        current = this.table[key];
+        current = this.table[str_key];
         while (current) {
-            if (current.key.value == key) {
+            if (current.key.value === str_key) {
                 return current.value;
             }
             current = current.next;
         }
     };
-    PyDict.prototype.set = function (key, value) {
+    PyDict.prototype.set = function (str_key, value) {
         var current;
-        if (typeof key == 'string') {
-            key = new_str(key);
-        } else if (!(key instanceof PyStr)) {
+        if (typeof str_key == 'string') {
+            str_key = new_str(str_key);
+        } else if (!(str_key instanceof PyStr)) {
             raise(TypeError, 'invalid primitive key type');
         }
-        if (key in this.table) {
-            current = this.table[key];
-            while (current) {
-                if (current.key.value == key.value) {
-                    current.value = value;
-                    return;
+        current = this.table[str_key];
+        while (current) {
+            if (current.key.value === str_key.value) {
+                current.value = value;
+                return;
+            }
+            current = current.next;
+        }
+        this.table[str_key.value] = {key: str_key, value: value, next: this.table[str_key]}
+    };
+    PyDict.prototype.pop = function (str_key) {
+        var current, value;
+        if (str_key instanceof PyStr) {
+            str_key = str_key.value;
+        } else if (typeof str_key != 'string') {
+            raise(TypeError, 'invalid primitive key type');
+        }
+        current = this.table[str_key];
+        if (current) {
+            if (current.key.value === str_key) {
+                if (!(this.table[str_key] = current.next)) {
+                    delete this.table[str_key];
+                }
+                return current.value;
+            } else {
+                while (current) {
+                    if (current.next && current.next.key.value === str_key) {
+                        value = current.next.value;
+                        current.next = current.next.next;
+                        return value;
+                    }
+                    current = current.next;
                 }
             }
         }
-        this.table[key.value] = {key: key, value: value, next: this.table[key]}
     };
 
-    function new_builtin_type(name, bases, attributes, mcs) {
+
+    function new_native_type(name, bases, attributes, mcs) {
         var type = new PyType(name, bases, attributes, mcs);
-        type.builtin = type;
+        type.native = type;
         return type;
     }
 
-    var py_object = new_builtin_type('object', []);
-    var py_type = new_builtin_type('type', [py_object]);
-    var py_dict = new_builtin_type('dict', [py_object]);
+
+    var py_object = new_native_type('object', []);
+    var py_type = new_native_type('type', [py_object]);
+    var py_dict = new_native_type('dict', [py_object]);
 
     py_object.cls = py_type.cls = py_dict.cls = py_type;
     py_object.dict.cls = py_type.dict.cls = py_dict.dict.cls = py_dict;
 
-    var py_int = new_builtin_type('int');
-    var py_bool = new_builtin_type('bool', [py_int]);
+    var py_int = new_native_type('int');
+    var py_bool = new_native_type('bool', [py_int]);
 
-    var py_float = new_builtin_type('float');
+    var py_float = new_native_type('float');
 
-    var py_str = new_builtin_type('str');
-    var py_bytes = new_builtin_type('bytes');
+    var py_str = new_native_type('str');
+    var py_bytes = new_native_type('bytes');
 
-    var py_tuple = new_builtin_type('tuple');
+    var py_tuple = new_native_type('tuple');
 
-    var py_code = new_builtin_type('code');
+    var py_code = new_native_type('code');
 
-    var py_list = new_builtin_type('list');
-    var py_set = new_builtin_type('set');
+    var py_list = new_native_type('list');
+    var py_set = new_native_type('set');
 
-    var py_function = new_builtin_type('function');
-    var py_method = new_builtin_type('method');
-    var py_generator = new_builtin_type('generator');
+    var py_function = new_native_type('function');
+    var py_method = new_native_type('method');
+    var py_generator = new_native_type('generator');
 
-    var py_frame = new_builtin_type('frame');
-    var py_traceback = new_builtin_type('traceback');
+    var py_frame = new_native_type('frame');
+    var py_traceback = new_native_type('traceback');
 
-    var py_module = new_builtin_type('ModuleType');
+    var py_module = new_native_type('ModuleType');
 
 
     function PyInt(value, cls) {
@@ -495,9 +598,9 @@ window['jaspy'] = (function () {
     PyCode.prototype = new PyObject;
 
 
-    var None = new PyObject(new_builtin_type('NoneType'));
-    var NotImplemented = new PyObject(new_builtin_type('NotImplemented'));
-    var Ellipsis = new PyObject(new_builtin_type('Ellipsis'));
+    var None = new PyObject(new_native_type('NoneType'));
+    var NotImplemented = new PyObject(new_native_type('NotImplemented'));
+    var Ellipsis = new PyObject(new_native_type('Ellipsis'));
 
     var False = new PyInt(0, py_bool);
     var True = new PyInt(1, py_bool);
@@ -525,9 +628,57 @@ window['jaspy'] = (function () {
 
     var BaseException = new PyType('BaseException');
     var Exception = new PyType('Exception', [BaseException]);
-
+    var ValueError = new PyType('ValueError', [Exception]);
+    var ArithmeticError = new PyType('ArithmeticError', [Exception]);
+    var LookupError = new PyType('LookupError', [Exception]);
+    var RuntimeError = new PyType('RuntimeError', [Exception]);
+    var BufferError = new PyType('BufferError', [Exception]);
+    var AssertionError = new PyType('AssertionError', [Exception]);
     var AttributeError = new PyType('AttributeError', [Exception]);
+    var EOFError = new PyType('EOFError', [Exception]);
+    var FloatingPointError = new PyType('FloatingPointError', [ArithmeticError]);
+    var GeneratorExit = new PyType('GeneratorExit', [BaseException]);
+    var ImportError = new PyType('ImportError', [Exception]);
+    var IndexError = new PyType('IndexError', [LookupError]);
+    var KeyError = new PyType('KeyError', [Exception]);
+    var KeyboardInterrupt = new PyType('KeyboardInterrupt', [BaseException]);
+    var MemoryError = new PyType('MemoryError', [Exception]);
+    var NameError = new PyType('NameError', [Exception]);
+    var NotImplementedError = new PyType('NotImplementedError', [RuntimeError]);
+    var OSError = new PyType('OSError', [Exception]);
+    var OverflowError = new PyType('OverflowError', [Exception]);
+    var RecursionError = new PyType('RecursionError', [RuntimeError]);
+    var ReferenceError = new PyType('ReferenceError', [Exception]);
+    var StopIteration = new PyType('StopIteration', [Exception]);
+    var SyntaxError = new PyType('SyntaxError', [Exception]);
+    var IndentationError = new PyType('IndentationError', [SyntaxError]);
+    var TabError = new PyType('TabError', [IndentationError]);
+    var SystemError = new PyType('SystemError', [Exception]);
+    var SystemExit = new PyType('SystemExit', [BaseException]);
     var TypeError = new PyType('TypeError', [Exception]);
+    var UnboundLocalError = new PyType('UnboundLocalError', [NameError]);
+    var UnicodeError = new PyType('UnicodeError', [ValueError]);
+    var UnicodeEncodeError = new PyType('UnicodeEncodeError', [UnicodeError]);
+    var UnicodeDecodeError = new PyType('UnicodeDecodeError', [UnicodeError]);
+    var UnicodeTranslateError = new PyType('UnicodeTranslateError', [UnicodeError]);
+    var ZeroDivisionError = new PyType('ZeroDivisionError', [ArithmeticError]);
+    var EnvironmentError = OSError, IOError = OSError;
+
+    var BlockingIOError = new PyType('BlockingIOError', [OSError]);
+    var ChildProcessError = new PyType('ChildProcessError', [OSError]);
+    var BrokenPipeError = new PyType('BrokenPipeError', [OSError]);
+    var ConnectionError = new PyType('ConnectionError', [OSError]);
+    var ConnectionAbortedError = new PyType('ConnectionAbortedError', [ConnectionError]);
+    var ConnectionRefusedError = new PyType('ConnectionRefusedError', [ConnectionError]);
+    var ConnectionResetError = new PyType('ConnectionResetError', [ConnectionError]);
+    var FileExistsError = new PyType('FileExistsError', [OSError]);
+    var FileNotFoundError = new PyType('FileNotFoundError', [OSError]);
+    var InterruptedError = new PyType('InterruptedError', [OSError]);
+    var IsADirectoryError = new PyType('IsADirectoryError', [OSError]);
+    var NotADirectoryError = new PyType('NotADirectoryError', [OSError]);
+    var PermissionError = new PyType('PermissionError', [OSError]);
+    var ProcessLookupError = new PyType('ProcessLookupError', [OSError]);
+    var TimeoutError = new PyType('TimeoutError', [OSError]);
 
 
     function new_exception(cls, message) {
@@ -566,10 +717,10 @@ window['jaspy'] = (function () {
             } else if (defaults && name in defaults) {
                 result[name] = defaults[name];
             } else {
-                raise(TypeError, 'missing required positional argument');
+                raise(TypeError, 'missing required positional argument "' + name + '"');
             }
             if (name in kwargs) {
-                raise(TypeError, 'got multiple values for argument');
+                raise(TypeError, 'got multiple values for argument "' + name + '"');
             }
         }
         for (; index < this.argcount + this.kwargcount; index++) {
@@ -580,7 +731,7 @@ window['jaspy'] = (function () {
             } else if (defaults && name in defaults) {
                 result[name] = defaults[name];
             } else {
-                raise(TypeError, 'missing required keyword argument ' + name);
+                raise(TypeError, 'missing required keyword argument "' + name +'"');
             }
         }
         if ((this.flags & CODE_FLAGS.VAR_ARGS) != 0) {
@@ -829,16 +980,9 @@ window['jaspy'] = (function () {
             case OPCODES.GET_ITER:
                 switch (this.state) {
                     case 0:
-                        slot = OPCODES_EXTRA[instruction.opcode];
-                        top = this.pop();
-                        if (func) {
-                            if (top.call_method(this.vm, slot)) {
-                                this.state++;
-                                this.position--;
-                                break;
-                            }
-                        } else {
-                            this.vm.raise(TypeError, 'unsupported operand type');
+                        if (this.pop().call_method(this.vm, OPCODES_EXTRA[instruction.opcode])) {
+                            this.state++;
+                            this.position--;
                             break;
                         }
                     case 1:
@@ -1008,8 +1152,7 @@ window['jaspy'] = (function () {
             case OPCODES.STORE_NAME:
                 name = this.code.names[instruction.argument];
                 if (this.namespace) {
-                    this.namespace.c(this.vm, '__setitem__', [name, this.pop()]);
-                    console.log(this.namespace);
+                    this.namespace.call_method(this.vm, '__setitem__', [name, this.pop()]);
                 } else {
                     this.locals[name] = this.pop();
                 }
@@ -1038,7 +1181,7 @@ window['jaspy'] = (function () {
                         }
                         args = this.popn(low);
                         func = this.pop();
-                        if (vm.c(func, args, kwargs)) {
+                        if (vm.call_object(func, args, kwargs)) {
                             this.state = 1;
                             this.position -= 3;
                             break;
@@ -1122,7 +1265,6 @@ window['jaspy'] = (function () {
         }
     };
 
-
     function NativeFrame(code, options) {
         options = options || {};
 
@@ -1132,8 +1274,9 @@ window['jaspy'] = (function () {
     }
     NativeFrame.prototype = new Frame;
     NativeFrame.prototype.step = function () {
+        assert(!this.code.simple);
         var result = this.code.func(this.vm, this, this.args);
-        if (result < 0 || result instanceof PyObject) {
+        if (result == undefined || result instanceof PyObject) {
             if (result instanceof PyObject) {
                 vm.return_value = result;
             }
@@ -1143,6 +1286,121 @@ window['jaspy'] = (function () {
             return true;
         }
     };
+
+
+    function VM() {
+        this.frame = null;
+
+        this.return_value = None;
+        this.last_exception = null;
+    }
+    VM.prototype.step = function () {
+        this.frame.step();
+    };
+    VM.prototype.except = function (exc_type) {
+        if (!this.return_value && this.last_exception.exc_type.is_subclass_of(exc_type)) {
+            this.return_value = None;
+            return true;
+        }
+        return false;
+    };
+    VM.prototype.raise = function (exc_type, exc_value, exc_tb) {
+        if (typeof exc_value == 'string') {
+            exc_value = new_exception(exc_type, new_str(exc_value));
+        }
+        if (this.return_value === null) {
+            exc_value.dict.set('__context__', this.last_exception.exc_value);
+        } else {
+            this.return_value = null;
+        }
+
+        if (!exc_tb) {
+            // TODO: create traceback
+            console.log('error in line: ' + this.frame.get_line_number());
+            exc_tb = None;
+            exc_value.dict.set('__traceback__', exc_tb);
+        }
+        this.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
+    };
+    VM.prototype.run = function (object, args, kwargs) {
+        var old_frame = this.frame;
+        if (object instanceof Frame) {
+            this.frame = object;
+        } else if (object instanceof PyCode) {
+            this.frame = new PythonFrame(object.value, {
+                vm: this, builtins: builtins,
+                globals: {'__name__': new_str('__main__')}
+            })
+        } else {
+            error('object is not runnable');
+        }
+        while (this.frame) {
+            this.frame.step();
+        }
+        this.frame = old_frame;
+    };
+    VM.prototype.call_object = function (object, args, kwargs, defaults) {
+        var code, result, frame, vm = this;
+        while (true) {
+            if (object instanceof PythonCode) {
+                this.frame = new PythonFrame(object, {
+                    vm: vm, back: vm.frame, defaults: defaults,
+                    args: args, kwargs: kwargs
+                });
+                return true;
+            } else if (object instanceof NativeCode) {
+                if (object.simple) {
+                    try {
+                        result = object.func(object.parse_args(args, kwargs, defaults));
+                        vm.return_value = result || None;
+                    } catch (error) {
+                        if (error instanceof PyObject) {
+                            vm.raise(error.cls, error);
+                        } else {
+                            throw error;
+                        }
+                    }
+                    return false;
+                } else {
+                    this.frame = frame = new NativeFrame(object, {
+                        vm: vm, back: vm.frame, defaults: defaults,
+                        args: args, kwargs: kwargs
+                    });
+                    try {
+                        result = object.func(vm, vm.frame, vm.frame.args);
+                        if (result == undefined || result instanceof PyObject) {
+                            if (result instanceof PyObject) {
+                                vm.return_value = result;
+                            }
+                            vm.frame = frame.back;
+                            return false;
+                        } else {
+                            frame.position = result;
+                            return true;
+                        }
+                    } catch (error) {
+                        if (error instanceof PyObject) {
+                            vm.raise(error.cls, error);
+                            return false;
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+            } else if (object.cls === py_function) {
+                code = object.dict['__code__'];
+                if (code.cls === py_code) {
+                    defaults = object.defaults;
+                    object = code.value;
+                } else {
+                    this.raise(TypeError, 'invalid type of function code')
+                }
+            } else {
+                error('invalid callable');
+            }
+        }
+    };
+
 
     function new_native(func, signature, options) {
         var code = new NativeCode(func, options, signature);
@@ -1157,25 +1415,45 @@ window['jaspy'] = (function () {
         return func;
     }
 
-    py_type.define_method('__new__', function (args) {
-        if (!(args['mcs'] instanceof PyType)) {
-            raise(TypeError, 'invalid type of "mcs" argument');
-        }
-        if (!(args['name'] instanceof PyStr)) {
-            raise(TypeError, 'invalid type of "name" argument');
-        }
-        if (!(args['bases'] instanceof PyTuple)) {
-            raise(TypeError, 'invalid type of "bases" argument');
-        }
-        if (!(args['attributes'] instanceof PyDict)) {
-            raise(TypeError, 'invalid type of "attributes" argument')
-        }
-        var name = args['name'].value;
-        var bases = args['bases'].value;
-        return new PyType(name, bases, args['attributes'], args['mcs']);
-    }, ['mcs', 'name', 'bases', 'attributes'], {
-        simple: true
-    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    {
+        py_type.define_method('__new__', function (args) {
+            if (!(args['mcs'] instanceof PyType)) {
+                raise(TypeError, 'invalid type of "mcs" argument');
+            }
+            if (!(args['name'] instanceof PyStr)) {
+                raise(TypeError, 'invalid type of "name" argument');
+            }
+            if (!(args['bases'] instanceof PyTuple)) {
+                raise(TypeError, 'invalid type of "bases" argument');
+            }
+            if (!(args['attributes'] instanceof PyDict)) {
+                raise(TypeError, 'invalid type of "attributes" argument')
+            }
+            var name = args['name'].value;
+            var bases = args['bases'].value;
+            return new PyType(name, bases, args['attributes'], args['mcs']);
+        }, ['mcs', 'name', 'bases', 'attributes'], {
+            simple: true
+        });
+    }
 
     py_type.define_method('__call__', function (vm, frame, args) {
         switch (frame.position) {
@@ -1203,8 +1481,8 @@ window['jaspy'] = (function () {
         if (!(args.cls instanceof PyType)) {
             raise(TypeError, 'object.__new__(X): X is not a type object');
         }
-        if (args.cls.builtin !== py_object) {
-            raise(TypeError, 'object.__new__() is not safe, use ' + args.cls.builtin.cls + '.__new__()');
+        if (args.cls.native !== py_object) {
+            raise(TypeError, 'object.__new__() is not safe, use ' + args.cls.native.cls + '.__new__()');
         }
         return new PyObject(args.cls);
     }, ['cls', 'var_args', 'var_kwargs'], {
@@ -1384,103 +1662,13 @@ window['jaspy'] = (function () {
     }, ['self', 'key', 'value']);
 
 
-    function VM() {
-        this.frame = null;
 
-        this.return_value = None;
-        this.last_exception = null;
-    }
-    VM.prototype.step = function () {
-        this.frame.step();
-    };
-    VM.prototype.except = function (exc_type) {
-        var is_subclass = this.last_exception.exc_type.is_subclass_of(exc_type);
-        if (!this.return_value && is_subclass) {
-            this.return_value = None;
-            return true;
-        }
-        return false;
-    };
-    VM.prototype.raise = function (exc_type, exc_value, exc_tb) {
-        this.return_value = null;
-        if (typeof exc_value == 'string') {
-            exc_value = new_exception(exc_type, new_str(exc_value));
-        }
-        if (!exc_tb) {
-            // TODO: create traceback
-            exc_tb = None;
-        }
-        this.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
-    };
-    VM.prototype.run = function () {
-        while (this.frame) {
-            this.frame.step();
-        }
-    };
-    VM.prototype.run_code = function (code) {
-        this.frame = new PythonFrame(code.value, {
-            vm: this, builtins: builtins,
-            globals: {'__name__': new_str('__main__')}
-        });
-    };
-    VM.prototype.call_object = VM.prototype.c = function (object, args, kwargs, defaults) {
-        var code, result, frame;
-        try {
-            while (true) {
-                if (object instanceof PythonCode) {
-                    this.frame = new PythonFrame(object, {
-                        vm: this, back: this.frame, defaults: defaults,
-                        args: args, kwargs: kwargs
-                    });
-                    return true;
-                } else if (object instanceof NativeCode) {
-                    if (object.simple) {
-                        result = object.func(object.parse_args(args, kwargs, defaults));
-                        vm.return_value = result || None;
-                        return false;
-                    } else {
-                        this.frame = frame = new NativeFrame(object, {
-                            vm: this, back: this.frame, defaults: defaults,
-                            args: args, kwargs: kwargs
-                        });
-                        result = object.func(this, this.frame, this.frame.args);
-                        if (result < 0 || result instanceof PyObject) {
-                            if (result instanceof PyObject) {
-                                this.return_value = result;
-                            }
-                            this.frame = frame.back;
-                            return false;
-                        } else {
-                            frame.position = result;
-                            return true;
-                        }
-                    }
-                } else if (object.cls === py_function) {
-                    code = object.dict['__code__'];
-                    if (code.cls === py_code) {
-                        defaults = object.defaults;
-                        object = code.value;
-                    } else {
-                        this.raise(TypeError, 'invalid type of function code')
-                    }
-                } else {
-                    error('invalid callable');
-                }
-            }
-        } catch (error) {
-            if (error instanceof PyObject) {
-                this.raise(error.cls, error);
-                return false;
-            }
-            throw error;
-        }
-    };
 
     var build_class = new_native(function (vm, frame, args) {
         switch (frame.position) {
             case 0:
                 frame.store.namespace = new PyDict();
-                assert(vm.c(args.func));
+                assert(vm.call_object(args.func));
                 vm.frame.namespace = frame.store.namespace;
                 return 1;
             case 1:
@@ -1493,7 +1681,7 @@ window['jaspy'] = (function () {
         name: '__build_class__',
         flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
         kwargcount: 1,
-        defaults: {metaclass: None}
+        defaults: {'metaclass': None}
     });
 
 
