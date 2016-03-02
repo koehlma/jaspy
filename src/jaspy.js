@@ -924,8 +924,14 @@ window['jaspy'] = (function () {
     PythonFrame.prototype.top_block = function () {
         return this.blocks[this.blocks.length - 1];
     };
-    PythonFrame.prototype.push_block = function (type, position) {
-        this.blocks.push({type: type, position: position, active: false, level: this.stack.length});
+    PythonFrame.prototype.push_block = function (type, delta) {
+        this.blocks.push({
+            type: type,
+            position: this.position,
+            delta: delta,
+            active: false,
+            level: this.stack.length
+        });
     };
     PythonFrame.prototype.pop_block = function () {
         return this.blocks.pop();
@@ -982,15 +988,23 @@ window['jaspy'] = (function () {
                 continue;
             }
             if (block.type == BLOCK_TYPES.FINALLY) {
-                this.position = block.position;
+                this.position = block.position + block.delta;
                 block.active = true;
                 return;
             }
             switch (this.unwind_cause) {
                 case UNWIND_CAUSES.BREAK:
                     if (block.type == BLOCK_TYPES.LOOP) {
-                        this.position = block.position;
+                        this.position = block.position + block.delta;
                         this.blocks.pop();
+                        return;
+                    } else {
+                        this.blocks.pop();
+                    }
+                    break;
+                case UNWIND_CAUSES.CONTINUE:
+                    if (block.type == BLOCK_TYPES.LOOP) {
+                        this.position = block.position;
                         return;
                     } else {
                         this.blocks.pop();
@@ -998,7 +1012,7 @@ window['jaspy'] = (function () {
                     break;
                 case UNWIND_CAUSES.EXCEPTION:
                     if (block.type == BLOCK_TYPES.EXCEPT) {
-                        this.position = block.position;
+                        this.position = block.position + block.delta;
                         block.active = true;
                         return;
                     } else if (block.type == BLOCK_TYPES.BASE) {
@@ -1781,7 +1795,7 @@ window['jaspy'] = (function () {
             case OPCODES.SETUP_EXCEPT:
             case OPCODES.SETUP_FINALLY:
                 type = OPCODES_EXTRA[instruction.opcode];
-                this.push_block(type, instruction.argument + this.position);
+                this.push_block(type, instruction.argument);
                 break;
 
             case OPCODES.LOAD_CLOSURE:
