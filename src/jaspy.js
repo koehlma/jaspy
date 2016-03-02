@@ -17,7 +17,7 @@ window['jaspy'] = (function () {
     'use strict';
 
 
-    var DEBUG = true;
+    var DEBUG = false;
 
     var CODE_FLAGS = {
         OPTIMIZED: 1 << 0,
@@ -40,8 +40,25 @@ window['jaspy'] = (function () {
     };
     var UNWIND_CAUSES = {
         RETURN: 0,
-        EXCEPTION: 1
+        EXCEPTION: 1,
+        BREAK: 2,
+        CONTINUE: 3
     };
+
+    var COMPARE_OPS = {
+        LT: 0, LE: 1, EQ: 2, NE: 3, GT: 4, GE: 5, IN: 6, NIN: 7, IS: 8, NIS: 9, EXC: 10
+    };
+    var COMPARE_SLOTS = (function () {
+        var map = new Array(10);
+        map[COMPARE_OPS.LT] = '__lt__';
+        map[COMPARE_OPS.LE] = '__le__';
+        map[COMPARE_OPS.EQ] = '__eq__';
+        map[COMPARE_OPS.NE] = '__ne__';
+        map[COMPARE_OPS.GT] = '__gt__';
+        map[COMPARE_OPS.GE] = '__ge__';
+        map[COMPARE_OPS.IN] = map[COMPARE_OPS.NIN] = '__contains__';
+        return map;
+    })();
 
     var OPCODES = {
         BEFORE_ASYNC_WITH: 52,
@@ -166,6 +183,7 @@ window['jaspy'] = (function () {
         map[OPCODES.UNARY_NOT] = '__not__';
         map[OPCODES.UNARY_INVERT] = '__invert__';
         map[OPCODES.GET_ITER] = '__iter__';
+        map[OPCODES.GET_YIELD_FROM_ITER] = '__iter__';
 
         map[OPCODES.BINARY_POWER] = 'pow';
         map[OPCODES.BINARY_MULTIPLY] = 'mul';
@@ -205,10 +223,6 @@ window['jaspy'] = (function () {
         return map;
     })();
     var OPCODES_ARGUMENT = 90;
-
-    var COMPARE_OPS = {
-        LT: 0, LE: 1, EQ: 2, NE: 3, GT: 4, GE: 5, IN: 6, NIN: 7, IS: 8, NIS: 9, EXC: 10
-    };
 
 
     function error(message) {
@@ -903,14 +917,15 @@ window['jaspy'] = (function () {
         }
 
         this.state = options.state || 0;
-        this.raising = false;
+
+        this.unwind_cause = null;
     }
     PythonFrame.prototype = new Frame;
     PythonFrame.prototype.top_block = function () {
         return this.blocks[this.blocks.length - 1];
     };
     PythonFrame.prototype.push_block = function (type, position) {
-        this.blocks.push({type: type, position: position, active: false});
+        this.blocks.push({type: type, position: position, active: false, level: this.stack.length});
     };
     PythonFrame.prototype.pop_block = function () {
         return this.blocks.pop();
@@ -935,31 +950,54 @@ window['jaspy'] = (function () {
         this.stack.push(item);
     };
     PythonFrame.prototype.fetch = function () {
-        var high, low, argument = null;
+        var high, low, ext, argument = null;
         if (this.position >= this.code.bytecode.length) {
             error('bytecode overflow');
         }
         var opcode = this.code.bytecode.charCodeAt(this.position++);
-        console.log('opcode: ' + opcode + ' | ' + 'position: ' + this.position);
+        if(DEBUG) {
+            console.log('opcode: ' + opcode + ' | ' + 'position: ' + (this.position + 1));
+        }
         if (opcode >= OPCODES_ARGUMENT) {
             low = this.code.bytecode.charCodeAt(this.position++);
             high = this.code.bytecode.charCodeAt(this.position++);
             argument = high << 8 | low;
         }
+        if (opcode === OPCODES.EXTENDED_ARG) {
+            ext = this.fetch();
+            opcode = ext.opcode;
+            argument = argument << 16 | opcode.argument;
+        }
         return {opcode: opcode, argument: argument};
     };
     PythonFrame.prototype.unwind = function (cause) {
-        console.log(cause);
+        //console.log(cause);
+        if (cause != undefined) {
+            this.unwind_cause = cause;
+        }
         while (this.blocks.length > 0) {
             var block = this.top_block();
             if (block.active) {
                 this.blocks.pop();
                 continue;
             }
-            switch (cause) {
+            if (block.type == BLOCK_TYPES.FINALLY) {
+                this.position = block.position;
+                block.active = true;
+                return;
+            }
+            switch (this.unwind_cause) {
+                case UNWIND_CAUSES.BREAK:
+                    if (block.type == BLOCK_TYPES.LOOP) {
+                        this.position = block.position;
+                        this.blocks.pop();
+                        return;
+                    } else {
+                        this.blocks.pop();
+                    }
+                    break;
                 case UNWIND_CAUSES.EXCEPTION:
-                    console.log('exc', block.type, block.type == BLOCK_TYPES.EXCEPT);
-                    if (block.type == BLOCK_TYPES.EXCEPT || block.type == BLOCK_TYPES.FINALLY) {
+                    if (block.type == BLOCK_TYPES.EXCEPT) {
                         this.position = block.position;
                         block.active = true;
                         return;
@@ -970,12 +1008,9 @@ window['jaspy'] = (function () {
                         this.blocks.pop()
                     }
                     break;
+
                 case UNWIND_CAUSES.RETURN:
-                    if (block.type == BLOCK_TYPES.FINALLY) {
-                        this.position = block.position;
-                        block.active = true;
-                        return;
-                    } else if (block.type == BLOCK_TYPES.BASE) {
+                    if (block.type == BLOCK_TYPES.BASE) {
                         this.vm.frame = this.back;
                         return;
                     } else {
@@ -983,23 +1018,21 @@ window['jaspy'] = (function () {
                     }
                     break;
                 default:
-                    throw new Error('unknwen bloclk')
+                    console.error(block);
+                    error('unknown unwind cause ' + this.unwind_cause);
             }
         }
+    };
+    PythonFrame.prototype.raise = function () {
+        this.push(this.vm.last_exception.exc_tb);
+        this.push(this.vm.last_exception.exc_value);
+        this.push(this.vm.last_exception.exc_type);
+        this.unwind(UNWIND_CAUSES.EXCEPTION);
     };
     PythonFrame.prototype.step = function () {
         var top, value, low, high, mid, name, code, defaults, globals, index, slot, func;
         var head, right, left, kwargs, args, type, block, temp;
-        var exc_type, exc_traceback, exc_value;
-        if (vm.return_value === null && !this.raising) {
-            this.push(this.vm.last_exception.exc_tb);
-            this.push(this.vm.last_exception.exc_value);
-            this.push(this.vm.last_exception.exc_type);
-            console.log(this.vm.last_exception);
-            this.raising = true;
-            this.unwind(UNWIND_CAUSES.EXCEPTION);
-            return;
-        }
+        var exc_type, exc_tb, exc_value;
         var instruction = this.fetch();
         if (DEBUG) {
             console.log('executing instruction', instruction);
@@ -1030,6 +1063,10 @@ window['jaspy'] = (function () {
                 this.push(this.top1());
                 break;
 
+            case OPCODES.GET_YIELD_FROM_ITER:
+                if (this.state === 0 && is_iterable(this.top0())) {
+                    break;
+                }
             case OPCODES.UNARY_POSITIVE:
             case OPCODES.UNARY_NEGATIVE:
             case OPCODES.UNARY_NOT:
@@ -1044,17 +1081,16 @@ window['jaspy'] = (function () {
                         }
                     case 1:
                         this.state = 0;
-                        if (vm.return_value == NotImplemented || vm.except(MethodNotFoundError)) {
-                            vm.raise(TypeError, 'unsupported operand type');
-                        } else if (vm.return_value) {
-                            this.push(vm.return_value);
+                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
+                            this.vm.raise(TypeError, 'unsupported operand type');
+                            this.raise();
+                        } else if (this.vm.return_value) {
+                            this.push(this.vm.return_value);
+                        } else {
+                            this.raise();
                         }
                         break;
                 }
-                break;
-
-            case OPCODES.GET_YIELD_FROM_ITER:
-                error('not implemented');
                 break;
 
             case OPCODES.BINARY_POWER:
@@ -1074,45 +1110,41 @@ window['jaspy'] = (function () {
                 switch (this.state) {
                     case 0:
                         slot = OPCODES_EXTRA[instruction.opcode];
-                        left = this.top1();
                         right = this.top0();
+                        left = this.top1();
                         if (left.call_method(this.vm, '__' + slot + '__', [right])) {
-                            this.state++;
+                            this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
-                        if (!vm.return_value) {
-                            error('exception raised');
-                        }
-                        if (vm.return_value != NotImplemented) {
-                            this.state = 0;
-                            this.popn(2);
-                            this.push(vm.return_value);
-                            break;
-                        }
-                        slot = OPCODES_EXTRA[instruction.opcode];
-                        right = this.pop();
-                        left = this.pop();
-                        func = right.cls.lookup('__r' + slot + '__');
-                        if (func) {
-                            if (vm.c(func, [right, left])) {
-                                this.state++;
+                        this.state = 0;
+                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
+                            slot = OPCODES_EXTRA[instruction.opcode];
+                            right = this.pop();
+                            left = this.pop();
+                            if (right.call_method(this.vm, '__r' + slot + '__', [left])) {
+                                this.state = 2;
                                 this.position--;
                             }
+                        } else if (this.vm.return_value) {
+                            this.popn(2);
+                            this.push(this.vm.return_value);
                             break;
                         } else {
-                            this.state = 0;
-                            this.vm.raise(TypeError, 'unsupported operand type');
+                            this.popn(2);
+                            this.raise();
                             break;
                         }
-                        break;
                     case 2:
                         this.state = 0;
-                        if (vm.return_value != NotImplemented) {
-                            this.push(vm.return_value);
-                        } else {
+                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
                             this.vm.raise(TypeError, 'unsupported operand type');
+                            this.raise();
+                        } else if (this.vm.return_value) {
+                            this.push(this.vm.return_value);
+                        } else {
+                            this.raise();
                         }
                         break;
                 }
@@ -1138,28 +1170,22 @@ window['jaspy'] = (function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.pop();
                         left = this.pop();
-                        func = left.cls.lookup('__' + slot + '__');
-                        if (func) {
-                            if (vm.c(func, [left, right])) {
-                                this.state++;
-                                this.position--;
-                                break;
-                            }
-                        } else {
-                            vm.return_value = NotImplemented;
+                        if (right.call_method(this.vm, slot, [left])) {
+                            this.state = 1;
+                            this.position--;
+                            break;
                         }
                     case 1:
                         this.state = 0;
-                        if (!vm.return_value) {
-                            error('exception raised');
-                        }
-                        if (vm.return_value != NotImplemented) {
-                            this.push(vm.return_value);
-                            break;
-                        } else {
+                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
                             this.vm.raise(TypeError, 'unsupported operand type');
-                            break;
+                            this.raise();
+                        } else if (this.vm.return_value) {
+                            this.push(this.vm.return_value);
+                        } else {
+                            this.raise();
                         }
+                        break;
                 }
                 break;
 
@@ -1167,9 +1193,366 @@ window['jaspy'] = (function () {
                 console.log(this.pop());
                 break;
 
+            case OPCODES.BREAK_LOOP:
+                this.unwind(UNWIND_CAUSES.BREAK);
+                break;
+
+            case OPCODES.CONTINUE_LOOP:
+                this.unwind(UNWIND_CAUSES.CONTINUE);
+                break;
+
+            case OPCODES.SET_ADD:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.LIST_APPEND:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.MAP_ADD:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.RETURN_VALUE:
+                this.vm.return_value = this.pop();
+                this.unwind(UNWIND_CAUSES.RETURN);
+                break;
+
+            case OPCODES.YIELD_VALUE:
+                error('opcode not implemented');
+                this.vm.return_value = this.pop();
+                this.vm.frame = this.back;
+                break;
+
+            case OPCODES.YIELD_FROM:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.POP_BLOCK:
+                this.blocks.pop();
+                break;
+
+            case OPCODES.POP_EXCEPT:
+                block = this.blocks.pop();
+                assert(block.type === BLOCK_TYPES.EXCEPT);
+                while (this.stack.length > block.level + 3) {
+                    this.pop();
+                }
+                if (this.stack.length == block.level + 3) {
+                    exc_type = this.pop();
+                    exc_value = this.pop();
+                    exc_tb = this.pop();
+                    this.vm.raise(exc_type, exc_value, exc_tb);
+                } else {
+                    this.vm.return_value = None;
+                }
+                break;
+
+            case OPCODES.END_FINALLY:
+                this.unwind();
+                break;
+
+            case OPCODES.LOAD_BUILD_CLASS:
+                this.push(build_class);
+                break;
+
+            case OPCODES.SETUP_WITH:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.WITH_CLEANUP_START:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.WITH_CLEANUP_FINISH:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.STORE_FAST:
+            case OPCODES.DELETE_FAST:
+            case OPCODES.STORE_NAME:
+            case OPCODES.DELETE_NAME:
+                if (instruction.opcode === OPCODES.STORE_FAST){
+                    name = this.code.varnames[instruction.argument];
+                    instruction.opcode = OPCODES.STORE_NAME;
+                } else if (instruction.opcode === OPCODES.DELETE_FAST) {
+                    name = this.code.varnames[instruction.argument];
+                    instruction.opcode = OPCODES.DELETE_NAME;
+                } else {
+                    name = this.code.names[instruction.argument];
+                }
+                if (this.namespace) {
+                    switch (this.state) {
+                        case 0:
+                            if (instruction.opcode === OPCODES.STORE_NAME) {
+                                slot = '__setitem__';
+                                args = [new_str(name), this.pop()];
+                            } else {
+                                slot = '__delitem__';
+                                args = [new_str(name)];
+                            }
+                            if (this.namespace.call_method(this.vm, slot, args)) {
+                                this.state = 1;
+                                this.position -= 3;
+                                break;
+                            }
+                        case 1:
+                            this.state = 0;
+                            if (this.vm.except(MethodNotFoundError)) {
+                                this.vm.raise(TypeError, 'invalid namespace');
+                                this.raise();
+                            } else if (!this.vm.return_value) {
+                                this.raise();
+                            }
+                            break;
+                    }
+                } else {
+                    if (instruction.opcode === OPCODES.STORE_NAME) {
+                        this.locals[name] = this.pop();
+                    } else if (name in this.locals) {
+                        delete this.locals[name];
+                    } else {
+                        this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                        this.raise();
+                    }
+                }
+                break;
+
+            case OPCODES.LOAD_FAST:
+            case OPCODES.LOAD_NAME:
+                if (instruction.opcode === OPCODES.LOAD_FAST) {
+                    name = this.code.varnames[instruction.argument];
+                } else {
+                    name = this.code.names[instruction.argument];
+                }
+                if (this.namespace) {
+                    switch (this.state) {
+                        case 0:
+                            if (this.namespace.call_method(this.vm, '__getitem__', [new_str(name)])) {
+                                this.state = 1;
+                                this.position -= 3;
+                            }
+                        case 1:
+                            this.state = 0;
+                            if (this.vm.return_value) {
+                                this.push(this.vm.return_value);
+                            } else if (this.vm.except(MethodNotFoundError) || this.vm.except(KeyError)) {
+                                if (name in this.globals) {
+                                    this.push(this.globals[name]);
+                                } else if (name in this.builtins) {
+                                    this.push(this.builtins[name]);
+                                } else {
+                                    this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                                    this.raise();
+                                }
+                            } else {
+                                this.raise();
+                            }
+                            break;
+                    }
+                } else {
+                    if (name in this.locals) {
+                        this.push(this.locals[name]);
+                    } else if (name in this.globals) {
+                        this.push(this.globals[name]);
+                    } else if (name in this.builtins) {
+                        this.push(this.builtins[name]);
+                    } else {
+                        this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                        this.raise();
+                    }
+                }
+                break;
+
+            case OPCODES.STORE_GLOBAL:
+                name = this.code.names[instruction.argument];
+                this.globals[name] = this.pop();
+                break;
+
+            case OPCODES.DELETE_GLOBAL:
+                name = this.code.names[instruction.argument];
+                if (name in this.globals) {
+                    delete this.globals[name];
+                } else {
+                    this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                    this.raise();
+                }
+                break;
+
+            case OPCODES.LOAD_GLOBAL:
+                name = this.code.names[instruction.argument];
+                if (name in this.globals) {
+                    this.push(this.globals[name]);
+                } else if (name in this.builtins) {
+                    this.push(this.builtins[name]);
+                } else {
+                    this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                    this.raise();
+                }
+                break;
+
+            case OPCODES.STORE_ATTR:
+            case OPCODES.DELETE_ATTR:
+                name = this.code.names[instruction.argument];
+                switch (this.state) {
+                    case 0:
+                        temp = this.pop();
+                        if (instruction.opcode === OPCODES.STORE_ATTR) {
+                            slot = '__setattr__';
+                            args = [new_str(name), this.pop()];
+                        } else {
+                            slot = '__delattr__';
+                            args = [new_str(name)];
+                        }
+                        if (temp.call_method(this.vm, slot, args)) {
+                            this.state = 1;
+                            this.position -= 3;
+                        }
+                    case 1:
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            if (instruction.opcode === OPCODES.STORE_ATTR) {
+                                this.vm.raise(TypeError, 'object does not support attribute assignment');
+                            } else {
+                                this.vm.raise(TypeError, 'object does not support attribute deletion');
+                            }
+                            this.raise();
+                        } else if (!this.vm.return_value) {
+                            this.raise();
+                        }
+                        break;
+                }
+                break;
+
+            case OPCODES.LOAD_ATTR:
+                name = this.code.names[instruction.argument];
+                switch (this.state) {
+                    case 0:
+                        if (this.top0().call_method(this.vm, '__getattribute__', [new_str(name)])) {
+                            this.state = 1;
+                            this.position -= 3;
+                            break;
+                        }
+                    case 1:
+                        this.state = 0;
+                        if (this.vm.return_value) {
+                            this.pop();
+                            this.push(this.vm.return_value);
+                            break;
+                        }
+                        if (this.vm.except(AttributeError) || this.vm.except(MethodNotFoundError)) {
+                            if (this.pop().call_method(this.vm, '__getattr__', [new_str(name)])) {
+                                this.state = 2;
+                                this.position -= 3;
+                                break;
+                            }
+                        } else {
+                            this.pop();
+                            this.raise();
+                            break;
+                        }
+                    case 2:
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            this.vm.raise(TypeError, 'object does not support attribute access');
+                            this.raise();
+                        } else if (this.vm.return_value) {
+                            this.push(this.vm.return_value);
+                        } else {
+                            this.raise();
+                        }
+                        break;
+                }
+                break;
+
+            case OPCODES.UNPACK_SEQUENCE:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.UNPACK_EX:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.BUILD_TUPLE:
+                this.push(new_tuple(this.popn(instruction.argument)));
+                break;
+
+            case OPCODES.BUILD_LIST:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.BUILD_SET:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.BUILD_MAP:
+                this.push(new PyDict());
+                break;
+
+            case OPCODES.IMPORT_NAME:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.IMPORT_STAR:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.IMPORT_FROM:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.JUMP_FORWARD:
+                this.position += instruction.argument;
+                break;
+
+            case OPCODES.JUMP_ABSOLUTE:
+                this.position = instruction.argument;
+                break;
+
+            case OPCODES.COMPARE_OP:
+                switch (instruction.argument) {
+                    case COMPARE_OPS.EXC:
+                        exc_type = this.pop();
+                        this.push(this.pop().is_subclass_of(exc_type) ? True : False);
+                        break;
+                    case COMPARE_OPS.LT:
+                    case COMPARE_OPS.LE:
+                    case COMPARE_OPS.GT:
+                    case COMPARE_OPS.GE:
+                    case COMPARE_OPS.EQ:
+                    case COMPARE_OPS.NE:
+                        switch (this.state) {
+                            case 0:
+                                slot = COMPARE_SLOTS[instruction.argument];
+                                right = this.pop();
+                                left = this.pop();
+                                if (left.call_method(this.vm, slot, [right])) {
+                                    this.state = 1;
+                                    this.position -= 3;
+                                    break;
+                                }
+                            case 1:
+                                if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
+                                    this.vm.raise(TypeError, 'unsupported boolean operator');
+                                    this.raise();
+                                } else if (this.vm.return_value) {
+                                    this.push(this.vm.return_value);
+                                } else {
+                                    this.raise();
+                                }
+                                break;
+                        }
+                        break;
+
+                    case COMPARE_OPS.IS:
+                    case COMPARE_OPS.NIS:
+                    default:
+                        error('unsupported comparison operator');
+                }
+                break;
 
             case OPCODES.POP_JUMP_IF_TRUE:
-                if (this.top0() instanceof PyInt) {
+                if (this.top0().cls === py_int) {
                     if (this.pop().value) {
                         this.position = instruction.argument;
                     }
@@ -1183,37 +1566,41 @@ window['jaspy'] = (function () {
                             break;
                         }
                     case 1:
+                        this.state = 0;
                         if (this.vm.except(MethodNotFoundError)) {
                             if (this.top0().call_method(this.vm, '__len__')) {
                                 this.state = 2;
                                 this.position--;
+                                break;
                             }
                         } else if (!this.vm.return_value) {
                             this.pop();
-                            this.state = 0;
+                            this.raise();
                             break;
                         }
                     case 2:
-                        this.pop();
                         this.state = 0;
+                        this.pop();
                         if (this.vm.except(MethodNotFoundError)) {
                             this.position = instruction.argument;
-                            break;
-                        }
-                        if (this.vm.return_value) {
+                        } else if (this.vm.return_value) {
                             if (this.vm.return_value instanceof PyInt) {
                                 if (this.vm.return_value.value) {
                                     this.position = instruction.argument;
                                 }
                             } else {
                                 this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                this.raise();
                             }
+                        } else {
+                            this.raise();
                         }
                         break;
                 }
                 break;
+
             case OPCODES.POP_JUMP_IF_FALSE:
-                if (this.top0() instanceof PyInt) {
+                if (this.top0().cls === py_bool || this.top0().cls === py_int) {
                     if (!this.pop().value) {
                         this.position = instruction.argument;
                     }
@@ -1227,90 +1614,207 @@ window['jaspy'] = (function () {
                             break;
                         }
                     case 1:
+                        this.state = 0;
                         if (this.vm.except(MethodNotFoundError)) {
                             if (this.top0().call_method(this.vm, '__len__')) {
                                 this.state = 2;
                                 this.position--;
+                                break;
                             }
                         } else if (!this.vm.return_value) {
                             this.pop();
-                            this.state = 0;
+                            this.raise();
                             break;
                         }
                     case 2:
-                        this.pop();
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
-                            break;
-                        }
-                        if (this.vm.return_value) {
+                        this.pop();
+                        if (!this.vm.except(MethodNotFoundError)) {
                             if (this.vm.return_value instanceof PyInt) {
                                 if (!this.vm.return_value.value) {
                                     this.position = instruction.argument;
                                 }
-                            } else {
+                            } else if (this.vm.return_value) {
                                 this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                this.raise();
+                            } else {
+                                this.raise();
                             }
                         }
                         break;
                 }
                 break;
 
+            case OPCODES.JUMP_IF_TRUE_OR_POP:
+                if (this.top0().cls === py_int) {
+                    if (this.top0().value) {
+                        this.position = instruction.argument;
+                    } else {
+                        this.pop();
+                    }
+                    break;
+                }
+                switch (this.state) {
+                    case 0:
+                        if (this.top0().call_method(this.vm, '__bool__')) {
+                            this.state = 1;
+                            this.position--;
+                            break;
+                        }
+                    case 1:
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method(this.vm, '__len__')) {
+                                this.state = 2;
+                                this.position--;
+                                break;
+                            }
+                        } else if (!this.vm.return_value) {
+                            this.pop();
+                            this.raise();
+                            break;
+                        }
+                    case 2:
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            this.position = instruction.argument;
+                        } else if (this.vm.return_value) {
+                            if (this.vm.return_value instanceof PyInt) {
+                                if (this.vm.return_value.value) {
+                                    this.position = instruction.argument;
+                                } else {
+                                    this.pop();
+                                }
+                            } else {
+                                this.pop();
+                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                this.raise();
+                            }
+                        } else {
+                            this.pop();
+                            this.raise();
+                        }
+                        break;
+                }
+                break;
 
+            case OPCODES.JUMP_IF_FALSE_OR_POP:
+                if (this.top0().cls === py_int) {
+                    if (!this.top0().value) {
+                        this.position = instruction.argument;
+                    } else {
+                        this.pop();
+                    }
+                    break;
+                }
+                switch (this.state) {
+                    case 0:
+                        if (this.top0().call_method(this.vm, '__bool__')) {
+                            this.state = 1;
+                            this.position--;
+                            break;
+                        }
+                    case 1:
+                        this.state = 0;
+                        if (this.vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method(this.vm, '__len__')) {
+                                this.state = 2;
+                                this.position--;
+                                break;
+                            }
+                        } else if (!this.vm.return_value) {
+                            this.pop();
+                            this.raise();
+                            break;
+                        }
+                    case 2:
+                        this.state = 0;
+                        if (!this.vm.except(MethodNotFoundError)) {
+                            if (this.vm.return_value instanceof PyInt) {
+                                if (!this.vm.return_value.value) {
+                                    this.position = instruction.argument;
+                                } else {
+                                    this.pop();
+                                }
+                            } else if (this.vm.return_value) {
+                                this.pop();
+                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                this.raise();
+                            } else {
+                                this.pop();
+                                this.raise();
+                            }
+                        }
+                        break;
+                }
+                break;
+
+            case OPCODES.FOR_ITER:
+                switch (this.state) {
+                    case 0:
+                        if (this.top0().call_method(this.vm, '__next__')) {
+                            this.state = 1;
+                            this.position--;
+                            break;
+                        }
+                    case 1:
+                        this.state = 0
+                        if (this.vm.except(MethodNotFoundError)) {
+                            this.pop();
+                            this.vm.raise(TypeError, 'object does not support iteration');
+                            this.raise();
+                        } else if (this.vm.except(StopIteration)) {
+                            this.pop();
+                            this.position += instruction.argument;
+                        } else if (this.vm.return_value) {
+                            this.push(this.vm.return_value);
+                        } else {
+                            this.pop();
+                            this.raise();
+                        }
+                        break;
+                }
+                break;
+
+
+            case OPCODES.SETUP_LOOP:
+            case OPCODES.SETUP_EXCEPT:
+            case OPCODES.SETUP_FINALLY:
+                type = OPCODES_EXTRA[instruction.opcode];
+                this.push_block(type, instruction.argument + this.position);
+                break;
+
+            case OPCODES.LOAD_CLOSURE:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.LOAD_DEREF:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.LOAD_CLASSDEREF:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.STORE_DEREF:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.DELETE_DEREF:
+                error('opcode not implemented');
+                break;
+
+            case OPCODES.RAISE_VARARGS:
+                if (instruction.argument != 1) {
+                    error('unsupported raise format');
+                }
+                exc_type = this.pop();
+                this.vm.raise(exc_type, None, None);
+                this.raise();
+                break;
 
             case OPCODES.LOAD_CONST:
                 this.push(this.code.constants[instruction.argument]);
-                break;
-
-            case OPCODES.LOAD_NAME:
-                name = this.code.names[instruction.argument];
-                if (name in this.locals) {
-                    this.push(this.locals[name]);
-                } else if (name in this.globals) {
-                    this.push(this.globals[name]);
-                } else if (name in this.builtins) {
-                    this.push(this.builtins[name]);
-                } else {
-                    throw new Error('[INVALID NAME] ' + name);
-                }
-                break;
-            case OPCODES.LOAD_FAST:
-                name = this.code.varnames[instruction.argument];
-                if (name in this.locals) {
-                    this.push(this.locals[name]);
-                } else {
-                    throw new Error('[INVALID NAME] ' + name);
-                }
-                break;
-            case OPCODES.LOAD_GLOBAL:
-                name = this.code.names[instruction.argument];
-                if (name in this.globals) {
-                    this.push(this.globals[name]);
-                } else if (name in this.builtins) {
-                    this.push(this.builtins[name]);
-                } else {
-                    throw new Error('[INVALID NAME] ' + name);
-                }
-                break;
-
-            case OPCODES.STORE_NAME:
-                name = this.code.names[instruction.argument];
-                if (this.namespace) {
-                    this.namespace.call_method(this.vm, '__setitem__', [name, this.pop()]);
-                } else {
-                    this.locals[name] = this.pop();
-                }
-                break;
-            case OPCODES.STORE_FAST:
-                if (this.namespace) {
-                    console.log(this.namespace);
-                }
-                name = this.code.varnames[instruction.argument];
-                this.locals[name] = this.pop();
-                break;
-            case OPCODES.STORE_GLOBAL:
-                name = this.code.names[instruction.argument];
-                this.globals[name] = this.pop();
                 break;
 
             case OPCODES.CALL_FUNCTION:
@@ -1331,14 +1835,26 @@ window['jaspy'] = (function () {
                             break;
                         }
                     case 1:
-                        this.push(vm.return_value);
                         this.state = 0;
+                        if (vm.return_value) {
+                            this.push(vm.return_value);
+                        } else {
+                            this.raise();
+                        }
                         break;
                 }
                 break;
 
-            case OPCODES.LOAD_BUILD_CLASS:
-                this.push(build_class);
+            case OPCODES.CALL_FUNCTION_VAR:
+                error('opcode is not supported');
+                break;
+
+            case OPCODES.CALL_FUNCTION_KW:
+                error('opcode is not supported');
+                break;
+
+            case OPCODES.CALL_FUNCTION_VAR_KW:
+                error('opcode is not supported');
                 break;
 
             case OPCODES.MAKE_FUNCTION:
@@ -1348,7 +1864,7 @@ window['jaspy'] = (function () {
                 name = this.pop();
                 code = this.pop();
                 if (high) {
-                    throw new Error('annotations not supported');
+                    error('annotations not supported');
                 }
                 defaults = {};
                 for (index = 0; index < mid; index++) {
@@ -1366,74 +1882,17 @@ window['jaspy'] = (function () {
                 this.top0().defaults = defaults;
                 break;
 
-            case OPCODES.SETUP_LOOP:
-            case OPCODES.SETUP_EXCEPT:
-            case OPCODES.SETUP_FINALLY:
-                type = OPCODES_EXTRA[instruction.opcode];
-                this.push_block(type, instruction.argument + this.position);
+            case OPCODES.MAKE_CLOSURE:
+                error('opcode is not supported');
                 break;
 
-            case OPCODES.END_FINALLY:
-                this.unwind(this.vm.return_value === null ? UNWIND_CAUSES.EXCEPTION : UNWIND_CAUSES.RETURN);
-                break;
-
-            case OPCODES.POP_EXCEPT:
-                block = this.blocks.pop();
-                assert(block.type == BLOCK_TYPES.EXCEPT);
-                this.vm.return_value = None;
-                break;
-
-            case OPCODES.COMPARE_OP:
-                switch (instruction.argument) {
-                    case COMPARE_OPS.EXC:
-                        exc_type = this.pop();
-                        console.log('comp-exc', this.top0(), exc_type);
-                        console.log(this.stack);
-                        this.push(this.pop().is_subclass_of(exc_type) ? True : False);
-                        break;
-                    default:
-                        error('unknown comparison operator')
-                }
-                break;
-
-            case OPCODES.JUMP_FORWARD:
-                this.position += instruction.argument;
-                break;
-
-            case OPCODES.RAISE_VARARGS:
-                if (instruction.argument != 1) {
-                    throw new Error('invalid raise')
-                }
-                exc_type = this.pop();
-                vm.last_exception = {exc_type: exc_type};
-                this.action = ACTIONS.RAISE;
-                this.unwind(vm);
-                break;
-
-
-            case OPCODES.LOAD_ATTR:
-                switch (this.state) {
-                    case 0:
-                        if (this.top().call_method(this.vm, '__getattribute__')) {
-
-                        }
-                }
-                break;
-
-            case OPCODES.POP_BLOCK:
-                this.blocks.pop();
-                break;
-
-
-            case OPCODES.RETURN_VALUE:
-                vm.return_value = this.pop();
-                //this.unwind(vm);
-                vm.frame = this.back;
+            case OPCODES.BUILD_SLICE:
+                error('opcode is not supported');
                 break;
 
             default:
-                console.error('[UNKNOWN OPCODE] ', instruction);
-                throw new Error('[UNKNOWN OPCODE]');
+                error('unknown opcode ' + instruction.opcode);
+                break;
         }
     };
 
@@ -1478,7 +1937,7 @@ window['jaspy'] = (function () {
     };
     VM.prototype.raise = function (exc_type, exc_value, exc_tb) {
         if (typeof exc_value == 'string') {
-            exc_value = new_exception(exc_type, new_str(exc_value));
+            exc_value = new_exception(exc_type, exc_value);
         }
         if (this.return_value === null) {
             exc_value.dict.set('__context__', this.last_exception.exc_value);
@@ -1488,7 +1947,7 @@ window['jaspy'] = (function () {
 
         if (!exc_tb) {
             // TODO: create traceback
-            console.log('error in line: ' + this.frame.get_line_number());
+            //console.log('error in line: ' + this.frame.get_line_number());
             exc_tb = None;
             exc_value.dict.set('__traceback__', exc_tb);
         }
@@ -1568,8 +2027,11 @@ window['jaspy'] = (function () {
                     this.raise(TypeError, 'invalid type of function code')
                 }
             } else if (object instanceof PyObject) {
-                console.log(object);
-                return object.call_method(this, '__call__', args, kwargs);
+                result = object.call_method(this, '__call__', args, kwargs);
+                if (vm.except(MethodNotFoundError)) {
+                    vm.raise(TypeError, 'object is not callable');
+                }
+                return result;
             } else {
                 error('invalid callable');
             }
@@ -1592,7 +2054,9 @@ window['jaspy'] = (function () {
 
 
 
-
+    function is_iterable(object) {
+        return object.cls.lookup('__next__') != undefined;
+    }
 
 
 
@@ -1667,7 +2131,7 @@ window['jaspy'] = (function () {
         if (args.cls.native !== py_object) {
             raise(TypeError, 'object.__new__() is not safe, use ' + args.cls.native.cls + '.__new__()');
         }
-        return new PyObject(args.cls);
+        return new PyObject(args.cls, new PyDict());
     }, ['cls', 'var_args', 'var_kwargs'], {
         flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
         simple: true
@@ -1690,6 +2154,16 @@ window['jaspy'] = (function () {
                 }
         }
     }, ['self', 'name']);
+    py_object.define_method('__setattr__', function (args) {
+        console.log(args);
+        if (!(args['name'] instanceof PyStr)) {
+            raise(TypeError, 'invalid type of \'name\' argument');
+        }
+        if (!(args['self'].dict instanceof PyDict)) {
+            raise(TypeError, 'object does not support attribute assignment');
+        }
+        args['self'].dict.set(args['name'], args['item']);
+    }, ['self', 'name', 'item'], {simple: true});
 
     py_object.define_method('__str__', function (args) {
         var module = args.self.cls.dict.get('__module__');
@@ -1701,13 +2175,17 @@ window['jaspy'] = (function () {
         }
     }, ['self'], {simple: true});
 
+
     None.cls.define_method('__new__', function (args) {
         return None;
     }, ['self'], {simple: true});
-
     None.cls.define_method('__str__', function () {
         return new_str('None');
     }, ['self'], {simple: true});
+    None.cls.define_method('__bool__', function () {
+        return False;
+    }, ['self'], {simple: true});
+
 
 
     //py_function.define_method('__str__', )
@@ -1818,6 +2296,61 @@ window['jaspy'] = (function () {
         return new_str(args.self.value.toString());
     }, ['self']);
 
+    py_int.define_method('__lt__', function (args) {
+        if (!(args.self instanceof PyInt)) {
+            return NotImplemented;
+        }
+        if (!(args.other instanceof PyInt)) {
+            return NotImplemented;
+        }
+        return new_int(args.self.value < args.other.value);
+    }, ['self', 'other'], {simple: true});
+    py_int.define_method('__le__', function (args) {
+        if (!(args.self instanceof PyInt)) {
+            return NotImplemented;
+        }
+        if (!(args.other instanceof PyInt)) {
+            return NotImplemented;
+        }
+        return new_int(args.self.value <= args.other.value);
+    }, ['self', 'other'], {simple: true});
+    py_int.define_method('__eq__', function (args) {
+        if (!(args.self instanceof PyInt)) {
+            return NotImplemented;
+        }
+        if (!(args.other instanceof PyInt)) {
+            return NotImplemented;
+        }
+        return new_int(args.self.value == args.other.value);
+    }, ['self', 'other'], {simple: true});
+    py_int.define_method('__ne__', function (args) {
+        if (!(args.self instanceof PyInt)) {
+            return NotImplemented;
+        }
+        if (!(args.other instanceof PyInt)) {
+            return NotImplemented;
+        }
+        return new_int(args.self.value != args.other.value);
+    }, ['self', 'other'], {simple: true});
+    py_int.define_method('__gt__', function (args) {
+        if (!(args.self instanceof PyInt)) {
+            return NotImplemented;
+        }
+        if (!(args.other instanceof PyInt)) {
+            return NotImplemented;
+        }
+        return new_int(args.self.value > args.other.value);
+    }, ['self', 'other'], {simple: true});
+    py_int.define_method('__ge__', function (args) {
+        if (!(args.self instanceof PyInt)) {
+            return NotImplemented;
+        }
+        if (!(args.other instanceof PyInt)) {
+            return NotImplemented;
+        }
+        return new_int(args.self.value >= args.other.value);
+    }, ['self', 'other'], {simple: true});
+
     py_int.define_method('__add__', function (args) {
         if (!(args.self instanceof PyInt)) {
             return NotImplemented;
@@ -1855,17 +2388,27 @@ window['jaspy'] = (function () {
     }, ['self'], {simple: true});
 
     py_dict.define_method('__setitem__', function (vm, frame, args) {
-        console.log(args);
+        if (!(args['self'] instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
         switch (frame.position) {
             case 0:
-                if (typeof args.key == 'string') {
-                    vm.return_value = args.key;
-                } else if (args.key.c(vm, '__hash__')) {
+                if (args['key'].cls === py_str) {
+                    vm.return_value = args['key'];
+                } else if (args['key'].call_method(this.vm, '__hash__')) {
                     return 1;
                 }
             case 1:
-                // TODO: fixme
-                args.self.set(vm.return_value, args.value);
+                if (!vm.return_value) {
+                    return null;
+                }
+                if (vm.return_value instanceof PyStr) {
+                    args['self'].set(vm.return_value, args['value']);
+                } else if (vm.return_value instanceof PyInt) {
+                    args['self'].set(new_str(vm.return_value.value.toString()), args['value']);
+                } else {
+                    raise(TypeError, 'invalid result type of key hash');
+                }
                 return None;
         }
     }, ['self', 'key', 'value']);
@@ -1881,12 +2424,12 @@ window['jaspy'] = (function () {
                 vm.frame.namespace = frame.store.namespace;
                 return 1;
             case 1:
-                console.log(frame.store.namespace);
+                //console.log(frame.store.namespace);
                 // FIXME: implement this the right way
                 var cls = new PyType(args.name.value, [py_object], frame.store.namespace, py_type);
-                console.log(cls);
+                //console.log(cls);
                 return cls;
-                console.log(args);
+                //console.log(args);
                 return None;
         }
     }, ['func', 'name', 'metaclass', 'bases', 'keywords'], {
@@ -1911,6 +2454,7 @@ window['jaspy'] = (function () {
 
         'type': py_type,
         'int': py_int,
+        'object': py_object,
 
         'TypeError': TypeError,
         'AttributeError': AttributeError
