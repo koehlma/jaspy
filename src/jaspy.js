@@ -728,7 +728,11 @@ window['jaspy'] = (function () {
     var TimeoutError = new PyType('TimeoutError', [OSError]);
 
     var MethodNotFoundError = new PyType('MethodNotFoundError', [Exception]);
-    var METHOD_NOT_FOUND = {exc_type: MethodNotFoundError, exc_value: None, exc_tb: None};
+    var METHOD_NOT_FOUND = {
+        exc_type: MethodNotFoundError,
+        exc_value: new_exception(MethodNotFoundError, 'method not found'),
+        exc_tb: None
+    };
 
     function new_exception(cls, message) {
         var exc_value = new PyObject(cls, new PyDict());
@@ -2123,7 +2127,9 @@ window['jaspy'] = (function () {
                     return 2;
                 }
             case 2:
-                return frame.store['instance'];
+                if (vm.return_value) {
+                    return frame.store['instance'];
+                }
         }
     }, ['cls', 'var_args', 'var_kwargs'], {
         flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS
@@ -2453,34 +2459,83 @@ window['jaspy'] = (function () {
         defaults: {'metaclass': None}
     });
 
-
-    var get_by_id = new_native(function (args) {
-        frame.store.temp = document.getElementById(args.name.value);
-        return None;
-    }, ['name'], {
-        name: 'get_by_id',
-        simple: true
-    });
-
     var builtins = {
-        'print': print,
-        'get_by_id': get_by_id,
-
-        'type': py_type,
-        'int': py_int,
         'object': py_object,
+        'type': py_type,
+        'dict': py_dict,
+        'int': py_int,
+        'float': py_float,
+        'str': py_str,
+        'bytes': py_bytes,
+        'tuple': py_tuple,
 
+        'None': None,
+        'NotImplemented': NotImplemented,
+        'Ellipsis': Ellipsis,
+        'False': False,
+        'True': True,
+
+        'BaseException': BaseException,
+        'Exception': Exception,
+        'ValueError': ValueError,
+        'ArithmeticError': ArithmeticError,
+        'LookupError': LookupError,
+        'RuntimeError': RuntimeError,
+        'BufferError': BufferError,
+        'AssertionError': AssertionError,
+        'AttributeError': AttributeError,
+        'EOFError': EOFError,
+        'FloatingPointError': FloatingPointError,
+        'GeneratorExit': GeneratorExit,
+        'ImportError': ImportError,
+        'IndexError': IndexError,
+        'KeyError': KeyError,
+        'KeyboardInterrupt': KeyboardInterrupt,
+        'MemoryError': MemoryError,
+        'NameError': NameError,
+        'NotImplementedError': NotImplementedError,
+        'OSError': OSError,
+        'OverflowError': OverflowError,
+        'RecursionError': RecursionError,
+        'ReferenceError': ReferenceError,
+        'StopIteration': StopIteration,
+        'SyntaxError': SyntaxError,
+        'IndentationError': IndentationError,
+        'TabError': TabError,
+        'SystemError': SystemError,
+        'SystemExit': SystemExit,
         'TypeError': TypeError,
-        'AttributeError': AttributeError
+        'UnboundLocalError': UnboundLocalError,
+        'UnicodeError': UnicodeError,
+        'UnicodeEncodeError': UnicodeEncodeError,
+        'UnicodeDecodeError': UnicodeDecodeError,
+        'UnicodeTranslateError': UnicodeTranslateError,
+        'ZeroDivisionError': ZeroDivisionError,
+        'EnvironmentError': EnvironmentError,
+
+        'BlockingIOError': BlockingIOError,
+        'ChildProcessError': ChildProcessError,
+        'BrokenPipeError': BrokenPipeError,
+        'ConnectionError': ConnectionError,
+        'ConnectionAbortedError': ConnectionAbortedError,
+        'ConnectionRefusedError': ConnectionRefusedError,
+        'ConnectionResetError': ConnectionResetError,
+        'FileExistsError': FileExistsError,
+        'FileNotFoundError': FileNotFoundError,
+        'InterruptedError': InterruptedError,
+        'IsADirectoryError': IsADirectoryError,
+        'NotADirectoryError': NotADirectoryError,
+        'PermissionError': PermissionError,
+        'ProcessLookupError': ProcessLookupError,
+        'TimeoutError': TimeoutError,
+
+        'print': print
     };
 
 
-
-
-
-
-
     return {
+        'builtins': builtins,
+
         'PyObject': PyObject,
         'PyType': PyType,
         'PyDict': PyDict,
@@ -2522,11 +2577,6 @@ window['jaspy'] = (function () {
         'Ellipsis': Ellipsis,
         'False': False,
         'True': True,
-
-        'BaseException': BaseException,
-        'Exception': Exception,
-        'AttributeError': AttributeError,
-        'TypeError': TypeError,
 
 
 
