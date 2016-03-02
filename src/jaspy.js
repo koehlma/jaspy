@@ -38,6 +38,7 @@ window['jaspy'] = (function () {
         EXCEPT: 2,
         FINALLY: 3
     };
+
     var UNWIND_CAUSES = {
         RETURN: 0,
         EXCEPTION: 1,
@@ -482,6 +483,12 @@ window['jaspy'] = (function () {
         this.dict.set(name, item);
     };
     PyType.prototype.define_method = function (name, func, signature, options) {
+        options = options || {};
+        options.name = options.name || name;
+        options.qualname = options.qualname || (this.name + '.' + options.name);
+        this.define(name, new_native(func, signature, options));
+    };
+    PyType.prototype.define_classmethod = function (name, func, signature, options) {
         options = options || {};
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
@@ -981,12 +988,11 @@ window['jaspy'] = (function () {
         return {opcode: opcode, argument: argument};
     };
     PythonFrame.prototype.unwind = function (cause) {
-        //console.log(cause);
         if (cause != undefined) {
             this.unwind_cause = cause;
         }
         while (this.blocks.length > 0) {
-            var block = this.top_block();
+            var block = this.blocks[this.blocks.length - 1];
             if (block.active) {
                 this.blocks.pop();
                 continue;
@@ -1026,7 +1032,6 @@ window['jaspy'] = (function () {
                         this.blocks.pop()
                     }
                     break;
-
                 case UNWIND_CAUSES.RETURN:
                     if (block.type == BLOCK_TYPES.BASE) {
                         this.vm.frame = this.back;
@@ -1036,7 +1041,6 @@ window['jaspy'] = (function () {
                     }
                     break;
                 default:
-                    console.error(block);
                     error('unknown unwind cause ' + this.unwind_cause);
             }
         }
@@ -1987,6 +1991,9 @@ window['jaspy'] = (function () {
             this.frame.step();
         }
         this.frame = old_frame;
+        if (!this.return_value) {
+            console.log(this.last_exception.exc_value.dict.get('args').value[0].value)
+        }
     };
     VM.prototype.call_object = function (object, args, kwargs, defaults) {
         var code, result, frame, vm = this;
@@ -2090,27 +2097,26 @@ window['jaspy'] = (function () {
 
 
 
-    {
-        py_type.define_method('__new__', function (args) {
-            if (!(args['mcs'] instanceof PyType)) {
-                raise(TypeError, 'invalid type of "mcs" argument');
-            }
-            if (!(args['name'] instanceof PyStr)) {
-                raise(TypeError, 'invalid type of "name" argument');
-            }
-            if (!(args['bases'] instanceof PyTuple)) {
-                raise(TypeError, 'invalid type of "bases" argument');
-            }
-            if (!(args['attributes'] instanceof PyDict)) {
-                raise(TypeError, 'invalid type of "attributes" argument')
-            }
-            var name = args['name'].value;
-            var bases = args['bases'].value;
-            return new PyType(name, bases, args['attributes'], args['mcs']);
-        }, ['mcs', 'name', 'bases', 'attributes'], {
-            simple: true
-        });
-    }
+    py_type.define_method('__new__', function (args) {
+        if (!(args['mcs'] instanceof PyType)) {
+            raise(TypeError, 'invalid type of "mcs" argument');
+        }
+        if (!(args['name'] instanceof PyStr)) {
+            raise(TypeError, 'invalid type of "name" argument');
+        }
+        if (!(args['bases'] instanceof PyTuple)) {
+            raise(TypeError, 'invalid type of "bases" argument');
+        }
+        if (!(args['attributes'] instanceof PyDict)) {
+            raise(TypeError, 'invalid type of "attributes" argument')
+        }
+        var name = args['name'].value;
+        var bases = args['bases'].value;
+        return new PyType(name, bases, args['attributes'], args['mcs']);
+    }, ['mcs', 'name', 'bases', 'attributes'], {simple: true});
+    py_type.define_method('__init__', function (args) {
+
+    }, ['cls', 'name', 'bases', 'attributes'], {simple: true});
 
     py_type.define_method('__call__', function (vm, frame, args) {
         switch (frame.position) {
@@ -2142,6 +2148,9 @@ window['jaspy'] = (function () {
             return new_str('<class \'' + args.cls.name + '\'>');
         }
     }, ['cls'], {simple: true});
+    py_type.define_classmethod('__prepare__', function (args) {
+        return new PyDict();
+    }, ['mcs', 'bases'], {simple: true});
 
 
     py_object.define_method('__new__', function (args) {
@@ -2437,20 +2446,87 @@ window['jaspy'] = (function () {
 
 
     var build_class = new_native(function (vm, frame, args) {
+        var possible_meta_classes, index, good, bases;
+        if (!(args['func'].cls == py_function)) {
+            raise(TypeError, 'invalid type of \'func\' argument');
+        }
+        if (!(args['name'] instanceof PyStr)) {
+            raise(TypeError, 'invalid type of \'name\' argument');
+        }
+        if (!(args['bases'] instanceof Array)) {
+            raise(TypeError, 'invalid type of \'bases\' argument');
+        }
         switch (frame.position) {
             case 0:
-                frame.store.namespace = new PyDict();
-                assert(vm.call_object(args.func));
-                vm.frame.namespace = frame.store.namespace;
-                return 1;
+                if (args['metaclass'] === None && args['bases'].length == 0) {
+                    frame.store.metaclass = py_type;
+                } else if (!(args['metaclass'] instanceof PyType)) {
+                    frame.store.metaclass = args['metaclass'];
+                } else {
+                    possible_meta_classes = [];
+                    if (args['metaclass'] !== None) {
+                        possible_meta_classes.push(args['metaclass']);
+                    }
+                    for (index = 0; index < args['bases'].length; index++) {
+                        if (args['bases'].value[index] instanceof PyType) {
+                            possible_meta_classes.push(args['bases'][index].cls)
+                        } else {
+                            raise(TypeError, 'invalid type of base');
+                        }
+                    }
+                    for (index = 0; index < possible_meta_classes.length; index++) {
+                        good = true;
+                        possible_meta_classes.forEach(function (meta_class) {
+                            if (!possible_meta_classes[index].is_subclass_of(meta_class)) {
+                                good = false;
+                            }
+                        });
+                        if (good) {
+                            break;
+                        }
+                    }
+                    if (good) {
+                        frame.store.metaclass = possible_meta_classes[index];
+                    } else {
+                        raise(TypeError, 'unable to determine most derived metaclass');
+                    }
+                }
+                if (frame.store.metaclass.call_classmethod(vm, '__prepare__', [new_tuple(args['bases'])], args['keywords'])) {
+                    return 1;
+                }
             case 1:
-                //console.log(frame.store.namespace);
-                // FIXME: implement this the right way
-                var cls = new PyType(args.name.value, [py_object], frame.store.namespace, py_type);
-                //console.log(cls);
-                return cls;
-                //console.log(args);
-                return None;
+                if (!vm.return_value) {
+                    return null;
+                }
+                frame.store.namespace = vm.return_value;
+                assert(vm.call_object(args['func']));
+                vm.frame.namespace = frame.store.namespace;
+                return 2;
+            case 2:
+                if (!vm.return_value) {
+                    return null;
+                }
+                if (args['bases'].length == 0) {
+                    bases = [py_object];
+                } else {
+                    bases = args['bases'].array;
+                }
+                if (frame.store.metaclass.call_classmethod(vm, '__new__', [args['name'], new_tuple(bases), frame.store.namespace], args['keywords'])) {
+                    return 3;
+                }
+            case 3:
+                if (!vm.return_value) {
+                    return null;
+                }
+                frame.store.cls = vm.return_value;
+                if (vm.return_value.call_method(vm, '__init__', [args['name'], new_tuple(vm.return_value.bases), frame.store.namespace], args['keywords'])) {
+                    return 4;
+                }
+            case 4:
+                if (!vm.return_value) {
+                    return null;
+                }
+                return frame.store.cls;
         }
     }, ['func', 'name', 'metaclass', 'bases', 'keywords'], {
         name: '__build_class__',
