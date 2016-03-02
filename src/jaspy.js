@@ -435,6 +435,12 @@ window['jaspy'] = (function () {
             return false;
         }
     };
+    PyObject.prototype.set_attr = function (name, value) {
+        this.dict.set(name, value);
+    };
+    PyObject.prototype.get_attr = function (name) {
+        return this.dict.get(name)
+    };
 
 
     function PyType(name, bases, attributes, mcs) {
@@ -621,6 +627,9 @@ window['jaspy'] = (function () {
 
     var py_module = new_native_type('ModuleType');
 
+    var py_classmethod = new_native_type('classmethod');
+    var py_staticmethod = new_native_type('staticmethod');
+
 
     function PyInt(value, cls) {
         PyObject.call(this, cls || py_int);
@@ -730,7 +739,8 @@ window['jaspy'] = (function () {
     var UnicodeDecodeError = new PyType('UnicodeDecodeError', [UnicodeError]);
     var UnicodeTranslateError = new PyType('UnicodeTranslateError', [UnicodeError]);
     var ZeroDivisionError = new PyType('ZeroDivisionError', [ArithmeticError]);
-    var EnvironmentError = OSError, IOError = OSError;
+    var EnvironmentError = OSError;
+    var IOError = OSError;
 
     var BlockingIOError = new PyType('BlockingIOError', [OSError]);
     var ChildProcessError = new PyType('ChildProcessError', [OSError]);
@@ -2214,17 +2224,26 @@ window['jaspy'] = (function () {
 
     }, ['self']);
     py_object.define_method('__getattribute__', function (vm, frame, args) {
+        var value;
         switch (frame.position) {
             case 0:
                 if (!(args.name instanceof PyStr)) {
                     raise(TypeError, 'invalid type of \'name\' argument');
                 }
-                var value = args.self.dict.get(args.name);
-                if (value) {
-                    // TODO: bind if necessary
-                    return value;
-                } else {
+                value = args.self.dict.get(args.name);
+                if (!value) {
                     raise(AttributeError, '\'' + args.self.cls.name + '\' has no attribute \'' + args.name.value + '\'');
+                }
+                if (value.call_method(vm, '__get__', [args['self'], args['self'].cls])) {
+                    return 1;
+                }
+            case 1:
+                if (vm.except(MethodNotFoundError)) {
+                    return value;
+                } else if (vm.return_value) {
+                    return vm.return_value
+                } else {
+                    return null;
                 }
         }
     }, ['self', 'name']);
@@ -2488,6 +2507,97 @@ window['jaspy'] = (function () {
     }, ['self', 'key', 'value']);
 
 
+    function new_method(func, instance) {
+        return None;
+    }
+
+
+
+    py_classmethod.define_method('__init__', function (args) {
+        if (!(args['self'].dict instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        args['self'].dict.set('__func__', args['func']);
+    }, ['self', 'func'], {simple: true});
+    py_classmethod.define_method('__get__', function (args) {
+        if (!(args['self'].dict instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        return new_method(self['args'].dict.get('__func__'), args['owner']);
+    }, ['self', 'instance', 'owner'], {simple: true});
+
+
+    py_staticmethod.define_method('__init__', function (args) {
+        if (!(args['self'].dict instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        args['self'].dict.set('__func__', args['func']);
+    }, ['self', 'func']);
+    py_classmethod.define_method('__get__', function (args) {
+        var func;
+        if (!(args['self'].dict instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        func = self['args'].dict.get('__func__');
+        if (func) {
+            return func;
+        } else {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+    }, ['self', 'instance', 'owner'], {simple: true});
+
+
+    var py_range_iterator = new PyType('range_iterator');
+
+    function PyRangeIterator(start, stop, step) {
+        PyObject.call(this, py_range_iterator);
+        this.current = start.value;
+        this.stop = stop.value;
+        this.step = step.value;
+    }
+    PyRangeIterator.prototype = new PyObject;
+
+    py_range_iterator.define_method('__next__', function (args) {
+        var value;
+        if (!(args['self'] instanceof PyRangeIterator)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        value = new_int(args['self'].current);
+        if (args['self'].current > args['self'].stop && args['self'].step > 0) {
+            raise(StopIteration);
+        }
+        if (args['self'].current < args['self'].stop && args['self'].step < 0) {
+            raise(StopIteration);
+        }
+        args['self'].current += args['self'].step;
+        return value;
+    }, ['self'], {simple: true});
+
+    var py_range = new PyType('range');
+    py_range.define_method('__init__', function (args) {
+        if (args['stop'] === None) {
+            args['self'].set_attr('start', new_int(0));
+            args['self'].set_attr('stop', args['start']);
+        } else {
+            args['self'].set_attr('start', args['start']);
+            args['stop'].set_attr('stop', args['stop']);
+        }
+        if (args['step'] === None) {
+            args['self'].set_attr('step', new_int(1));
+        } else {
+            args['self'].set_attr('step', args['step']);
+        }
+    }, ['self', 'start', 'stop', 'step'], {
+        simple: true,
+        defaults: {'stop': None, 'step': None}
+    });
+    py_range.define_method('__iter__', function (args) {
+        return new PyRangeIterator(args['self'].get_attr('start'), args['self'].get_attr('stop'), args['self'].get_attr('step'));
+    }, ['self'], {simple: true});
+
+
+
+
 
 
     var build_class = new_native(function (vm, frame, args) {
@@ -2580,6 +2690,14 @@ window['jaspy'] = (function () {
         defaults: {'metaclass': None}
     });
 
+    var append_body = new PyType('test');
+
+    append_body.define_method('__init__', function (args) {
+        var div = document.createElement('div');
+        div.innerHTML = 'hello';
+        document.getElementsByTagName('body')[0].appendChild(div);
+    }, ['self'], {simple: true});
+
     var builtins = {
         'object': py_object,
         'type': py_type,
@@ -2651,6 +2769,9 @@ window['jaspy'] = (function () {
         'TimeoutError': TimeoutError,
 
         '__build_class__': build_class,
+
+        'range': py_range,
+        'append_body': append_body,
 
         'print': print
     };
