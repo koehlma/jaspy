@@ -617,6 +617,8 @@ window['jaspy'] = (function () {
     var py_frame = new_native_type('frame');
     var py_traceback = new_native_type('traceback');
 
+    var py_cell = new_native_type('cell');
+
     var py_module = new_native_type('ModuleType');
 
 
@@ -650,6 +652,18 @@ window['jaspy'] = (function () {
         this.value = value;
     }
     PyCode.prototype = new PyObject;
+
+    function PyCell(item) {
+        PyObject.call(this, py_cell);
+        this.item = item;
+    }
+    PyCell.prototype = new PyObject;
+    PyCell.prototype.set = function (item) {
+        this.item = item;
+    }
+    PyCell.prototype.get = function () {
+        return this.item;
+    }
 
 
     var None = new PyObject(new_native_type('NoneType'));
@@ -834,7 +848,7 @@ window['jaspy'] = (function () {
         this.names = options.names || [];
         this.varnames = options.varnames || [];
         this.freevars = options.freevars || [];
-        this.callvars = options.callvars || [];
+        this.cellvars = options.cellvars || [];
 
         this.constants = options.constants || [];
 
@@ -913,6 +927,8 @@ window['jaspy'] = (function () {
     };
 
     function PythonFrame(code, options) {
+        var index;
+
         options = options || {};
 
         Frame.call(this, code, options);
@@ -928,6 +944,16 @@ window['jaspy'] = (function () {
         }
 
         this.state = options.state || 0;
+
+        this.closure = options.closure || [];
+
+        this.cells = {};
+        for (index = 0; index < this.code.cellvars.length; index++) {
+            this.cells[this.code.cellvars[index]] = new PyCell();
+        }
+        for (index = 0; index < this.code.freevars.length; index++) {
+            this.cells[this.code.freevars[index]] = this.closure[index];
+        }
 
         this.unwind_cause = null;
     }
@@ -1807,11 +1833,19 @@ window['jaspy'] = (function () {
                 break;
 
             case OPCODES.LOAD_CLOSURE:
-                error('opcode not implemented');
+                if (instruction.argument < this.code.cellvars.length) {
+                    this.push(this.cells[this.code.cellvars[instruction.argument]]);
+                } else {
+                    this.push(this.cells[this.code.freevars[instruction.argument]]);
+                }
                 break;
 
             case OPCODES.LOAD_DEREF:
-                error('opcode not implemented');
+                if (instruction.argument < this.code.cellvars.length) {
+                    this.push(this.cells[this.code.cellvars[instruction.argument]].get());
+                } else {
+                    this.push(this.cells[this.code.freevars[instruction.argument]].get());
+                }
                 break;
 
             case OPCODES.LOAD_CLASSDEREF:
@@ -1819,7 +1853,11 @@ window['jaspy'] = (function () {
                 break;
 
             case OPCODES.STORE_DEREF:
-                error('opcode not implemented');
+                if (instruction.argument < this.code.cellvars.length) {
+                    this.cells[this.code.cellvars[instruction.argument]].set(this.pop());
+                } else {
+                    error('load free variable closure not implemented');
+                }
                 break;
 
             case OPCODES.DELETE_DEREF:
@@ -1880,6 +1918,7 @@ window['jaspy'] = (function () {
                 break;
 
             case OPCODES.MAKE_FUNCTION:
+            case OPCODES.MAKE_CLOSURE:
                 low = instruction.argument & 0xFF;
                 mid = (instruction.argument >> 8) & 0xFF;
                 high = (instruction.argument >> 16) & 0x7FFF;
@@ -1897,14 +1936,17 @@ window['jaspy'] = (function () {
                     defaults[code.value.argnames[index]] = this.pop();
                 }
                 globals = this.globals;
-                this.push(new PyObject(py_function, {
-                    '__name__': name,
-                    '__code__': code
-                }));
-                this.top0().defaults = defaults;
+                func = new PyObject(py_function, new PyDict());
+                func.dict.set('__name__', new_str(name));
+                func.dict.set('__code__', code);
+                func.defaults = defaults;
+                if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
+                    func.dict.set('__closure__', this.pop());
+                }
+                this.push(func);
                 break;
 
-            case OPCODES.MAKE_CLOSURE:
+
                 error('opcode is not supported');
                 break;
 
@@ -1995,13 +2037,13 @@ window['jaspy'] = (function () {
             console.log(this.last_exception.exc_value.dict.get('args').value[0].value)
         }
     };
-    VM.prototype.call_object = function (object, args, kwargs, defaults) {
+    VM.prototype.call_object = function (object, args, kwargs, defaults, closure) {
         var code, result, frame, vm = this;
         while (true) {
             if (object instanceof PythonCode) {
                 this.frame = new PythonFrame(object, {
                     vm: vm, back: vm.frame, defaults: defaults,
-                    args: args, kwargs: kwargs
+                    args: args, kwargs: kwargs, closure: closure
                 });
                 return true;
             } else if (object instanceof NativeCode) {
@@ -2044,10 +2086,14 @@ window['jaspy'] = (function () {
                     }
                 }
             } else if (object.cls === py_function) {
-                code = object.dict['__code__'];
+                code = object.dict.get('__code__');
+                closure = object.dict.get('__closure__');
                 if (code.cls === py_code) {
                     defaults = object.defaults;
                     object = code.value;
+                    if (closure instanceof PyTuple) {
+                        closure = closure.value;
+                    }
                 } else {
                     this.raise(TypeError, 'invalid type of function code')
                 }
@@ -2066,13 +2112,12 @@ window['jaspy'] = (function () {
 
     function new_native(func, signature, options) {
         var code = new NativeCode(func, options, signature);
-        func = new PyObject(py_function, {
-            '__name__': new_str(options.name || '<unkown>'),
-            '__qualname__': new_str(options.qualname || '<unkown>'),
-            '__doc__': new_str(options.doc || ''),
-            '__module__': options.module ? new_str(options.module) : None,
-            '__code__': new_code(code)
-        });
+        func = new PyObject(py_function, new PyDict());
+        func.dict.set('__name__', new_str(options.name || '<unkown>'));
+        func.dict.set('__qualname__', new_str(options.qualname || '<unkown>'));
+        func.dict.set('__doc__', new_str(options.doc || ''));
+        func.dict.set('__module__', options.module ? new_str(options.module) : None);
+        func.dict.set('__code__', new_code(code));
         func.defaults = options.defaults;
         return func;
     }
@@ -2604,6 +2649,8 @@ window['jaspy'] = (function () {
         'PermissionError': PermissionError,
         'ProcessLookupError': ProcessLookupError,
         'TimeoutError': TimeoutError,
+
+        '__build_class__': build_class,
 
         'print': print
     };
