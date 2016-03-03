@@ -420,7 +420,7 @@ window['jaspy'] = (function () {
         return this.id;
     };
     PyObject.prototype.get_address = function () {
-        return ('0000000000000' + args.self.get_id().toString(16)).substr(-13);
+        return ('0000000000000' + this.get_id().toString(16)).substr(-13);
     };
     PyObject.prototype.is_instance_of = function (cls) {
         return this.cls.is_subclass_of(cls);
@@ -507,12 +507,13 @@ window['jaspy'] = (function () {
         this.define(name, new_native(func, signature, options));
     };
     PyType.prototype.define_method = function (name, func, signature, options) {
+        signature = signature || [];
         options = options || {};
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
         options.direct = true;
         options.simple = !options.complex;
-        this.define(name, new_native(func, signature, options));
+        this.define(name, new_native(func, ['self'].concat(signature), options));
     };
     PyType.prototype.define_classmethod = function (name, func, signature, options) {
         options = options || {};
@@ -714,6 +715,13 @@ window['jaspy'] = (function () {
         PyObject.call(this, py_native);
         this.value = value;
     }
+
+    function PyMethod(self, func) {
+        PyObject.call(this, py_method);
+        this.self = self;
+        this.func = func;
+    }
+    PyMethod.prototype = new PyObject;
 
     var None = new PyObject(new_native_type('NoneType'));
     var NotImplemented = new PyObject(new_native_type('NotImplemented'));
@@ -2064,7 +2072,16 @@ window['jaspy'] = (function () {
     NativeFrame.prototype = new Frame;
     NativeFrame.prototype.step = function () {
         assert(!this.code.simple);
-        var result = this.code.func(this.vm, this, this.args);
+        try {
+            var result = this.code.func(this.vm, this, this.args);
+        } catch (error) {
+            if (error instanceof PyObject) {
+                this.vm.raise(error.cls, error);
+                this.vm.frame = this.back;
+                return;
+            }
+            throw error;
+        }
         if (result == undefined || result instanceof PyObject) {
             if (result instanceof PyObject) {
                 vm.return_value = result;
@@ -2200,6 +2217,9 @@ window['jaspy'] = (function () {
                 } else {
                     this.raise(TypeError, 'invalid type of function code')
                 }
+            } else if (object instanceof PyMethod) {
+                args = [object.self].concat(args);
+                object = object.func;
             } else if (object instanceof PyObject) {
                 result = object.call_method(this, '__call__', args, kwargs);
                 if (vm.except(MethodNotFoundError)) {
@@ -2241,7 +2261,9 @@ window['jaspy'] = (function () {
 
 
 
-
+    py_function.define_method('__get__', function (self, instance, owner) {
+        return new PyMethod(instance, self);
+    }, ['instance', 'owner']);
 
 
 
@@ -2325,10 +2347,17 @@ window['jaspy'] = (function () {
                 }
                 value = args.self.dict.get(args.name);
                 if (!value) {
-                    raise(AttributeError, '\'' + args.self.cls.name + '\' has no attribute \'' + args.name.value + '\'');
-                }
-                if (value.call_method(vm, '__get__', [args['self'], args['self'].cls])) {
-                    return 1;
+                    value = args.self.cls.lookup(args.name);
+                    if (value) {
+                        if (value.call_method(vm, '__get__', [args['self'], args['self'].cls])) {
+                            return 1;
+                        }
+                    } else {
+                        raise(AttributeError, '\'' + args.self.cls.name + '\' has no attribute \'' + args.name.value + '\'');
+                    }
+
+                } else {
+                    return value;
                 }
             case 1:
                 if (vm.except(MethodNotFoundError)) {
