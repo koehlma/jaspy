@@ -14,24 +14,18 @@
  */
 
 jaspy.define_module('time', function (module, builtins) {
-    var sleep = module.define_function('sleep', function (frame, args) {
-        var timeout, vm;
-        switch (frame.position) {
+    module.define_function('sleep', function (seconds, state, frame) {
+        var vm;
+        switch (state) {
             case 0:
-                timeout = jaspy.unpack_float(args.seconds) * 1000;
                 vm = jaspy.vm;
                 vm.frame = null;
                 setTimeout(function () {
                     vm.run(frame);
-                }, timeout);
+                }, jaspy.unpack_float(seconds) * 1000);
                 return 1;
             case 1:
                 break;
         }
-    }, ['seconds'], {complex: true});
-
-
-    return {
-        'sleep': sleep
-    }
+    }, ['seconds']);
 }, ['builtins']);

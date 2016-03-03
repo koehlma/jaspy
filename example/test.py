@@ -18,6 +18,7 @@ p['style'] = 'background: #00FF00'
 p.html = '<strong>Hallo Python!</strong>'
 
 
+
 print(dom.get_body())
 
 dom.get_body().append(wrapper)
@@ -29,9 +30,5 @@ while True:
         p.css('background', '#00FF00')
         x = False
     else:
-        p.css('background', '#FF0000')
+        p.css('background', '#0000FF')
         x = True
-
-
-
-

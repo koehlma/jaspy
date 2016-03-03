@@ -392,7 +392,7 @@ window['jaspy'] = (function () {
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
         options.direct = true;
-        options.simple = !options.complex;
+        options.simple = func.length == signature.length;;
         this.define(name, new_native(func, ['self'].concat(signature), options));
     };
     PyType.prototype.define_property = function (name, getter, setter) {
@@ -410,7 +410,7 @@ window['jaspy'] = (function () {
         options.qualname = options.qualname || (this.name + '.' + options.name);
         this.define(name, new_native(func, signature, options));
     };
-    PyType.prototype.call_classmethod = function (vm, name, args, kwargs) {
+    PyType.prototype.call_classmethod = function (name, args, kwargs) {
         var method = this.lookup(name);
         if (method) {
             return vm.call_object(method, [this].concat(args || []), kwargs);
@@ -420,7 +420,7 @@ window['jaspy'] = (function () {
             return false;
         }
     };
-    PyType.prototype.call_staticmethod = function (vm, name, args, kwargs) {
+    PyType.prototype.call_staticmethod = function (name, args, kwargs) {
         var method = this.lookup(name);
         if (method) {
             return vm.call_object(method, args, kwargs);
@@ -2155,8 +2155,20 @@ window['jaspy'] = (function () {
     NativeFrame.prototype = new Frame;
     NativeFrame.prototype.step = function () {
         assert(!this.code.simple);
+        var result;
         try {
-            var result = this.code.func(this, this.args);
+            if (this.code.direct) {
+                var unpacked_args = [];
+                for (var index = 0; index < this.code.argnames.length; index++) {
+                    unpacked_args.push(this.args[this.code.argnames[index]]);
+                }
+                unpacked_args.push(this.position);
+                unpacked_args.push(this);
+                //console.log(unpacked_args);
+                result = this.code.func.apply(null, unpacked_args);
+            } else {
+                result = this.code.func(this, this.args);
+            }
         } catch (error) {
             if (error instanceof PyObject) {
                 vm.raise(error.cls, error);
@@ -2279,7 +2291,18 @@ window['jaspy'] = (function () {
                         args: args, kwargs: kwargs
                     });
                     try {
-                        result = object.func(vm.frame, vm.frame.args);
+                        if (object.direct) {
+                            //console.log('exex', object);
+                            unpacked_args = [];
+                            for (index = 0; index < object.argnames.length; index++) {
+                                unpacked_args.push(this.frame.args[object.argnames[index]]);
+                            }
+                            unpacked_args.push(this.frame.position);
+                            unpacked_args.push(this.frame);
+                            result = object.func.apply(null, unpacked_args);
+                        } else {
+                            result = object.func(vm.frame, vm.frame.args);
+                        }
                         if (result == undefined || result instanceof PyObject) {
                             vm.return_value = result || None;
                             vm.frame = frame.back;
@@ -2328,6 +2351,26 @@ window['jaspy'] = (function () {
 
 
     function new_native(func, signature, options) {
+        options = options || {};
+        options.flags = options.flags || 0;
+        if (signature.length >= 1) {
+            var last = signature[signature.length - 1];
+            if (last.indexOf('**') == 0) {
+                options.flags |= CODE_FLAGS.VAR_KWARGS;
+                signature[signature.length - 1] = last.substring(2, last.length);
+            } else if (last.indexOf('*') == 0) {
+                options.flags |= CODE_FLAGS.VAR_ARGS;
+                signature[signature.length - 1] = last.substring(1, last.length);
+            }
+        }
+        if (signature.length >= 2) {
+            last = signature[signature.length - 2];
+            if (last.indexOf('*') == 0) {
+                options.flags |= CODE_FLAGS.VAR_ARGS;
+                signature[signature.length - 2] = last.substring(1, last.length);
+            }
+        }
+
         var code = new NativeCode(func, options, signature);
         func = new PyObject(py_function, new PyDict());
         func.dict.set('__name__', new_str(options.name || '<unkown>'));
@@ -2374,10 +2417,10 @@ window['jaspy'] = (function () {
 
     }, ['name', 'bases', 'attributes']);
 
-    py_type.define_method_old('__call__', function (frame, args) {
-        switch (frame.position) {
+    py_type.define_method('__call__', function (cls, args, kwargs, state, frame) {
+        switch (state) {
             case 0:
-                if (args['cls'].call_classmethod(vm, '__new__', args['var_args'], args['var_kwargs'])) {
+                if (cls.call_classmethod('__new__', args, kwargs)) {
                     return 1;
                 }
             case 1:
@@ -2385,7 +2428,7 @@ window['jaspy'] = (function () {
                     return null;
                 }
                 frame.store['instance'] = vm.return_value;
-                if (frame.store['instance'].call_method('__init__', args['var_args'], args['var_kwargs'])) {
+                if (frame.store['instance'].call_method('__init__', args, kwargs)) {
                     return 2;
                 }
             case 2:
@@ -2393,9 +2436,8 @@ window['jaspy'] = (function () {
                     return frame.store['instance'];
                 }
         }
-    }, ['cls', 'var_args', 'var_kwargs'], {
-        flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS
-    });
+    }, ['*args', '**kwargs']);
+
     py_type.define_method_old('__str__', function (args) {
         var module = args.cls.dict.get('__module__');
         if (module instanceof PyStr) {
@@ -2409,7 +2451,7 @@ window['jaspy'] = (function () {
     }, ['mcs', 'bases'], {simple: true});
 
 
-    py_object.define_method('__new__', function (cls, var_args, var_kwargs) {
+    py_object.define_method('__new__', function (cls, args, kwargs) {
         if (!(cls instanceof PyType)) {
             raise(TypeError, 'object.__new__(X): X is not a type object');
         }
@@ -2417,30 +2459,26 @@ window['jaspy'] = (function () {
             raise(TypeError, 'object.__new__() is not safe, use ' + cls.native.name + '.__new__()');
         }
         return new PyObject(cls, new PyDict());
-    }, ['var_args', 'var_kwargs'], {
-        flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
-    });
+    }, ['*args', '**kwargs']);
 
     py_object.define_method('__init__', function (self) {
 
     });
 
-    py_object.define_method_old('__getattribute__', function (frame, args) {
+    py_object.define_method('__getattribute__', function (self, name, state, frame) {
         var value;
-        switch (frame.position) {
+        switch (state) {
             case 0:
-                if (!(args.name instanceof PyStr)) {
-                    raise(TypeError, 'invalid type of \'name\' argument');
-                }
-                value = args.self.dict.get(args.name);
+                name = unpack_str(name);
+                value = self.dict.get(name);
                 if (!value) {
-                    value = args.self.cls.lookup(args.name);
+                    value = self.cls.lookup(name);
                     if (value) {
-                        if (value.call_method('__get__', [args['self'], args['self'].cls])) {
+                        if (value.call_method('__get__', [self, self.cls])) {
                             return 1;
                         }
                     } else {
-                        raise(AttributeError, '\'' + args.self.cls.name + '\' has no attribute \'' + args.name.value + '\'');
+                        raise(AttributeError, '\'' + self.cls.name + '\' has no attribute \'' + name + '\'');
                     }
 
                 } else {
@@ -2455,7 +2493,8 @@ window['jaspy'] = (function () {
                     return null;
                 }
         }
-    }, ['self', 'name']);
+    }, ['name']);
+
     py_object.define_method_old('__setattr__', function (frame, args) {
         switch (frame.position) {
             case 0:
@@ -2864,7 +2903,7 @@ window['jaspy'] = (function () {
                         raise(TypeError, 'unable to determine most derived metaclass');
                     }
                 }
-                if (frame.store.metaclass.call_classmethod(vm, '__prepare__', [new_tuple(args['bases'])], args['keywords'])) {
+                if (frame.store.metaclass.call_classmethod('__prepare__', [new_tuple(args['bases'])], args['keywords'])) {
                     return 1;
                 }
             case 1:
@@ -2884,7 +2923,7 @@ window['jaspy'] = (function () {
                 } else {
                     bases = args['bases'].array;
                 }
-                if (frame.store.metaclass.call_classmethod(vm, '__new__', [args['name'], new_tuple(bases), frame.store.namespace], args['keywords'])) {
+                if (frame.store.metaclass.call_classmethod('__new__', [args['name'], new_tuple(bases), frame.store.namespace], args['keywords'])) {
                     return 3;
                 }
             case 3:
@@ -2935,7 +2974,7 @@ window['jaspy'] = (function () {
         if (!value) {
             raise(AttributeError, 'module has no attribute \'' + name + '\'');
         }
-        console.log('module', value);
+        //console.log('module', value);
         return value;
     }, ['name']);
 
@@ -3053,17 +3092,24 @@ window['jaspy'] = (function () {
 
     function NativeModule(name, func, depends) {
         Module.call(this, name, depends);
-        this.namespace = func.apply(null, [this].concat(this.depends.map(get_namespace)));
+        this.namespace = {};
+        func.apply(null, [this].concat(this.depends.map(get_namespace)));
+        //console.log(this.namespace);
     }
     NativeModule.prototype.define_function = function (name, func, signature, options) {
         options = options || {};
+        signature = signature || [];
         options.module = this.name;
         options.name = name;
         options.qualname = name;
-        return new_native(func, signature, options);
+        options.direct = true;
+        options.simple = func.length == signature.length;
+        this.namespace[name] = new_native(func, signature, options);
+        return this.namespace[name];
     };
     NativeModule.prototype.define_type = function (name, bases, mcs) {
-        return new PyType(name, bases, new PyDict(), mcs);
+        this.namespace[name] = new PyType(name, bases, new PyDict(), mcs);
+        return this.namespace[name];
     };
 
     function define_module(name, code_or_func, depends) {
@@ -3080,7 +3126,7 @@ window['jaspy'] = (function () {
     }
 
     define_module('builtins', function (module) {
-       return builtins;
+       module.namespace = builtins;
     });
 
     define_module('js', function (module) {

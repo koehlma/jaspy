@@ -14,6 +14,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import dis
 import os.path
 import types
 
@@ -52,9 +53,16 @@ def convert(const):
     return '(' + ''.join(js) + ')'
 
 
+def disassemble(const):
+    dis.dis(const)
+    for const in const.co_consts:
+        if isinstance(const, types.CodeType):
+            disassemble(const)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('module', type=argparse.FileType('r'))
+    parser.add_argument('--debug', default=False, action='store_true')
 
     arguments = parser.parse_args()
 
@@ -65,6 +73,9 @@ def main():
 
     with open(arguments.module.name + '.js', 'w') as output:
         output.write('jaspy.define_module(%r, %s);' % (name, source))
+
+    if arguments.debug:
+        disassemble(code)
 
 
 if __name__ == '__main__':
