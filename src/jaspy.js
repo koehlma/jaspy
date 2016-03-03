@@ -320,6 +320,10 @@ window['jaspy'] = (function () {
         return new Signature(argnames, poscount, star_args, star_kwargs);
     }
 
+    function parse_python_signature(varnames, argcount, kwargcount, flags) {
+
+    }
+
     function error(message) {
         throw new Error('[FATAL ERROR] ' + (message || 'fatal interpreter error'));
     }
@@ -2281,6 +2285,9 @@ window['jaspy'] = (function () {
         this.return_value = None;
         this.last_exception = null;
     }
+    VM.prototype.pause = function () {
+        this.frame = null;
+    };
     VM.prototype.step = function () {
         this.frame.step();
     };
@@ -2417,6 +2424,7 @@ window['jaspy'] = (function () {
     };
 
 
+
     function new_native(func, signature, options) {
         options = options || {};
         var code = new NativeCode(func, options, signature);
@@ -2474,7 +2482,7 @@ window['jaspy'] = (function () {
     }, ['*args', '**kwargs']);
 
     py_type.define_method('__str__', function (cls) {
-        var module = cls.getattr('__module');
+        var module = cls.getattr('__module__');
         if (!(cls instanceof PyType)) {
             raise(TypeError, 'invalid type of \'cls\' argument');
         }
@@ -2691,6 +2699,9 @@ window['jaspy'] = (function () {
         return None;
     }
 
+    py_method.define_method('__str__', function (self) {
+        return new_str('<bound-method');
+    });
 
     py_function.define_method('__get__', function (self, instance, owner) {
         return new PyMethod(instance, self);
@@ -2772,7 +2783,7 @@ window['jaspy'] = (function () {
         if (!(bases instanceof Array)) {
             raise(TypeError, 'invalid type of \'bases\' argument');
         }
-        switch (frame.position) {
+        switch (state) {
             case 0:
                 if (metaclass === None && bases.length == 0) {
                     frame.old_store.metaclass = py_type;
@@ -3127,9 +3138,11 @@ window['jaspy'] = (function () {
 
     var loader = new Loader();
 
-
+    vm = new VM();
 
     return {
+        'vm': vm,
+
         'main': main,
 
         'loader': loader,
@@ -3192,8 +3205,6 @@ window['jaspy'] = (function () {
         'print': print,
 
         'PythonCode': PythonCode,
-        'NativeCode': NativeCode,
-
-        'VM': VM
+        'NativeCode': NativeCode
     }
 })();

@@ -13,21 +13,15 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('time', function (module, builtins) {
-    module.define_function('sleep', function (seconds, state, frame) {
-        switch (state) {
-            case 0:
-                setTimeout(function () {
-                    jaspy.vm.run(frame);
-                }, jaspy.unpack_float(seconds) * 1000);
-                jaspy.vm.pause();
-                return 1;
-            case 1:
-                break;
-        }
-    }, ['seconds']);
+jaspy.define_module('greenlet', function (module, builtins) {
+    var Greenlet = module.define_type('greenlet');
+    var GreenletExit = module.define_type('GreenletExit', [builtins.Exception]);
 
-    module.define_function('time', function () {
-        return jaspy.new_float((new Date()).getTime() / 1000);
-    });
+
+    var current = builtins.None;
+
+    Greenlet.define_method('__init__', function (self, run) {
+
+    }, ['run', 'parent'], {defaults: {run: builtins.None, parent: builtins.None}});
+
 }, ['builtins']);

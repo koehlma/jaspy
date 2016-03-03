@@ -26,6 +26,8 @@ p = wrapper.p
 p['style'] = 'background: #00FF00'
 p.html = '<strong>Hallo Python!</strong>'
 
+print(Test.__str__)
+
 x = 3
 print(-x)
 
