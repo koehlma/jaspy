@@ -60,9 +60,17 @@ jaspy.define_module('dom', function (module, builtins) {
         self.unpack('__element__').setAttribute('style', attributes.join('; '));
     }, ['name', 'value']);
 
-    Py_Element.define_method('text', function (self, text) {
-        self.unpack('__element__').innerText = jaspy.unpack_str(text);
-    }, ['text']);
+    Py_Element.define_property('text', function (self) {
+        return jaspy.new_str(self.unpack('__element__').innerText)
+    }, function (self, value) {
+        self.unpack('__element__').innerText = jaspy.unpack_str(value);
+    });
+
+    Py_Element.define_property('html', function (self) {
+        return jaspy.new_str(self.unpack('__element__').innerHTML)
+    }, function (self, value) {
+        self.unpack('__element__').innerHTML = jaspy.unpack_str(value);
+    });
 
 
 

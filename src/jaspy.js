@@ -504,7 +504,17 @@ window['jaspy'] = (function () {
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
         options.direct = false;
-        this.define(name, new_native(func, signature, options));
+        var f = new_native(func, signature, options)
+        this.define(name, f);
+    };
+    PyType.prototype.define_property = function (name, getter, setter) {
+        if (getter) {
+            getter = new_native(getter, ['self'], {name: name, qualname: name, direct: true, simple: true});
+        }
+        if (setter) {
+            setter = new_native(setter, ['self', 'value'], {name: name, qualname: name, direct: true, simple: true});
+        }
+        this.define(name, new PyProperty(getter, setter));
     };
     PyType.prototype.define_method = function (name, func, signature, options) {
         signature = signature || [];
@@ -723,6 +733,16 @@ window['jaspy'] = (function () {
     }
     PyMethod.prototype = new PyObject;
 
+    var py_property = new_native_type('property')
+
+    function PyProperty(getter, setter) {
+        PyObject.call(this, py_property, new PyDict({
+            'fget': getter || None,
+            'fset': setter || None
+        }));
+    }
+    PyProperty.prototype = new PyObject;
+
     var None = new PyObject(new_native_type('NoneType'));
     var NotImplemented = new PyObject(new_native_type('NotImplemented'));
     var Ellipsis = new PyObject(new_native_type('Ellipsis'));
@@ -830,12 +850,6 @@ window['jaspy'] = (function () {
         return exc_value;
     }
 
-
-    var Property = new PyType('property');
-
-    function new_property() {
-        return new PyObject(Property);
-    }
 
 
     function Code(options) {
@@ -2174,6 +2188,7 @@ window['jaspy'] = (function () {
                     } catch (error) {
                         if (error instanceof PyObject) {
                             vm.raise(error.cls, error);
+                            this.frame = this.frame.back;
                         } else {
                             throw error;
                         }
@@ -2199,6 +2214,7 @@ window['jaspy'] = (function () {
                     } catch (error) {
                         if (error instanceof PyObject) {
                             vm.raise(error.cls, error);
+                            this.frame = this.frame.back;
                             return false;
                         } else {
                             throw error;
@@ -2227,6 +2243,7 @@ window['jaspy'] = (function () {
                 }
                 return result;
             } else {
+                console.log(object, object instanceof NativeCode);
                 error('invalid callable');
             }
         }
@@ -2369,16 +2386,28 @@ window['jaspy'] = (function () {
                 }
         }
     }, ['self', 'name']);
-    py_object.define_method_old('__setattr__', function (args) {
-        console.log(args);
-        if (!(args['name'] instanceof PyStr)) {
-            raise(TypeError, 'invalid type of \'name\' argument');
+    py_object.define_method_old('__setattr__', function (vm, frame, args) {
+        switch (frame.position) {
+            case 0:
+                if (!(args['name'] instanceof PyStr)) {
+                    raise(TypeError, 'invalid type of \'name\' argument');
+                }
+                if (!(args['self'].dict instanceof PyDict)) {
+                    raise(TypeError, 'object does not support attribute assignment');
+                }
+                var value = args['self'].cls.lookup(args['name']);
+                if (value && value.cls.lookup('__set__')) {
+                    if (value.call_method(vm, '__set__', [args['self'], args['item']])) {
+                        return 1;
+                    }
+                } else {
+                    args['self'].dict.set(args['name'], args['item']);
+                    return null;
+                }
+            case 1:
+                return null;
         }
-        if (!(args['self'].dict instanceof PyDict)) {
-            raise(TypeError, 'object does not support attribute assignment');
-        }
-        args['self'].dict.set(args['name'], args['item']);
-    }, ['self', 'name', 'item'], {simple: true});
+    }, ['self', 'name', 'item']);
 
     py_object.define_method_old('__str__', function (args) {
         var module = args.self.cls.dict.get('__module__');
@@ -2808,6 +2837,28 @@ window['jaspy'] = (function () {
         kwargcount: 1,
         defaults: {'metaclass': None}
     });
+
+    py_property.define_method_old('__get__', function (vm, frame, args) {
+        switch (frame.position) {
+            case 0:
+                if (vm.call_object(args.self.getattr('fget'), [args.instance])) {
+                    return 1;
+                }
+            case 1:
+                break;
+        }
+    }, ['self', 'instance', 'owner']);
+
+    py_property.define_method_old('__set__', function (vm, frame, args) {
+        switch (frame.position) {
+            case 0:
+                if (vm.call_object(args.self.getattr('fset'), [args.instance, args.value])) {
+                    return 1;
+                }
+            case 1:
+                break;
+        }
+    }, ['self', 'instance', 'value']);
 
     var append_body = new PyType('test');
 
