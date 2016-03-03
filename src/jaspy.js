@@ -482,16 +482,15 @@ window['jaspy'] = (function () {
         options = options || {};
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
-        options.direct = true;
         options.simple = func.length == signature.length;;
         this.define(name, new_native(func, ['self'].concat(signature), options));
     };
     PyType.prototype.define_property = function (name, getter, setter) {
         if (getter) {
-            getter = new_native(getter, ['self'], {name: name, qualname: name, direct: true, simple: true});
+            getter = new_native(getter, ['self'], {name: name, qualname: name, simple: true});
         }
         if (setter) {
-            setter = new_native(setter, ['self', 'value'], {name: name, qualname: name, direct: true, simple: true});
+            setter = new_native(setter, ['self', 'value'], {name: name, qualname: name, simple: true});
         }
         this.define(name, new PyProperty(getter, setter));
     };
@@ -499,7 +498,6 @@ window['jaspy'] = (function () {
         options = options || {};
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
-        options.direct = true;
         this.define(name, new_native(func, ['cls'].concat(signature || []), options));
     };
     PyType.prototype.call_classmethod = function (name, args, kwargs) {
@@ -1134,36 +1132,9 @@ window['jaspy'] = (function () {
         options = options || {};
         options.flags = (options.flags || 0) | CODE_FLAGS.NATIVE;
         options.name = options.name || '<native>';
-        this.direct = options.direct || false;
 
-        if (this.direct) {
-            this.signature = parse_native_signature(signature);
+        this.signature = parse_native_signature(signature);
 
-            if (this.signature.star_args) {
-                options.flags |= CODE_FLAGS.STAR_ARGS;
-            }
-            if (this.signature.star_kwargs) {
-                options.flags |= CODE_FLAGS.STAR_KWARGS;
-            }
-        }
-
-
-
-        if (signature) {
-            options.argnames = options.argnames || signature;
-            if (!options.argcount) {
-                options.argcount = signature.length;
-                if ((options.flags & CODE_FLAGS.STAR_ARGS) != 0) {
-                    options.argcount--;
-                }
-                if ((options.flags & CODE_FLAGS.STAR_KWARGS) != 0) {
-                    options.argcount--;
-                }
-                if (options.kwargcount) {
-                    options.argcount -= options.kwargcount;
-                }
-            }
-        }
 
         Code.call(this, options);
 
@@ -1175,12 +1146,8 @@ window['jaspy'] = (function () {
         return position;
     };
     NativeCode.prototype.parse_args = function (args, kwargs, defaults) {
-        if (this.direct) {
-            return this.signature.parse(args, kwargs, defaults);
-        } else {
-            return Code.prototype.parse_args.apply(this, [args, kwargs, defaults]);
-        }
-    }
+        return this.signature.parse(args, kwargs, defaults);
+    };
 
 
     function Frame(code, options) {
@@ -2281,12 +2248,7 @@ window['jaspy'] = (function () {
         assert(!this.code.simple);
         var result;
         try {
-            if (this.code.direct) {
-                //console.log(unpacked_args);
-                result = this.code.func.apply(null, this.args.concat([this.position, this]));
-            } else {
-                result = this.code.func(this, this.args);
-            }
+            result = this.code.func.apply(null, this.args.concat([this.position, this]));
         } catch (error) {
             if (error instanceof PyObject) {
                 vm.raise(error.cls, error);
@@ -2390,11 +2352,7 @@ window['jaspy'] = (function () {
                 if (object.simple) {
                     try {
                         args = object.parse_args(args, kwargs, defaults);
-                        if (object.direct) {
-                            result = object.func.apply(null, args);
-                        } else {
-                            result = object.func(args);
-                        }
+                        result = object.func.apply(null, args);
                         vm.return_value = result || None;
                     } catch (error) {
                         if (error instanceof PyObject) {
@@ -2411,12 +2369,7 @@ window['jaspy'] = (function () {
                         args: args, kwargs: kwargs
                     });
                     try {
-                        if (object.direct) {
-                            //console.log('exex', object);
-                            result = object.func.apply(null, vm.frame.args.concat([frame.position, frame]));
-                        } else {
-                            result = object.func(vm.frame, vm.frame.args);
-                        }
+                        result = object.func.apply(null, vm.frame.args.concat([frame.position, frame]));
                         if (result == undefined || result instanceof PyObject) {
                             vm.return_value = result || None;
                             vm.frame = frame.back;
@@ -2612,7 +2565,7 @@ window['jaspy'] = (function () {
     });
 
 
-     None.cls.define_method('__new__', function (cls) {
+    None.cls.define_method('__new__', function (cls) {
         return None;
     });
 
@@ -2675,7 +2628,7 @@ window['jaspy'] = (function () {
 
     py_bool.define_method('__str__', function (self) {
         return self === True ? new_str('True') : new_str('False');
-    })
+    });
 
 
 
@@ -2729,39 +2682,6 @@ window['jaspy'] = (function () {
                 return None;
         }
     }, ['key', 'value']);
-
-
-
-    var getattr = new_native(function (frame, args) {
-        var slot;
-        while (true) {
-            switch (frame.position) {
-                case 0:
-                    slot = args.object.cls.lookup('__getattribute__');
-                    if (vm.c(slot, [args.object, args.name])) {
-                        return 1;
-                    }
-                case 1:
-                    if (vm.except(AttributeError)) {
-                        slot = args.object.cls.lookup('__getattr__');
-                        if (vm.c(slot, [args.object, args.name])) {
-                            return 2;
-                        }
-                    } else {
-                        return -1;
-                    }
-                case 2:
-                    if (args.fallback && vm.except(AttributeError)) {
-                        vm.return_value = args.fallback;
-                    }
-                    return -1;
-            }
-        }
-    }, ['object', 'name', 'fallback'], {
-        name: 'getattr',
-        module: 'builtins',
-        defaults: {fallback: null}
-    });
 
 
 
@@ -2841,31 +2761,31 @@ window['jaspy'] = (function () {
 
 
 
-    var build_class = new_native(function (frame, args) {
+    var build_class = new_native(function (func, name, bases, metaclass, keywords, state, frame) {
         var possible_meta_classes, index, good, bases;
-        if (!(args['func'].cls == py_function)) {
+        if (!(func.cls == py_function)) {
             raise(TypeError, 'invalid type of \'func\' argument');
         }
-        if (!(args['name'] instanceof PyStr)) {
+        if (!(name instanceof PyStr)) {
             raise(TypeError, 'invalid type of \'name\' argument');
         }
-        if (!(args['bases'] instanceof Array)) {
+        if (!(bases instanceof Array)) {
             raise(TypeError, 'invalid type of \'bases\' argument');
         }
         switch (frame.position) {
             case 0:
-                if (args['metaclass'] === None && args['bases'].length == 0) {
+                if (metaclass === None && bases.length == 0) {
                     frame.old_store.metaclass = py_type;
-                } else if (!(args['metaclass'] instanceof PyType)) {
-                    frame.old_store.metaclass = args['metaclass'];
+                } else if (!(metaclass instanceof PyType)) {
+                    frame.old_store.metaclass = metaclass;
                 } else {
                     possible_meta_classes = [];
-                    if (args['metaclass'] !== None) {
-                        possible_meta_classes.push(args['metaclass']);
+                    if (metaclass !== None) {
+                        possible_meta_classes.push(metaclass);
                     }
-                    for (index = 0; index < args['bases'].length; index++) {
-                        if (args['bases'].value[index] instanceof PyType) {
-                            possible_meta_classes.push(args['bases'][index].cls)
+                    for (index = 0; index < bases.length; index++) {
+                        if (bases.value[index] instanceof PyType) {
+                            possible_meta_classes.push(bases[index].cls)
                         } else {
                             raise(TypeError, 'invalid type of base');
                         }
@@ -2887,7 +2807,7 @@ window['jaspy'] = (function () {
                         raise(TypeError, 'unable to determine most derived metaclass');
                     }
                 }
-                if (frame.old_store.metaclass.call_classmethod('__prepare__', [new_tuple(args['bases'])], args['keywords'])) {
+                if (frame.old_store.metaclass.call_classmethod('__prepare__', [new_tuple(bases)], keywords)) {
                     return 1;
                 }
             case 1:
@@ -2895,19 +2815,19 @@ window['jaspy'] = (function () {
                     return null;
                 }
                 frame.old_store.namespace = vm.return_value;
-                assert(vm.call_object(args['func']));
+                assert(vm.call_object(func));
                 vm.frame.namespace = frame.old_store.namespace;
                 return 2;
             case 2:
                 if (!vm.return_value) {
                     return null;
                 }
-                if (args['bases'].length == 0) {
+                if (bases.length == 0) {
                     bases = [py_object];
                 } else {
-                    bases = args['bases'].array;
+                    bases = bases.array;
                 }
-                if (frame.old_store.metaclass.call_classmethod('__new__', [args['name'], new_tuple(bases), frame.old_store.namespace], args['keywords'])) {
+                if (frame.old_store.metaclass.call_classmethod('__new__', [name, new_tuple(bases), frame.old_store.namespace], keywords)) {
                     return 3;
                 }
             case 3:
@@ -2915,7 +2835,7 @@ window['jaspy'] = (function () {
                     return null;
                 }
                 frame.old_store.cls = vm.return_value;
-                if (vm.return_value.call_method('__init__', [args['name'], new_tuple(vm.return_value.bases), frame.old_store.namespace], args['keywords'])) {
+                if (vm.return_value.call_method('__init__', [name, new_tuple(vm.return_value.bases), frame.old_store.namespace], keywords)) {
                     return 4;
                 }
             case 4:
@@ -2924,10 +2844,8 @@ window['jaspy'] = (function () {
                 }
                 return frame.old_store.cls;
         }
-    }, ['func', 'name', 'metaclass', 'bases', 'keywords'], {
+    }, ['func', 'name', '*bases', 'metaclass', '**keywords'], {
         name: '__build_class__',
-        flags: CODE_FLAGS.STAR_ARGS | CODE_FLAGS.STAR_KWARGS,
-        kwargcount: 1,
         defaults: {'metaclass': None}
     });
 
@@ -3079,7 +2997,6 @@ window['jaspy'] = (function () {
         options.module = this.name;
         options.name = name;
         options.qualname = name;
-        options.direct = true;
         options.simple = func.length == signature.length;
         this.namespace[name] = new_native(func, signature, options);
         return this.namespace[name];
