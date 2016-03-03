@@ -55,9 +55,9 @@ jaspy.define_module('dom', function (module, builtins) {
     }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
     Py_Element.define_property('text', function (self) {
-        return jaspy.new_str(self.unpack('element').innerText)
+        return jaspy.new_str(self.unpack('element').textContent)
     }, function (self, value) {
-        self.unpack('element').innerText = jaspy.unpack_str(value);
+        self.unpack('element').textContent = jaspy.unpack_str(value);
     });
 
     Py_Element.define_property('html', function (self) {

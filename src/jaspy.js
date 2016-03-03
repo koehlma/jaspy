@@ -26,8 +26,8 @@ window['jaspy'] = (function () {
         GENERATOR: 1 << 5,
         NOFREE: 1 << 6,
 
-        VAR_ARGS: 1 << 2,
-        VAR_KWARGS: 1 << 3,
+        STAR_ARGS: 1 << 2,
+        STAR_KWARGS: 1 << 3,
 
         PYTHON: 1 << 10,
         NATIVE: 1 << 11
@@ -57,7 +57,8 @@ window['jaspy'] = (function () {
         map[COMPARE_OPS.NE] = '__ne__';
         map[COMPARE_OPS.GT] = '__gt__';
         map[COMPARE_OPS.GE] = '__ge__';
-        map[COMPARE_OPS.IN] = map[COMPARE_OPS.NIN] = '__contains__';
+        map[COMPARE_OPS.IN] = '__contains__';
+        map[COMPARE_OPS.NIN] = '__contains__';
         return map;
     })();
 
@@ -472,13 +473,9 @@ window['jaspy'] = (function () {
     PyType.prototype.define = function (name, item) {
         this.dict.set(name, item);
     };
-    PyType.prototype.define_method_old = function (name, func, signature, options) {
-        options = options || {};
-        options.name = options.name || name;
-        options.qualname = options.qualname || (this.name + '.' + options.name);
-        options.direct = false;
-        var f = new_native(func, signature, options)
-        this.define(name, f);
+    PyType.prototype.define_alias = function (name, alias) {
+        this.define(alias, this.lookup(name));
+
     };
     PyType.prototype.define_method = function (name, func, signature, options) {
         signature = signature || [];
@@ -502,7 +499,8 @@ window['jaspy'] = (function () {
         options = options || {};
         options.name = options.name || name;
         options.qualname = options.qualname || (this.name + '.' + options.name);
-        this.define(name, new_native(func, signature, options));
+        options.direct = true;
+        this.define(name, new_native(func, ['cls'].concat(signature || []), options));
     };
     PyType.prototype.call_classmethod = function (name, args, kwargs) {
         var method = this.lookup(name);
@@ -936,6 +934,17 @@ window['jaspy'] = (function () {
         }
     }
 
+    function unpack_int(object, fallback) {
+        if (object === None && fallback) {
+            return fallback;
+        }
+        if (object instanceof PyInt) {
+            return object.value;
+        } else {
+            raise(TypeError, 'unable to unpack int value from object');
+        }
+    }
+
 
     var BaseException = new PyType('BaseException');
     var Exception = new PyType('Exception', [BaseException]);
@@ -1063,13 +1072,13 @@ window['jaspy'] = (function () {
                 raise(TypeError, 'missing required keyword argument "' + name +'"');
             }
         }
-        if ((this.flags & CODE_FLAGS.VAR_ARGS) != 0) {
+        if ((this.flags & CODE_FLAGS.STAR_ARGS) != 0) {
             name = this.argnames[index++];
             result[name] = args.slice(this.argcount, args.length);
         } else if (args.length > this.argcount) {
             raise(TypeError, 'too many positional arguments given');
         }
-        if ((this.flags & CODE_FLAGS.VAR_KWARGS) != 0) {
+        if ((this.flags & CODE_FLAGS.STAR_KWARGS) != 0) {
             name = this.argnames[index];
             result[name] = kwargs;
         } else {
@@ -1131,10 +1140,10 @@ window['jaspy'] = (function () {
             this.signature = parse_native_signature(signature);
 
             if (this.signature.star_args) {
-                options.flags |= CODE_FLAGS.VAR_ARGS;
+                options.flags |= CODE_FLAGS.STAR_ARGS;
             }
             if (this.signature.star_kwargs) {
-                options.flags |= CODE_FLAGS.VAR_KWARGS;
+                options.flags |= CODE_FLAGS.STAR_KWARGS;
             }
         }
 
@@ -1144,10 +1153,10 @@ window['jaspy'] = (function () {
             options.argnames = options.argnames || signature;
             if (!options.argcount) {
                 options.argcount = signature.length;
-                if ((options.flags & CODE_FLAGS.VAR_ARGS) != 0) {
+                if ((options.flags & CODE_FLAGS.STAR_ARGS) != 0) {
                     options.argcount--;
                 }
-                if ((options.flags & CODE_FLAGS.VAR_KWARGS) != 0) {
+                if ((options.flags & CODE_FLAGS.STAR_KWARGS) != 0) {
                     options.argcount--;
                 }
                 if (options.kwargcount) {
@@ -1485,7 +1494,7 @@ window['jaspy'] = (function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.pop();
                         left = this.pop();
-                        console.log(right, left);
+                        //console.log(right, left);
                         if (left.call_method(slot, [right])) {
                             this.state = 1;
                             this.position--;
@@ -1497,7 +1506,7 @@ window['jaspy'] = (function () {
                             vm.raise(TypeError, 'unsupported operand type');
                             this.raise();
                         } else if (vm.return_value) {
-                            if (instruction.opcode == OPCODES.DELETE_SUBSCR) {
+                            if (instruction.opcode != OPCODES.DELETE_SUBSCR) {
                                 this.push(vm.return_value);
                             }
                         } else {
@@ -2476,20 +2485,6 @@ window['jaspy'] = (function () {
 
 
 
-
-
-
-
-
-
-
-
-    py_function.define_method('__get__', function (self, instance, owner) {
-        return new PyMethod(instance, self);
-    }, ['instance', 'owner']);
-
-
-
     py_type.define_method('__new__', function (mcs, name, bases, attributes) {
         if (!(mcs instanceof PyType)) {
             raise(TypeError, 'invalid type of "mcs" argument');
@@ -2499,6 +2494,7 @@ window['jaspy'] = (function () {
         }
         return new PyType(unpack_str(name), unpack_tuple(bases), attributes, mcs);
     }, ['name', 'bases', 'attributes']);
+
     py_type.define_method('__init__', function (cls, name, bases, attributes) {
 
     }, ['name', 'bases', 'attributes']);
@@ -2524,17 +2520,21 @@ window['jaspy'] = (function () {
         }
     }, ['*args', '**kwargs']);
 
-    py_type.define_method_old('__str__', function (args) {
-        var module = args.cls.dict.get('__module__');
-        if (module instanceof PyStr) {
-            return new_str('<class \'' + module.value + '.' + args.cls.name + '\'>');
-        } else {
-            return new_str('<class \'' + args.cls.name + '\'>');
+    py_type.define_method('__str__', function (cls) {
+        var module = cls.getattr('__module');
+        if (!(cls instanceof PyType)) {
+            raise(TypeError, 'invalid type of \'cls\' argument');
         }
-    }, ['cls'], {simple: true});
-    py_type.define_classmethod('__prepare__', function (args) {
+        if (module instanceof PyStr) {
+            return new_str('<class \'' + unpack_str(module) + '.' + cls.name + '\'>');
+        } else {
+            return new_str('<class \'' + cls.name + '\'>');
+        }
+    });
+
+    py_type.define_classmethod('__prepare__', function (mcs, bases) {
         return new PyDict();
-    }, ['mcs', 'bases'], {simple: true});
+    }, ['bases']);
 
 
     py_object.define_method('__new__', function (cls, args, kwargs) {
@@ -2581,28 +2581,25 @@ window['jaspy'] = (function () {
         }
     }, ['name']);
 
-    py_object.define_method_old('__setattr__', function (frame, args) {
-        switch (frame.position) {
+    py_object.define_method('__setattr__', function (self, name, item, state, frame) {
+        switch (state) {
             case 0:
-                if (!(args['name'] instanceof PyStr)) {
-                    raise(TypeError, 'invalid type of \'name\' argument');
-                }
-                if (!(args['self'].dict instanceof PyDict)) {
+                if (!(self.dict instanceof PyDict)) {
                     raise(TypeError, 'object does not support attribute assignment');
                 }
-                var value = args['self'].cls.lookup(args['name']);
+                var value = self.cls.lookup(name);
                 if (value && value.cls.lookup('__set__')) {
-                    if (value.call_method('__set__', [args['self'], args['item']])) {
+                    if (value.call_method('__set__', [self, item])) {
                         return 1;
                     }
                 } else {
-                    args['self'].dict.set(args['name'], args['item']);
+                    self.dict.set(name, item);
                     return null;
                 }
             case 1:
                 return null;
         }
-    }, ['self', 'name', 'item']);
+    }, ['name', 'item']);
 
     py_object.define_method('__str__', function (self) {
         var module = self.cls.dict.get('__module__');
@@ -2615,19 +2612,124 @@ window['jaspy'] = (function () {
     });
 
 
-    None.cls.define_method('__new__', function (cls) {
+     None.cls.define_method('__new__', function (cls) {
         return None;
     });
-    None.cls.define_method_old('__str__', function () {
+
+    None.cls.define_method('__str__', function (self) {
         return new_str('None');
-    }, ['self'], {simple: true});
-    None.cls.define_method_old('__bool__', function () {
+    });
+
+    None.cls.define_method('__bool__', function (self) {
         return False;
-    }, ['self'], {simple: true});
+    });
+
+
+    py_int.define_method('__str__', function (self) {
+        return new_str(unpack_int(self).toString());
+    });
+
+    py_int.define_method('__neg__', function (self) {
+        return new_int(-unpack_int(self));
+    });
+
+    py_int.define_method('__pos__', function (self) {
+        return self;
+    });
+
+    py_int.define_method('__lt__', function (self, other) {
+        return unpack_int(self) < unpack_int(other) ? True : False;
+    }, ['other']);
+
+    py_int.define_method('__le__', function (self, other) {
+        return unpack_int(self) <= unpack_int(other) ? True : False;
+    }, ['other']);
+
+    py_int.define_method('__eq__', function (self, other) {
+        return unpack_int(self) == unpack_int(other) ? True : False;
+    }, ['other']);
+
+    py_int.define_method('__ne__', function (self, other) {
+        return unpack_int(self) != unpack_int(other) ? True : False;
+    }, ['other']);
+
+    py_int.define_method('__gt__', function (self, other) {
+        return unpack_int(self) > unpack_int(other) ? True : False;
+    }, ['other']);
+
+    py_int.define_method('__ge__', function (self, other) {
+        return unpack_int(self) <= unpack_int(other) ? True : False;
+    }, ['other']);
+
+    py_int.define_method('__add__', function (self, other) {
+        return new_int(unpack_int(self) + unpack_int(other));
+    }, ['other']);
+    py_int.define_alias('__add__', '__iadd__');
+
+    py_int.define_method('__sub__', function (self, other) {
+        return new_int(unpack_int(self) - unpack_int(other));
+    }, ['other']);
+    py_int.define_alias('__sub__', '__isub__');
 
 
 
-    //py_function.define_method_old('__str__', )
+    py_bool.define_method('__str__', function (self) {
+        return self === True ? new_str('True') : new_str('False');
+    })
+
+
+
+    py_float.define_method('__str__', function (self) {
+        return new_str(unpack_float(self).toString())
+    });
+
+    py_float.define_method('__add__', function (self, other) {
+        return new_float(unpack_float(self) + unpack_float(other));
+    }, ['other']);
+    py_float.define_alias('__add__', '__iadd__');
+
+    py_float.define_method('__sub__', function (self, other) {
+        return new_float(unpack_float(self) - unpack_float(other));
+    }, ['other']);
+    py_float.define_alias('__sub__', '__isub__');
+
+
+
+    py_str.define_method('__add__', function (self, other) {
+        return new_str(unpack_str(self) + unpack_str(other));
+    }, ['other']);
+
+    py_str.define_method('__hash__', function (self) {
+        return self;
+    });
+
+
+    py_dict.define_method('__setitem__', function (self, key, value, state, frame) {
+        if (!(self instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        switch (state) {
+            case 0:
+                if (key.cls === py_str) {
+                    vm.return_value = key;
+                } else if (key.call_method('__hash__')) {
+                    return 1;
+                }
+            case 1:
+                if (!vm.return_value) {
+                    return null;
+                }
+                if (vm.return_value instanceof PyStr) {
+                    self.set(vm.return_value, value);
+                } else if (vm.return_value instanceof PyInt) {
+                    self.set(new_str(vm.return_value.value.toString()), value);
+                } else {
+                    raise(TypeError, 'invalid result type of key hash');
+                }
+                return None;
+        }
+    }, ['key', 'value']);
+
 
 
     var getattr = new_native(function (frame, args) {
@@ -2664,175 +2766,24 @@ window['jaspy'] = (function () {
 
 
 
-    py_int.define_method_old('__neg__', function (frame, args) {
-        if (!args.self.is_instance_of(py_int)) {
-            raise(TypeError, 'invalid operand type');
-        }
-        return new_int(-args.self.value)
-    }, ['self']);
-    py_int.define_method_old('__str__', function (frame, args) {
-        if (!(args.self instanceof PyInt)) {
-            raise(TypeError, 'invalid type');
-        }
-        return new_str(args.self.value.toString());
-    }, ['self']);
-
-    py_int.define_method_old('__lt__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value < args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.define_method_old('__le__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value <= args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.define_method_old('__eq__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value == args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.define_method_old('__ne__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value != args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.define_method_old('__gt__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value > args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.define_method_old('__ge__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value >= args.other.value);
-    }, ['self', 'other'], {simple: true});
-
-    py_int.define_method_old('__add__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value + args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.dict.set('__iadd__', py_int.dict.get('__add__'));
-
-    py_int.define_method_old('__sub__', function (args) {
-        if (!(args.self instanceof PyInt)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyInt)) {
-            return NotImplemented;
-        }
-        return new_int(args.self.value - args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_int.dict.set('__isub__', py_int.dict.get('__sub__'));
-
-
-    py_str.define_method_old('__add__', function (args) {
-        if (!(args.self instanceof PyStr)) {
-            return NotImplemented;
-        }
-        if (!(args.other instanceof PyStr)) {
-            return NotImplemented;
-        }
-        return new_str(args.self.value + args.other.value);
-    }, ['self', 'other'], {simple: true});
-    py_str.define_method_old('__hash__', function (args) {
-        return args.self;
-    }, ['self'], {simple: true});
-
-    py_dict.define_method_old('__setitem__', function (frame, args) {
-        if (!(args['self'] instanceof PyDict)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        switch (frame.position) {
-            case 0:
-                if (args['key'].cls === py_str) {
-                    vm.return_value = args['key'];
-                } else if (args['key'].call_method('__hash__')) {
-                    return 1;
-                }
-            case 1:
-                if (!vm.return_value) {
-                    return null;
-                }
-                if (vm.return_value instanceof PyStr) {
-                    args['self'].set(vm.return_value, args['value']);
-                } else if (vm.return_value instanceof PyInt) {
-                    args['self'].set(new_str(vm.return_value.value.toString()), args['value']);
-                } else {
-                    raise(TypeError, 'invalid result type of key hash');
-                }
-                return None;
-        }
-    }, ['self', 'key', 'value']);
-
 
     function new_method(func, instance) {
         return None;
     }
 
 
-
-    py_classmethod.define_method_old('__init__', function (args) {
-        if (!(args['self'].dict instanceof PyDict)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        args['self'].dict.set('__func__', args['func']);
-    }, ['self', 'func'], {simple: true});
-    py_classmethod.define_method_old('__get__', function (args) {
-        if (!(args['self'].dict instanceof PyDict)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        return new_method(self['args'].dict.get('__func__'), args['owner']);
-    }, ['self', 'instance', 'owner'], {simple: true});
+    py_function.define_method('__get__', function (self, instance, owner) {
+        return new PyMethod(instance, self);
+    }, ['instance', 'owner']);
 
 
-    py_staticmethod.define_method_old('__init__', function (args) {
-        if (!(args['self'].dict instanceof PyDict)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        args['self'].dict.set('__func__', args['func']);
-    }, ['self', 'func']);
-    py_classmethod.define_method_old('__get__', function (args) {
-        var func;
-        if (!(args['self'].dict instanceof PyDict)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        func = self['args'].dict.get('__func__');
-        if (func) {
-            return func;
-        } else {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-    }, ['self', 'instance', 'owner'], {simple: true});
+
+    py_classmethod.define_method('__init__', function (self, func) {
+        self.setattr('__func__', func);
+    }, ['func']);
+    py_classmethod.define_method('__get__', function (self, instance, owner) {
+        return new_method(self.getattr('__func__'), owner);
+    }, ['instance', 'owner']);
 
 
     var py_range_iterator = new PyType('range_iterator');
@@ -2845,6 +2796,8 @@ window['jaspy'] = (function () {
     }
     PyRangeIterator.prototype = new PyObject;
 
+    var py_range = new PyType('range');
+    /*
     py_range_iterator.define_method_old('__next__', function (args) {
         var value;
         if (!(args['self'] instanceof PyRangeIterator)) {
@@ -2859,9 +2812,9 @@ window['jaspy'] = (function () {
         }
         args['self'].current += args['self'].step;
         return value;
-    }, ['self'], {simple: true});
+    });
 
-    var py_range = new PyType('range');
+
     py_range.define_method_old('__init__', function (args) {
         if (args['stop'] === None) {
             args['self'].setattr('start', new_int(0));
@@ -2883,7 +2836,7 @@ window['jaspy'] = (function () {
         return new PyRangeIterator(args['self'].getattr('start'), args['self'].getattr('stop'), args['self'].getattr('step'));
     }, ['self'], {simple: true});
 
-
+    */
 
 
 
@@ -2973,32 +2926,33 @@ window['jaspy'] = (function () {
         }
     }, ['func', 'name', 'metaclass', 'bases', 'keywords'], {
         name: '__build_class__',
-        flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
+        flags: CODE_FLAGS.STAR_ARGS | CODE_FLAGS.STAR_KWARGS,
         kwargcount: 1,
         defaults: {'metaclass': None}
     });
 
-    py_property.define_method_old('__get__', function (frame, args) {
-        switch (frame.position) {
-            case 0:
-                if (vm.call_object(args.self.getattr('fget'), [args.instance])) {
-                    return 1;
-                }
-            case 1:
-                break;
-        }
-    }, ['self', 'instance', 'owner']);
 
-    py_property.define_method_old('__set__', function (frame, args) {
-        switch (frame.position) {
+    py_property.define_method('__get__', function (self, instance, owner, state, frame) {
+        switch (state) {
             case 0:
-                if (vm.call_object(args.self.getattr('fset'), [args.instance, args.value])) {
+                if (vm.call_object(self.getattr('fget'), [instance])) {
                     return 1;
                 }
             case 1:
                 break;
         }
-    }, ['self', 'instance', 'value']);
+    }, ['instance', 'owner']);
+
+    py_property.define_method('__set__', function (self, instance, value, state, frame) {
+        switch (state) {
+            case 0:
+                if (vm.call_object(self.getattr('fset'), [instance, value])) {
+                    return 1;
+                }
+            case 1:
+                break;
+        }
+    }, ['instance', 'value']);
 
     py_module.define_method('__getattribute__', function (self, name) {
         var value = self.dict.get(name);
@@ -3009,13 +2963,6 @@ window['jaspy'] = (function () {
         return value;
     }, ['name']);
 
-    var append_body = new PyType('test');
-
-    append_body.define_method_old('__init__', function (args) {
-        var div = document.createElement('div');
-        div.innerHTML = 'hello';
-        document.getElementsByTagName('body')[0].appendChild(div);
-    }, ['self'], {simple: true});
 
 
 

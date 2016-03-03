@@ -28,4 +28,8 @@ jaspy.define_module('time', function (module, builtins) {
                 break;
         }
     }, ['seconds']);
+
+    module.define_function('time', function () {
+        return jaspy.new_float((new Date()).getTime() / 1000);
+    });
 }, ['builtins']);
