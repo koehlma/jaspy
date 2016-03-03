@@ -831,6 +831,17 @@ window['jaspy'] = (function () {
         }
     }
 
+    function unpack_float(object, fallback) {
+        if (object === None && fallback) {
+            return fallback;
+        }
+        if (object instanceof PyFloat || object instanceof PyInt) {
+            return object.value;
+        } else {
+            raise(TypeError, 'unable to unpack float value from object');
+        }
+    }
+
 
     var BaseException = new PyType('BaseException');
     var Exception = new PyType('Exception', [BaseException]);
@@ -2205,6 +2216,7 @@ window['jaspy'] = (function () {
         var old_frame = this.frame;
         var old_vm = vm;
         vm = this;
+        jaspy.vm = this;
         if (object instanceof PythonCode) {
             object = new_code(object);
         }
@@ -2213,7 +2225,9 @@ window['jaspy'] = (function () {
         } else if (object instanceof PyCode) {
             this.frame = new PythonFrame(object.value, {
                 vm: this, builtins: builtins,
-                globals: {'__name__': new_str('__main__')}
+                globals: {
+                    '__name__': new_str('__main__')
+                }
             })
         } else {
             error('object is not runnable');
@@ -3130,6 +3144,7 @@ window['jaspy'] = (function () {
         'define_module': define_module,
 
         'unpack_str': unpack_str,
+        'unpack_float': unpack_float,
 
         raise: raise,
 
