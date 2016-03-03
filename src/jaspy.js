@@ -1243,6 +1243,19 @@ window['jaspy'] = (function () {
     var JSError = new PyType('JSError', [Exception]);
 
 
+    function pack_error(error) {
+        return new PyObject(JSError, new PyDict({
+            'args': new_tuple([new_str(error.name), new_str(error.message)])
+        }));
+    }
+
+    function new_exception(cls, message) {
+        var exc_value = new PyObject(cls, new PyDict());
+        exc_value.dict.set('args', new_tuple([new_str(message)]));
+        return exc_value;
+    }
+
+
     function new_property(getter, setter) {
         return new PyObject(py_property, new PyDict({
             'fget': getter || None,
@@ -1396,6 +1409,33 @@ window['jaspy'] = (function () {
     py_type.define_property('__mro__', function (cls) {
         return new_tuple(cls.unpack('mro'));
     });
+
+
+    py_dict.define_method('__setitem__', function (self, key, value, state, frame) {
+        if (!(self instanceof PyDict)) {
+            raise(TypeError, 'invalid type of \'self\' argument');
+        }
+        switch (state) {
+            case 0:
+                if (key.cls === py_str) {
+                    vm.return_value = key;
+                } else if (key.call_method('__hash__')) {
+                    return 1;
+                }
+            case 1:
+                if (!vm.return_value) {
+                    return null;
+                }
+                if (vm.return_value instanceof PyStr) {
+                    self.set(vm.return_value, value);
+                } else if (vm.return_value instanceof PyInt) {
+                    self.set(new_str(vm.return_value.value.toString()), value);
+                } else {
+                    raise(TypeError, 'invalid result type of key hash');
+                }
+                return None;
+        }
+    }, ['key', 'value']);
 
 
     py_int.define_method('__new__', function (cls, initializer, base, state, frame) {
@@ -1776,6 +1816,13 @@ window['jaspy'] = (function () {
     }
     PyModule.prototype = new PyObject;
 
+    py_module.define_method('__getattribute__', function (self, name) {
+        var value = self.dict.get(name);
+        if (!value) {
+            raise(AttributeError, 'module has no attribute \'' + name + '\'');
+        }
+        return value;
+    }, ['name']);
 
 
     function PyMethod(self, func) {
@@ -1785,17 +1832,50 @@ window['jaspy'] = (function () {
     }
     PyMethod.prototype = new PyObject;
 
+    function new_method(func, instance) {
+        return None;
+    }
+
+    py_method.define_method('__str__', function (self) {
+        return new_str('<bound-method');
+    });
 
 
-    py_module.define_method('__getattribute__', function (self, name) {
-        var value = self.dict.get(name);
-        if (!value) {
-            raise(AttributeError, 'module has no attribute \'' + name + '\'');
+    py_function.define_method('__get__', function (self, instance, owner) {
+        return new PyMethod(instance, self);
+    }, ['instance', 'owner']);
+
+
+    py_classmethod.define_method('__init__', function (self, func) {
+        self.setattr('__func__', func);
+    }, ['func']);
+
+    py_classmethod.define_method('__get__', function (self, instance, owner) {
+        return new_method(self.getattr('__func__'), owner);
+    }, ['instance', 'owner']);
+
+
+    py_property.define_method('__get__', function (self, instance, owner, state, frame) {
+        switch (state) {
+            case 0:
+                if (vm.call_object(self.getattr('fget'), [instance])) {
+                    return 1;
+                }
+            case 1:
+                return vm.return_value;
         }
-        //console.log('module', value);
-        return value;
-    }, ['name']);
+    }, ['instance', 'owner']);
 
+    py_property.define_method('__set__', function (self, instance, value, state, frame) {
+        switch (state) {
+            case 0:
+                if (vm.call_object(self.getattr('fset'), [instance, value])) {
+                    return 1;
+                }
+            case 1:
+                break;
+        }
+    }, ['instance', 'value']);
 
 
     var modules = {};
@@ -1816,8 +1896,6 @@ window['jaspy'] = (function () {
         modules[this.name] = this;
     }
 
-
-
     function PythonModule(name, code, depends) {
         Module.call(this, name, depends);
         this.code = code;
@@ -1827,7 +1905,6 @@ window['jaspy'] = (function () {
         Module.call(this, name, depends);
         this.namespace = {};
         func.apply(null, [this].concat(this.depends.map(get_namespace)));
-        //console.log(this.namespace);
     }
     NativeModule.prototype.define_function = function (name, func, signature, options) {
         options = options || {};
@@ -1858,54 +1935,6 @@ window['jaspy'] = (function () {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    function pack_error(error) {
-        return new PyObject(JSError, new PyDict({
-            'args': new_tuple([new_str(error.name), new_str(error.message)])
-        }));
-    }
-
-    function new_exception(cls, message) {
-        var exc_value = new PyObject(cls, new PyDict());
-        exc_value.dict.set('args', new_tuple([new_str(message)]));
-        return exc_value;
-    }
-
-
-
-
-
-
-
-
-
-
-
     function Frame(code, options) {
         this.code = code;
 
@@ -1917,8 +1946,6 @@ window['jaspy'] = (function () {
         this.builtins = options.builtins || (this.back ? this.back.builtins : {});
 
         this.position = options.position || 0;
-
-        if (this.code === undefined) return;
     }
     Frame.prototype.get_line_number = function () {
         return this.code.get_line_number(this.position);
@@ -1997,8 +2024,8 @@ window['jaspy'] = (function () {
             error('bytecode overflow');
         }
         var opcode = this.code.bytecode.charCodeAt(this.position++);
-        if(DEBUG) {
-            console.log('opcode: ' + opcode + ' | ' + 'position: ' + (this.position + 1));
+        if (DEBUG) {
+            console.log('opcode: ' + opcode + ' | ' + 'position: ' + (this.position - 1));
         }
         if (opcode >= OPCODES_ARGUMENT) {
             low = this.code.bytecode.charCodeAt(this.position++);
@@ -2216,7 +2243,6 @@ window['jaspy'] = (function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.pop();
                         left = this.pop();
-                        //console.log(right, left);
                         if (left.call_method(slot, [right])) {
                             this.state = 1;
                             this.position--;
@@ -2997,8 +3023,6 @@ window['jaspy'] = (function () {
         Frame.call(this, code, options);
 
         this.args = this.code.parse_args(options.args, options.kwargs, options.defaults);
-
-        this.old_store = options.old_store || {};
     }
     NativeFrame.prototype = new Frame;
     NativeFrame.prototype.step = function () {
@@ -3025,10 +3049,10 @@ window['jaspy'] = (function () {
         }
     };
     NativeFrame.prototype.store = function (name, value) {
-        this.old_store[name] = value;
+        this[name] = value;
     };
     NativeFrame.prototype.load = function (name) {
-        return this.old_store[name];
+        return this[name];
     };
 
 
@@ -3063,9 +3087,8 @@ window['jaspy'] = (function () {
 
         if (!exc_tb) {
             // TODO: create traceback
-            //console.log('error in line: ' + this.frame.get_line_number());
             exc_tb = None;
-            console.log(exc_value);
+            //console.log(exc_value);
             exc_value.dict.set('__traceback__', exc_tb);
         }
         this.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
@@ -3172,136 +3195,15 @@ window['jaspy'] = (function () {
                 }
                 return result;
             } else {
-                console.log(object, object instanceof NativeCode);
                 error('invalid callable');
             }
         }
     };
 
 
-
-
-
-
-
     function is_iterable(object) {
         return object.cls.lookup('__next__') != undefined;
     }
-
-
-
-
-
-
-
-
-
-
-    py_dict.define_method('__setitem__', function (self, key, value, state, frame) {
-        if (!(self instanceof PyDict)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        switch (state) {
-            case 0:
-                if (key.cls === py_str) {
-                    vm.return_value = key;
-                } else if (key.call_method('__hash__')) {
-                    return 1;
-                }
-            case 1:
-                if (!vm.return_value) {
-                    return null;
-                }
-                if (vm.return_value instanceof PyStr) {
-                    self.set(vm.return_value, value);
-                } else if (vm.return_value instanceof PyInt) {
-                    self.set(new_str(vm.return_value.value.toString()), value);
-                } else {
-                    raise(TypeError, 'invalid result type of key hash');
-                }
-                return None;
-        }
-    }, ['key', 'value']);
-
-
-
-
-
-    function new_method(func, instance) {
-        return None;
-    }
-
-    py_method.define_method('__str__', function (self) {
-        return new_str('<bound-method');
-    });
-
-    py_function.define_method('__get__', function (self, instance, owner) {
-        return new PyMethod(instance, self);
-    }, ['instance', 'owner']);
-
-
-
-    py_classmethod.define_method('__init__', function (self, func) {
-        self.setattr('__func__', func);
-    }, ['func']);
-    py_classmethod.define_method('__get__', function (self, instance, owner) {
-        return new_method(self.getattr('__func__'), owner);
-    }, ['instance', 'owner']);
-
-
-    var py_range_iterator = new PyType('range_iterator');
-
-    function PyRangeIterator(start, stop, step) {
-        PyObject.call(this, py_range_iterator);
-        this.current = start.value;
-        this.stop = stop.value;
-        this.step = step.value;
-    }
-    PyRangeIterator.prototype = new PyObject;
-
-    var py_range = new PyType('range');
-    /*
-    py_range_iterator.define_method_old('__next__', function (args) {
-        var value;
-        if (!(args['self'] instanceof PyRangeIterator)) {
-            raise(TypeError, 'invalid type of \'self\' argument');
-        }
-        value = new_int(args['self'].current);
-        if (args['self'].current > args['self'].stop && args['self'].step > 0) {
-            raise(StopIteration);
-        }
-        if (args['self'].current < args['self'].stop && args['self'].step < 0) {
-            raise(StopIteration);
-        }
-        args['self'].current += args['self'].step;
-        return value;
-    });
-
-
-    py_range.define_method_old('__init__', function (args) {
-        if (args['stop'] === None) {
-            args['self'].setattr('start', new_int(0));
-            args['self'].setattr('stop', args['start']);
-        } else {
-            args['self'].setattr('start', args['start']);
-            args['stop'].setattr('stop', args['stop']);
-        }
-        if (args['step'] === None) {
-            args['self'].setattr('step', new_int(1));
-        } else {
-            args['self'].setattr('step', args['step']);
-        }
-    }, ['self', 'start', 'stop', 'step'], {
-        simple: true,
-        defaults: {'stop': None, 'step': None}
-    });
-    py_range.define_method_old('__iter__', function (args) {
-        return new PyRangeIterator(args['self'].getattr('start'), args['self'].getattr('stop'), args['self'].getattr('step'));
-    }, ['self'], {simple: true});
-
-    */
-
-
 
 
     var build_class = new_native(function (func, name, bases, metaclass, keywords, state, frame) {
@@ -3318,9 +3220,9 @@ window['jaspy'] = (function () {
         switch (state) {
             case 0:
                 if (metaclass === None && bases.length == 0) {
-                    frame.old_store.metaclass = py_type;
+                    frame.metaclass = py_type;
                 } else if (!(metaclass instanceof PyType)) {
-                    frame.old_store.metaclass = metaclass;
+                    frame.metaclass = metaclass;
                 } else {
                     possible_meta_classes = [];
                     if (metaclass !== None) {
@@ -3345,21 +3247,21 @@ window['jaspy'] = (function () {
                         }
                     }
                     if (good) {
-                        frame.old_store.metaclass = possible_meta_classes[index];
+                        frame.metaclass = possible_meta_classes[index];
                     } else {
                         raise(TypeError, 'unable to determine most derived metaclass');
                     }
                 }
-                if (frame.old_store.metaclass.call_classmethod('__prepare__', [new_tuple(bases)], keywords)) {
+                if (frame.metaclass.call_classmethod('__prepare__', [new_tuple(bases)], keywords)) {
                     return 1;
                 }
             case 1:
                 if (!vm.return_value) {
                     return null;
                 }
-                frame.old_store.namespace = vm.return_value;
+                frame.namespace = vm.return_value;
                 assert(vm.call_object(func));
-                vm.frame.namespace = frame.old_store.namespace;
+                vm.frame.namespace = frame.namespace;
                 return 2;
             case 2:
                 if (!vm.return_value) {
@@ -3370,124 +3272,91 @@ window['jaspy'] = (function () {
                 } else {
                     bases = bases.array;
                 }
-                if (frame.old_store.metaclass.cls.call_method('__call__', [name, new_tuple(bases), frame.old_store.namespace], keywords)) {
+                if (frame.metaclass.cls.call_method('__call__', [name, new_tuple(bases), frame.namespace], keywords)) {
                     return 3;
                 }
             case 3:
                 if (!vm.return_value) {
                     return null;
                 }
-                return frame.old_store.cls;
+                return frame.cls;
         }
     }, ['func', 'name', '*bases', 'metaclass', '**keywords'], {
         name: '__build_class__',
         defaults: {'metaclass': None}
     });
 
-
-    py_property.define_method('__get__', function (self, instance, owner, state, frame) {
-        switch (state) {
-            case 0:
-                if (vm.call_object(self.getattr('fget'), [instance])) {
-                    return 1;
-                }
-            case 1:
-                return vm.return_value;
-        }
-    }, ['instance', 'owner']);
-
-    py_property.define_method('__set__', function (self, instance, value, state, frame) {
-        switch (state) {
-            case 0:
-                if (vm.call_object(self.getattr('fset'), [instance, value])) {
-                    return 1;
-                }
-            case 1:
-                break;
-        }
-    }, ['instance', 'value']);
-
-
-
-
-
-
     var builtins = {
-        'object': py_object,
-        'type': py_type,
-        'dict': py_dict,
-        'int': py_int,
-        'float': py_float,
-        'str': py_str,
-        'bytes': py_bytes,
-        'tuple': py_tuple,
+        object: py_object,
+        type: py_type,
+        dict: py_dict,
+        int: py_int,
+        float: py_float,
+        str: py_str,
+        bytes: py_bytes,
+        tuple: py_tuple,
 
-        'None': None,
+        None: None,
         NotImplemented: NotImplemented,
-        'Ellipsis': Ellipsis,
-        'False': False,
-        'True': True,
+        Ellipsis: Ellipsis,
+        False: False,
+        True: True,
 
-        'BaseException': BaseException,
-        'Exception': Exception,
-        'ValueError': ValueError,
-        'ArithmeticError': ArithmeticError,
-        'LookupError': LookupError,
-        'RuntimeError': RuntimeError,
-        'BufferError': BufferError,
-        'AssertionError': AssertionError,
-        'AttributeError': AttributeError,
-        'EOFError': EOFError,
-        'FloatingPointError': FloatingPointError,
-        'GeneratorExit': GeneratorExit,
-        'ImportError': ImportError,
-        'IndexError': IndexError,
-        'KeyError': KeyError,
-        'KeyboardInterrupt': KeyboardInterrupt,
-        'MemoryError': MemoryError,
-        'NameError': NameError,
-        'NotImplementedError': NotImplementedError,
-        'OSError': OSError,
-        'OverflowError': OverflowError,
-        'RecursionError': RecursionError,
-        'ReferenceError': ReferenceError,
-        'StopIteration': StopIteration,
-        'SyntaxError': SyntaxError,
-        'IndentationError': IndentationError,
-        'TabError': TabError,
-        'SystemError': SystemError,
-        'SystemExit': SystemExit,
+        BaseException: BaseException,
+        Exception: Exception,
+        ValueError: ValueError,
+        ArithmeticError: ArithmeticError,
+        LookupError: LookupError,
+        RuntimeError: RuntimeError,
+        BufferError: BufferError,
+        AssertionError: AssertionError,
+        AttributeError: AttributeError,
+        EOFError: EOFError,
+        FloatingPointError: FloatingPointError,
+        GeneratorExit: GeneratorExit,
+        ImportError: ImportError,
+        IndexError: IndexError,
+        KeyError: KeyError,
+        KeyboardInterrupt: KeyboardInterrupt,
+        MemoryError: MemoryError,
+        NameError: NameError,
+        NotImplementedError: NotImplementedError,
+        OSError: OSError,
+        OverflowError: OverflowError,
+        RecursionError: RecursionError,
+        ReferenceError: ReferenceError,
+        StopIteration: StopIteration,
+        SyntaxError: SyntaxError,
+        IndentationError: IndentationError,
+        TabError: TabError,
+        SystemError: SystemError,
+        SystemExit: SystemExit,
         TypeError: TypeError,
-        'UnboundLocalError': UnboundLocalError,
-        'UnicodeError': UnicodeError,
-        'UnicodeEncodeError': UnicodeEncodeError,
-        'UnicodeDecodeError': UnicodeDecodeError,
-        'UnicodeTranslateError': UnicodeTranslateError,
-        'ZeroDivisionError': ZeroDivisionError,
-        'EnvironmentError': EnvironmentError,
+        UnboundLocalError: UnboundLocalError,
+        UnicodeError: UnicodeError,
+        UnicodeEncodeError: UnicodeEncodeError,
+        UnicodeDecodeError: UnicodeDecodeError,
+        UnicodeTranslateError: UnicodeTranslateError,
+        ZeroDivisionError: ZeroDivisionError,
+        EnvironmentError: EnvironmentError,
+        BlockingIOError: BlockingIOError,
+        ChildProcessError: ChildProcessError,
+        BrokenPipeError: BrokenPipeError,
+        ConnectionError: ConnectionError,
+        ConnectionAbortedError: ConnectionAbortedError,
+        ConnectionRefusedError: ConnectionRefusedError,
+        ConnectionResetError: ConnectionResetError,
+        FileExistsError: FileExistsError,
+        FileNotFoundError: FileNotFoundError,
+        InterruptedError: InterruptedError,
+        IsADirectoryError: IsADirectoryError,
+        NotADirectoryError: NotADirectoryError,
+        PermissionError: PermissionError,
+        ProcessLookupError: ProcessLookupError,
+        TimeoutError: TimeoutError,
 
-        'BlockingIOError': BlockingIOError,
-        'ChildProcessError': ChildProcessError,
-        'BrokenPipeError': BrokenPipeError,
-        'ConnectionError': ConnectionError,
-        'ConnectionAbortedError': ConnectionAbortedError,
-        'ConnectionRefusedError': ConnectionRefusedError,
-        'ConnectionResetError': ConnectionResetError,
-        'FileExistsError': FileExistsError,
-        'FileNotFoundError': FileNotFoundError,
-        'InterruptedError': InterruptedError,
-        'IsADirectoryError': IsADirectoryError,
-        'NotADirectoryError': NotADirectoryError,
-        'PermissionError': PermissionError,
-        'ProcessLookupError': ProcessLookupError,
-        'TimeoutError': TimeoutError,
-
-        '__build_class__': build_class,
-
-        'range': py_range
+        __build_class__: build_class
     };
-
-
 
 
     var module_builtins = define_module('builtins', function (module) {
@@ -3500,7 +3369,7 @@ window['jaspy'] = (function () {
         }
     });
 
-    builtins.print = module_builtins.define_function('print', function (objects, sep, end, file, flush, state, frame) {
+    module_builtins.define_function('print', function (objects, sep, end, file, flush, state, frame) {
         var object;
         while (true) {
             switch (state) {
@@ -3553,7 +3422,6 @@ window['jaspy'] = (function () {
     });
 
 
-
     function main(name) {
         if (!vm) {
             vm = new VM();
@@ -3601,20 +3469,24 @@ window['jaspy'] = (function () {
     vm = new VM();
 
     return {
-        'python_signature': python_signature,
+        vm: vm,
 
-        'vm': vm,
+        main: main,
 
-        'main': main,
+        loader: loader,
 
-        'loader': loader,
+        define_module: define_module,
 
-        'define_module': define_module,
-
-        'unpack_str': unpack_str,
-        'unpack_float': unpack_float,
+        unpack_int: unpack_int,
+        unpack_float: unpack_float,
+        unpack_str: unpack_str,
+        unpack_bytes: unpack_bytes,
+        unpack_tuple: unpack_tuple,
+        unpack_code: unpack_code,
 
         raise: raise,
+        error: error,
+        assert: assert,
 
         'builtins': builtins,
 
@@ -3628,25 +3500,6 @@ window['jaspy'] = (function () {
         'PyTuple': PyTuple,
         'PyCode': PyCode,
 
-        'py_object': py_object,
-        'py_type': py_type,
-        'py_dict': py_dict,
-        'py_int': py_int,
-        'py_bool': py_bool,
-        'py_float': py_float,
-        'py_str': py_str,
-        'py_bytes': py_bytes,
-        'py_tuple': py_tuple,
-        'py_code': py_code,
-        'py_list': py_list,
-        'py_set': py_set,
-        'py_function': py_function,
-        'py_method': py_method,
-        'py_generator': py_generator,
-        'py_frame': py_frame,
-        'py_traceback': py_traceback,
-        'py_module': py_module,
-
         'new_int': new_int,
         'new_float': new_float,
         'new_str': new_str,
@@ -3659,12 +3512,6 @@ window['jaspy'] = (function () {
         'Ellipsis': Ellipsis,
         'False': False,
         'True': True,
-
-
-
-
-
-        'print': print,
 
         'PythonCode': PythonCode,
         'NativeCode': NativeCode
