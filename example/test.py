@@ -27,6 +27,39 @@ p['style'] = 'background: #00FF00'
 p.html = '<strong>Hallo Python!</strong>'
 
 print(Test.__str__)
+print(Test.__name__)
+
+Test.__name__ = 'Test2'
+
+try:
+    Test.__name__ = p1
+except TypeError:
+    print(Test)
+
+print(Test.__class__)
+
+try:
+    Test.__class__ = int
+except TypeError:
+    print('yes')
+
+
+class Test2():
+    pass
+
+x = Test()
+x.__class__ = Test2
+
+print(x)
+
+print(int('ff', 16))
+
+
+def hello(name='World'):
+    print('Hello,', name + '!')
+
+
+hello()
 
 x = 3
 print(-x)
@@ -53,10 +86,14 @@ print(x)
 
 start = time.time()
 x = 0
-while x < 5000: x += 1
+while x < 5: x += 1
 stop = time.time()
 print(x)
 print(stop - start)
+
+print(str(dom))
+
+print('abc'.startswith('a'))
 
 
 x = True
