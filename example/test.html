@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Jaspy</title>
+
+    <script src="../src/jaspy.js"></script>
+    <script src="../src/dom.js"></script>
+
+    <script src="test.py.js"></script>
+
+    <script>
+        function on_load() {
+            var start = (new Date()).getTime();
+            jaspy.main('test');
+            var stop = (new Date()).getTime();
+            console.log('execution time: ' + (stop - start));
+        }
+    </script>
+</head>
+<body onload="on_load()">
+<h1>Jaspy</h1>
+<div id="test"></div>
+</body>
+</html>

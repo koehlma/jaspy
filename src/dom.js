@@ -20,7 +20,6 @@ jaspy.define_module('dom', function (module, builtins) {
 
     Py_Element.define_method('__init__', function (self, tag) {
         self.pack('__element__', document.createElement(jaspy.unpack_str(tag, 'div')));
-        self.pack('__css__', {});
     }, ['tag'], {defaults: {'tag': builtins.None}});
 
     Py_Element.define_method('__str__', function (self) {
@@ -41,24 +40,19 @@ jaspy.define_module('dom', function (module, builtins) {
     Py_Element.define_method('__getattr__', function (self, name) {
         var child = new jaspy.PyObject(Py_Element, new jaspy.PyDict());
         child.pack('__element__', document.createElement(jaspy.unpack_str(name)));
-        child.pack('__css__', {});
         self.unpack('__element__').appendChild(child.unpack('__element__'));
         return child;
     }, ['name']);
 
     Py_Element.define_method('css', function (self, name, value) {
         name = jaspy.unpack_str(name);
-        value = jaspy.unpack_str(value);
-        var css = self.unpack('__css__');
-        var attributes = [];
-        css[name] = value;
-        for (name in css) {
-            if (css.hasOwnProperty(name)) {
-                attributes.push(name + ': ' + css[name]);
-            }
+        if (value === builtins.NotImplemented) {
+            return jaspy.new_str(self.unpack('__element__').style[name])
+        } else {
+            value = jaspy.unpack_str(value, '');
+            self.unpack('__element__').style[name] = value;
         }
-        self.unpack('__element__').setAttribute('style', attributes.join('; '));
-    }, ['name', 'value']);
+    }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
     Py_Element.define_property('text', function (self) {
         return jaspy.new_str(self.unpack('__element__').innerText)
@@ -72,14 +66,31 @@ jaspy.define_module('dom', function (module, builtins) {
         self.unpack('__element__').innerHTML = jaspy.unpack_str(value);
     });
 
+    Py_Element.define_method('append', function (self, other) {
+        if (!(other.is_instance_of(Py_Element))) {
+            jaspy.raise(builtins.TypeError, 'invalid type of \'other\' argument');
+        }
+        self.unpack('__element__').appendChild(other.unpack('__element__'));
+    }, ['other']);
 
+    var get_body = module.define_function('get_body', function () {
+        if (document.body) {
+            var element = new jaspy.PyObject(Py_Element, new jaspy.PyDict());
+            element.pack('__element__', document.body);
+            return element;
+        } else {
+            jaspy.raise(builtins.ValueError, 'unable to load body from dom')
+        }
+    });
 
     Py_Element.define_method('body_append', function (self) {
         document.getElementsByTagName('body')[0].appendChild(self.unpack('__element__'));
     });
 
+
     return {
         'MetaElement': Py_MetaElement,
-        'Element': Py_Element
+        'Element': Py_Element,
+        'get_body': get_body
     }
 }, ['builtins']);

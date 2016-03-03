@@ -225,6 +225,7 @@ window['jaspy'] = (function () {
     })();
     var OPCODES_ARGUMENT = 90;
 
+    var vm = null;
 
     function error(message) {
         throw new Error('[FATAL ERROR] ' + (message || 'fatal interpreter error'));
@@ -241,132 +242,6 @@ window['jaspy'] = (function () {
             error(message);
         }
     }
-
-
-    function ArrayList(size) {
-        this.array = new Array(4);
-        this.size = size || 0;
-        this.grow();
-    }
-    ArrayList.prototype.check = function (index) {
-        if (index < 0) {
-            index = this.size - index;
-        }
-        if (index < 0 || index > this.size - 1) {
-            raise(IndexError, 'index out of range');
-        }
-        return index;
-    };
-    ArrayList.prototype.grow = function () {
-        while (this.array.length <= this.size) {
-            var length = this.array.length * 2;
-            while (length <= this.size) {
-                length *= 2;
-            }
-            this.array.length = length;
-        }
-    };
-    ArrayList.prototype.shrink = function () {
-        if (this.array.length > 4 && this.array.length / 4 >= this.size) {
-            var length = this.array.length / 2;
-            while (length / 4 >= this.size && length > 4) {
-                length /= 2;
-            }
-            this.array.length = length;
-        }
-    };
-    ArrayList.prototype.get = function (index) {
-        index = this.check(index);
-        return this.array[index];
-    };
-    ArrayList.prototype.set = function (index, item) {
-        index = this.check(index);
-        return this.array[index] = item;
-    };
-    ArrayList.prototype.append = function (item) {
-        this.size++;
-        this.grow();
-        this.array[this.size - 1] = item;
-        return item;
-    };
-    ArrayList.prototype.pop = function (index) {
-        index = this.check(index);
-        this.size--;
-        if (index == null) {
-            index = this.size;
-        }
-        var item = this.array[index];
-        for (; index < this.size; index++) {
-            this.array[index] = this.array[index + 1];
-        }
-        this.array[index] = null;
-        this.shrink();
-        return item;
-    };
-    ArrayList.prototype.clear = function () {
-        this.array = new Array(4);
-        this.size = 0;
-    };
-    ArrayList.prototype.slice = function (start, stop, step) {
-        var index, list = new ArrayList();
-        if (start == undefined) {
-            start = 0;
-        } else if (start < 0) {
-            start = this.size + start;
-        }
-        if (stop == undefined) {
-            stop = this.size;
-        } else if (stop < 0) {
-            stop = this.size + stop;
-        }
-        step = step || 1;
-        if (step > 0) {
-            if (start < 0) {
-                start = 0;
-            }
-            if (stop > this.size) {
-                stop = this.size;
-            }
-            for (index = start; index < stop; index += step) {
-                list.append(this.array[index]);
-            }
-        } else if (step < 0) {
-            if (start >= this.size) {
-                    start = this.size - 1;
-            }
-            if (stop < 0) {
-                stop = 0;
-            }
-            for (index = start; index > stop; index += step) {
-                list.append(this.array[index]);
-            }
-        } else {
-            raise(ValueError, 'slice step cannot be zero')
-        }
-        return list;
-    };
-    ArrayList.prototype.concat = function (list_or_array) {
-        var list, index, size;
-        if (list_or_array instanceof ArrayList) {
-            size = list_or_array.size;
-            list_or_array = list_or_array.array;
-        } else if (list_or_array instanceof Array) {
-            size = list_or_array.length;
-        } else {
-            raise(TypeError, 'invalid type of "list_or_array" argument');
-        }
-        list = new ArrayList(this.size + size);
-        for (index = 0; index < this.size; index++) {
-            list.array[index] = this.array[index];
-        }
-        for (index = 0; index < size; index++) {
-            list.array[index + this.size] = list_or_array[index];
-        }
-        return list;
-    };
-    ArrayList.prototype.copy = function () {
-        return this.concat([]);
-    };
 
 
     function get_mro(cls) {
@@ -407,7 +282,6 @@ window['jaspy'] = (function () {
 
     var object_id_counter = 0;
 
-
     function PyObject(cls, dict) {
         this.cls = cls;
         this.dict = dict || null;
@@ -425,7 +299,7 @@ window['jaspy'] = (function () {
     PyObject.prototype.is_instance_of = function (cls) {
         return this.cls.is_subclass_of(cls);
     };
-    PyObject.prototype.call_method = function (vm, name, args, kwargs) {
+    PyObject.prototype.call_method = function (name, args, kwargs) {
         var method = this.cls.lookup(name);
         if (method) {
             return vm.call_object(method, [this].concat(args || []), kwargs);
@@ -435,41 +309,46 @@ window['jaspy'] = (function () {
             return false;
         }
     };
-    PyObject.prototype.set_attr = function (name, value) {
+    PyObject.prototype.setattr = function (name, value) {
+        if (!this.dict) {
+            raise(TypeError, 'object does not support attribute access');
+        }
         this.dict.set(name, value);
     };
-    PyObject.prototype.get_attr = function (name) {
+    PyObject.prototype.getattr = function (name) {
+        if (!this.dict) {
+            raise(TypeError, 'object does not support attribute access');
+        }
         return this.dict.get(name)
     };
-    PyObject.prototype.getattr = PyObject.prototype.get_attr;
     PyObject.prototype.unpack = function (name) {
-        var item = this.dict.get(name);
-        if (!(item instanceof PyNative)) {
+        var item = this['_' + name];
+        if (!item) {
             raise(TypeError, 'unable to unpack ' + name + ' from object');
         }
-        return item.value;
+        return item;
     };
     PyObject.prototype.pack = function (name, value) {
-        this.dict.set(name, new PyNative(value));
+        this['_' + name] = value;
     };
 
 
     function PyType(name, bases, attributes, mcs) {
-        var index, builtin;
+        var index, native;
         PyObject.call(this, mcs || py_type, attributes || new PyDict());
         this.name = name;
         this.bases = bases || [py_object];
         this.mro = compute_mro(this);
         this.native = null;
         for (index = 0; index < this.mro.length; index++) {
-            builtin = this.mro[index].native;
-            if (builtin === py_object) {
+            native = this.mro[index].native;
+            if (native === py_object) {
                 continue;
             }
-            if (this.native && this.native !== builtin && builtin) {
+            if (this.native && this.native !== native && native) {
                 raise(TypeError, 'invalid native type hierarchy');
             }
-            this.native = builtin;
+            this.native = native;
         }
         this.native = this.native || py_object;
     }
@@ -507,15 +386,6 @@ window['jaspy'] = (function () {
         var f = new_native(func, signature, options)
         this.define(name, f);
     };
-    PyType.prototype.define_property = function (name, getter, setter) {
-        if (getter) {
-            getter = new_native(getter, ['self'], {name: name, qualname: name, direct: true, simple: true});
-        }
-        if (setter) {
-            setter = new_native(setter, ['self', 'value'], {name: name, qualname: name, direct: true, simple: true});
-        }
-        this.define(name, new PyProperty(getter, setter));
-    };
     PyType.prototype.define_method = function (name, func, signature, options) {
         signature = signature || [];
         options = options || {};
@@ -524,6 +394,15 @@ window['jaspy'] = (function () {
         options.direct = true;
         options.simple = !options.complex;
         this.define(name, new_native(func, ['self'].concat(signature), options));
+    };
+    PyType.prototype.define_property = function (name, getter, setter) {
+        if (getter) {
+            getter = new_native(getter, ['self'], {name: name, qualname: name, direct: true, simple: true});
+        }
+        if (setter) {
+            setter = new_native(setter, ['self', 'value'], {name: name, qualname: name, direct: true, simple: true});
+        }
+        this.define(name, new PyProperty(getter, setter));
     };
     PyType.prototype.define_classmethod = function (name, func, signature, options) {
         options = options || {};
@@ -551,6 +430,10 @@ window['jaspy'] = (function () {
             return false;
         }
     };
+    PyType.prototype.create = function (args, kwargs) {
+        var func_new = this.lookup('__new__');
+        var func_init = this.lookup('__init__');
+    }
 
 
     function PyDict(initializer, cls) {
@@ -675,31 +558,174 @@ window['jaspy'] = (function () {
         this.value = value;
     }
     PyInt.prototype = new PyObject;
+
     function PyFloat(value, cls) {
         PyObject.call(this, cls || py_float);
         this.value = value;
     }
     PyFloat.prototype = new PyObject;
+
     function PyStr(value, cls) {
         PyObject.call(this, cls || py_str);
         this.value = value;
     }
     PyStr.prototype = new PyObject;
+
     function PyBytes(value, cls) {
         PyObject.call(this, cls || py_bytes);
         this.value = value;
     }
     PyBytes.prototype = new PyObject;
+
     function PyTuple(value, cls) {
         PyObject.call(this, cls || py_tuple);
         this.value = value;
     }
     PyTuple.prototype = new PyObject;
+
     function PyCode(value, cls) {
         PyObject.call(this, cls || py_code);
         this.value = value;
     }
     PyCode.prototype = new PyObject;
+
+
+    function PyList(initializer, size) {
+        PyObject.call(this, py_list);
+        this.array = new Array(4);
+        if (initializer) {
+            this.size = initializer.length;
+        } else {
+            this.size = size || 0;
+        }
+        this.grow();
+        if (initializer) {
+            for (var index = 0; index < initializer.length; index++) {
+                this.array[index] = initializer[index];
+            }
+        }
+    }
+    PyList.prototype = new PyObject;
+    PyList.prototype.check = function (index) {
+        if (index < 0) {
+            index = this.size - index;
+        }
+        if (index < 0 || index > this.size - 1) {
+            raise(IndexError, 'index out of range');
+        }
+        return index;
+    };
+    PyList.prototype.grow = function () {
+        while (this.array.length <= this.size) {
+            var length = this.array.length * 2;
+            while (length <= this.size) {
+                length *= 2;
+            }
+            this.array.length = length;
+        }
+    };
+    PyList.prototype.shrink = function () {
+        if (this.array.length > 4 && this.array.length / 4 >= this.size) {
+            var length = this.array.length / 2;
+            while (length / 4 >= this.size && length > 4) {
+                length /= 2;
+            }
+            this.array.length = length;
+        }
+    };
+    PyList.prototype.get = function (index) {
+        index = this.check(index);
+        return this.array[index];
+    };
+    PyList.prototype.set = function (index, item) {
+        index = this.check(index);
+        return this.array[index] = item;
+    };
+    PyList.prototype.append = function (item) {
+        this.size++;
+        this.grow();
+        this.array[this.size - 1] = item;
+        return item;
+    };
+    PyList.prototype.pop = function (index) {
+        index = this.check(index);
+        this.size--;
+        if (index == null) {
+            index = this.size;
+        }
+        var item = this.array[index];
+        for (; index < this.size; index++) {
+            this.array[index] = this.array[index + 1];
+        }
+        this.array[index] = null;
+        this.shrink();
+        return item;
+    };
+    PyList.prototype.clear = function () {
+        this.array = new Array(4);
+        this.size = 0;
+    };
+    PyList.prototype.slice = function (start, stop, step) {
+        var index, list = new PyList();
+        if (start == undefined) {
+            start = 0;
+        } else if (start < 0) {
+            start = this.size + start;
+        }
+        if (stop == undefined) {
+            stop = this.size;
+        } else if (stop < 0) {
+            stop = this.size + stop;
+        }
+        step = step || 1;
+        if (step > 0) {
+            if (start < 0) {
+                start = 0;
+            }
+            if (stop > this.size) {
+                stop = this.size;
+            }
+            for (index = start; index < stop; index += step) {
+                list.append(this.array[index]);
+            }
+        } else if (step < 0) {
+            if (start >= this.size) {
+                    start = this.size - 1;
+            }
+            if (stop < 0) {
+                stop = 0;
+            }
+            for (index = start; index > stop; index += step) {
+                list.append(this.array[index]);
+            }
+        } else {
+            raise(ValueError, 'slice step cannot be zero')
+        }
+        return list;
+    };
+    PyList.prototype.concat = function (list_or_array) {
+        var list, index, size;
+        if (list_or_array instanceof PyList) {
+            size = list_or_array.size;
+            list_or_array = list_or_array.array;
+        } else if (list_or_array instanceof Array) {
+            size = list_or_array.length;
+        } else {
+            raise(TypeError, 'invalid type of "list_or_array" argument');
+        }
+        list = new PyList(null, this.size + size);
+        for (index = 0; index < this.size; index++) {
+            list.array[index] = this.array[index];
+        }
+        for (index = 0; index < size; index++) {
+            list.array[index + this.size] = list_or_array[index];
+        }
+        return list;
+    };
+    PyList.prototype.copy = function () {
+        return this.concat([]);
+    };
+
 
     function PyCell(item) {
         PyObject.call(this, py_cell);
@@ -712,6 +738,10 @@ window['jaspy'] = (function () {
     PyCell.prototype.get = function () {
         return this.item;
     }
+
+
+
+
 
 
     function PyModule(namespace) {
@@ -766,6 +796,10 @@ window['jaspy'] = (function () {
     function new_tuple(value) {
         return new PyTuple(value);
     }
+    function new_list(array) {
+        return new PyList(array);
+    }
+
     function new_code(value) {
         return new PyCode(value);
     }
@@ -775,10 +809,26 @@ window['jaspy'] = (function () {
         if (object === None && fallback) {
             return fallback;
         }
-        if (!(object instanceof PyStr)) {
-            raise(TypeError, 'unable to unpack object to js string');
+        if (object instanceof PyStr) {
+            return object.value;
+        } else if (object instanceof PyInt) {
+            return object.value.toString();
+        } else if (object instanceof PyFloat) {
+            return object.value.toString();
+        } else {
+            raise(TypeError, 'unable to unpack string value from object');
         }
-        return object.value;
+    }
+
+    function unpack_tuple(object, fallback) {
+        if (object === None && fallback) {
+            return fallback;
+        }
+        if (object instanceof PyTuple) {
+            return object.value;
+        } else {
+            raise(TypeError, 'unable to unpack tuple value from object');
+        }
     }
 
 
@@ -844,11 +894,21 @@ window['jaspy'] = (function () {
         exc_tb: None
     };
 
+    var JSError = new PyType('JSError', [Exception]);
+
+    function pack_error(error) {
+        return new PyObject(JSError, new PyDict({
+            'args': new_tuple([new_str(error.name), new_str(error.message)])
+        }));
+    }
+
     function new_exception(cls, message) {
         var exc_value = new PyObject(cls, new PyDict());
         exc_value.dict.set('args', new_tuple([new_str(message)]));
         return exc_value;
     }
+
+
 
 
 
@@ -1000,8 +1060,6 @@ window['jaspy'] = (function () {
 
         this.position = options.position || 0;
 
-        this.vm = options.vm || null;
-
         if (this.code === undefined) return;
 
         this.args = this.code.parse_args(options.args, options.kwargs, options.defaults);
@@ -1136,7 +1194,7 @@ window['jaspy'] = (function () {
                         block.active = true;
                         return;
                     } else if (block.type == BLOCK_TYPES.BASE) {
-                        this.vm.frame = this.back;
+                        vm.frame = this.back;
                         return;
                     } else {
                         this.blocks.pop()
@@ -1144,7 +1202,7 @@ window['jaspy'] = (function () {
                     break;
                 case UNWIND_CAUSES.RETURN:
                     if (block.type == BLOCK_TYPES.BASE) {
-                        this.vm.frame = this.back;
+                        vm.frame = this.back;
                         return;
                     } else {
                         this.blocks.pop();
@@ -1156,9 +1214,9 @@ window['jaspy'] = (function () {
         }
     };
     PythonFrame.prototype.raise = function () {
-        this.push(this.vm.last_exception.exc_tb);
-        this.push(this.vm.last_exception.exc_value);
-        this.push(this.vm.last_exception.exc_type);
+        this.push(vm.last_exception.exc_tb);
+        this.push(vm.last_exception.exc_value);
+        this.push(vm.last_exception.exc_type);
         this.unwind(UNWIND_CAUSES.EXCEPTION);
     };
     PythonFrame.prototype.step = function () {
@@ -1206,18 +1264,18 @@ window['jaspy'] = (function () {
             case OPCODES.GET_ITER:
                 switch (this.state) {
                     case 0:
-                        if (this.pop().call_method(this.vm, OPCODES_EXTRA[instruction.opcode])) {
+                        if (this.pop().call_method(OPCODES_EXTRA[instruction.opcode])) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
-                            this.vm.raise(TypeError, 'unsupported operand type');
+                        if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
+                            vm.raise(TypeError, 'unsupported operand type');
                             this.raise();
-                        } else if (this.vm.return_value) {
-                            this.push(this.vm.return_value);
+                        } else if (vm.return_value) {
+                            this.push(vm.return_value);
                         } else {
                             this.raise();
                         }
@@ -1244,24 +1302,24 @@ window['jaspy'] = (function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.top0();
                         left = this.top1();
-                        if (left.call_method(this.vm, '__' + slot + '__', [right])) {
+                        if (left.call_method('__' + slot + '__', [right])) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
+                        if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
                             slot = OPCODES_EXTRA[instruction.opcode];
                             right = this.pop();
                             left = this.pop();
-                            if (right.call_method(this.vm, '__r' + slot + '__', [left])) {
+                            if (right.call_method('__r' + slot + '__', [left])) {
                                 this.state = 2;
                                 this.position--;
                             }
-                        } else if (this.vm.return_value) {
+                        } else if (vm.return_value) {
                             this.popn(2);
-                            this.push(this.vm.return_value);
+                            this.push(vm.return_value);
                             break;
                         } else {
                             this.popn(2);
@@ -1270,11 +1328,11 @@ window['jaspy'] = (function () {
                         }
                     case 2:
                         this.state = 0;
-                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
-                            this.vm.raise(TypeError, 'unsupported operand type');
+                        if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
+                            vm.raise(TypeError, 'unsupported operand type');
                             this.raise();
-                        } else if (this.vm.return_value) {
-                            this.push(this.vm.return_value);
+                        } else if (vm.return_value) {
+                            this.push(vm.return_value);
                         } else {
                             this.raise();
                         }
@@ -1302,19 +1360,19 @@ window['jaspy'] = (function () {
                         right = this.pop();
                         left = this.pop();
                         console.log(right, left);
-                        if (left.call_method(this.vm, slot, [right])) {
+                        if (left.call_method(slot, [right])) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
-                            this.vm.raise(TypeError, 'unsupported operand type');
+                        if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
+                            vm.raise(TypeError, 'unsupported operand type');
                             this.raise();
-                        } else if (this.vm.return_value) {
+                        } else if (vm.return_value) {
                             if (instruction.opcode == OPCODES.DELETE_SUBSCR) {
-                                this.push(this.vm.return_value);
+                                this.push(vm.return_value);
                             }
                         } else {
                             this.raise();
@@ -1329,17 +1387,17 @@ window['jaspy'] = (function () {
                         name = this.pop();
                         left = this.pop();
                         right = this.pop();
-                        if (left.call_method(this.vm, '__setitem__', [name, right])) {
+                        if (left.call_method('__setitem__', [name, right])) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
-                            this.vm.raise(TypeError, 'unsupported operand type');
+                        if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
+                            vm.raise(TypeError, 'unsupported operand type');
                             this.raise();
-                        } else if (!this.vm.return_value) {
+                        } else if (!vm.return_value) {
                             this.raise();
                         }
                         break;
@@ -1371,14 +1429,14 @@ window['jaspy'] = (function () {
                 break;
 
             case OPCODES.RETURN_VALUE:
-                this.vm.return_value = this.pop();
+                vm.return_value = this.pop();
                 this.unwind(UNWIND_CAUSES.RETURN);
                 break;
 
             case OPCODES.YIELD_VALUE:
                 error('opcode not implemented');
-                this.vm.return_value = this.pop();
-                this.vm.frame = this.back;
+                vm.return_value = this.pop();
+                vm.frame = this.back;
                 break;
 
             case OPCODES.YIELD_FROM:
@@ -1399,9 +1457,9 @@ window['jaspy'] = (function () {
                     exc_type = this.pop();
                     exc_value = this.pop();
                     exc_tb = this.pop();
-                    this.vm.raise(exc_type, exc_value, exc_tb);
+                    vm.raise(exc_type, exc_value, exc_tb);
                 } else {
-                    this.vm.return_value = None;
+                    vm.return_value = None;
                 }
                 break;
 
@@ -1448,17 +1506,17 @@ window['jaspy'] = (function () {
                                 slot = '__delitem__';
                                 args = [new_str(name)];
                             }
-                            if (this.namespace.call_method(this.vm, slot, args)) {
+                            if (this.namespace.call_method(slot, args)) {
                                 this.state = 1;
                                 this.position -= 3;
                                 break;
                             }
                         case 1:
                             this.state = 0;
-                            if (this.vm.except(MethodNotFoundError)) {
-                                this.vm.raise(TypeError, 'invalid namespace');
+                            if (vm.except(MethodNotFoundError)) {
+                                vm.raise(TypeError, 'invalid namespace');
                                 this.raise();
-                            } else if (!this.vm.return_value) {
+                            } else if (!vm.return_value) {
                                 this.raise();
                             }
                             break;
@@ -1469,7 +1527,7 @@ window['jaspy'] = (function () {
                     } else if (name in this.locals) {
                         delete this.locals[name];
                     } else {
-                        this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                        vm.raise(NameError, 'name \'' + name + '\' is not defined');
                         this.raise();
                     }
                 }
@@ -1485,21 +1543,21 @@ window['jaspy'] = (function () {
                 if (this.namespace) {
                     switch (this.state) {
                         case 0:
-                            if (this.namespace.call_method(this.vm, '__getitem__', [new_str(name)])) {
+                            if (this.namespace.call_method('__getitem__', [new_str(name)])) {
                                 this.state = 1;
                                 this.position -= 3;
                             }
                         case 1:
                             this.state = 0;
-                            if (this.vm.return_value) {
-                                this.push(this.vm.return_value);
-                            } else if (this.vm.except(MethodNotFoundError) || this.vm.except(KeyError)) {
+                            if (vm.return_value) {
+                                this.push(vm.return_value);
+                            } else if (vm.except(MethodNotFoundError) || vm.except(KeyError)) {
                                 if (name in this.globals) {
                                     this.push(this.globals[name]);
                                 } else if (name in this.builtins) {
                                     this.push(this.builtins[name]);
                                 } else {
-                                    this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                                    vm.raise(NameError, 'name \'' + name + '\' is not defined');
                                     this.raise();
                                 }
                             } else {
@@ -1515,7 +1573,7 @@ window['jaspy'] = (function () {
                     } else if (name in this.builtins) {
                         this.push(this.builtins[name]);
                     } else {
-                        this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                        vm.raise(NameError, 'name \'' + name + '\' is not defined');
                         this.raise();
                     }
                 }
@@ -1531,7 +1589,7 @@ window['jaspy'] = (function () {
                 if (name in this.globals) {
                     delete this.globals[name];
                 } else {
-                    this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                    vm.raise(NameError, 'name \'' + name + '\' is not defined');
                     this.raise();
                 }
                 break;
@@ -1543,7 +1601,7 @@ window['jaspy'] = (function () {
                 } else if (name in this.builtins) {
                     this.push(this.builtins[name]);
                 } else {
-                    this.vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                    vm.raise(NameError, 'name \'' + name + '\' is not defined');
                     this.raise();
                 }
                 break;
@@ -1561,20 +1619,20 @@ window['jaspy'] = (function () {
                             slot = '__delattr__';
                             args = [new_str(name)];
                         }
-                        if (temp.call_method(this.vm, slot, args)) {
+                        if (temp.call_method(slot, args)) {
                             this.state = 1;
                             this.position -= 3;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
+                        if (vm.except(MethodNotFoundError)) {
                             if (instruction.opcode === OPCODES.STORE_ATTR) {
-                                this.vm.raise(TypeError, 'object does not support attribute assignment');
+                                vm.raise(TypeError, 'object does not support attribute assignment');
                             } else {
-                                this.vm.raise(TypeError, 'object does not support attribute deletion');
+                                vm.raise(TypeError, 'object does not support attribute deletion');
                             }
                             this.raise();
-                        } else if (!this.vm.return_value) {
+                        } else if (!vm.return_value) {
                             this.raise();
                         }
                         break;
@@ -1585,20 +1643,20 @@ window['jaspy'] = (function () {
                 name = this.code.names[instruction.argument];
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method(this.vm, '__getattribute__', [new_str(name)])) {
+                        if (this.top0().call_method('__getattribute__', [new_str(name)])) {
                             this.state = 1;
                             this.position -= 3;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.return_value) {
+                        if (vm.return_value) {
                             this.pop();
-                            this.push(this.vm.return_value);
+                            this.push(vm.return_value);
                             break;
                         }
-                        if (this.vm.except(AttributeError) || this.vm.except(MethodNotFoundError)) {
-                            if (this.pop().call_method(this.vm, '__getattr__', [new_str(name)])) {
+                        if (vm.except(AttributeError) || vm.except(MethodNotFoundError)) {
+                            if (this.pop().call_method('__getattr__', [new_str(name)])) {
                                 this.state = 2;
                                 this.position -= 3;
                                 break;
@@ -1610,11 +1668,11 @@ window['jaspy'] = (function () {
                         }
                     case 2:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
-                            this.vm.raise(TypeError, 'object does not support attribute access');
+                        if (vm.except(MethodNotFoundError)) {
+                            vm.raise(TypeError, 'object does not support attribute access');
                             this.raise();
-                        } else if (this.vm.return_value) {
-                            this.push(this.vm.return_value);
+                        } else if (vm.return_value) {
+                            this.push(vm.return_value);
                         } else {
                             this.raise();
                         }
@@ -1635,7 +1693,7 @@ window['jaspy'] = (function () {
                 break;
 
             case OPCODES.BUILD_LIST:
-                error('opcode not implemented');
+                this.push(new_list(this.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_SET:
@@ -1652,7 +1710,7 @@ window['jaspy'] = (function () {
                 if (name in modules) {
                     this.push(new PyModule(modules[name].namespace));
                 } else {
-                    this.vm.raise(ImportError)
+                    vm.raise(ImportError)
                     this.raise();
                 }
                 break;
@@ -1690,17 +1748,17 @@ window['jaspy'] = (function () {
                                 slot = COMPARE_SLOTS[instruction.argument];
                                 right = this.pop();
                                 left = this.pop();
-                                if (left.call_method(this.vm, slot, [right])) {
+                                if (left.call_method(slot, [right])) {
                                     this.state = 1;
                                     this.position -= 3;
                                     break;
                                 }
                             case 1:
-                                if (this.vm.return_value === NotImplemented || this.vm.except(MethodNotFoundError)) {
-                                    this.vm.raise(TypeError, 'unsupported boolean operator');
+                                if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
+                                    vm.raise(TypeError, 'unsupported boolean operator');
                                     this.raise();
-                                } else if (this.vm.return_value) {
-                                    this.push(this.vm.return_value);
+                                } else if (vm.return_value) {
+                                    this.push(vm.return_value);
                                 } else {
                                     this.raise();
                                 }
@@ -1724,20 +1782,20 @@ window['jaspy'] = (function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method(this.vm, '__bool__')) {
+                        if (this.top0().call_method('__bool__')) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
-                            if (this.top0().call_method(this.vm, '__len__')) {
+                        if (vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method('__len__')) {
                                 this.state = 2;
                                 this.position--;
                                 break;
                             }
-                        } else if (!this.vm.return_value) {
+                        } else if (!vm.return_value) {
                             this.pop();
                             this.raise();
                             break;
@@ -1745,15 +1803,15 @@ window['jaspy'] = (function () {
                     case 2:
                         this.state = 0;
                         this.pop();
-                        if (this.vm.except(MethodNotFoundError)) {
+                        if (vm.except(MethodNotFoundError)) {
                             this.position = instruction.argument;
-                        } else if (this.vm.return_value) {
-                            if (this.vm.return_value instanceof PyInt) {
-                                if (this.vm.return_value.value) {
+                        } else if (vm.return_value) {
+                            if (vm.return_value instanceof PyInt) {
+                                if (vm.return_value.value) {
                                     this.position = instruction.argument;
                                 }
                             } else {
-                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                vm.raise(TypeError, 'invalid result type of boolean conversion');
                                 this.raise();
                             }
                         } else {
@@ -1772,20 +1830,20 @@ window['jaspy'] = (function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method(this.vm, '__bool__')) {
+                        if (this.top0().call_method('__bool__')) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
-                            if (this.top0().call_method(this.vm, '__len__')) {
+                        if (vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method('__len__')) {
                                 this.state = 2;
                                 this.position--;
                                 break;
                             }
-                        } else if (!this.vm.return_value) {
+                        } else if (!vm.return_value) {
                             this.pop();
                             this.raise();
                             break;
@@ -1793,13 +1851,13 @@ window['jaspy'] = (function () {
                     case 2:
                         this.state = 0;
                         this.pop();
-                        if (!this.vm.except(MethodNotFoundError)) {
-                            if (this.vm.return_value instanceof PyInt) {
-                                if (!this.vm.return_value.value) {
+                        if (!vm.except(MethodNotFoundError)) {
+                            if (vm.return_value instanceof PyInt) {
+                                if (!vm.return_value.value) {
                                     this.position = instruction.argument;
                                 }
-                            } else if (this.vm.return_value) {
-                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            } else if (vm.return_value) {
+                                vm.raise(TypeError, 'invalid result type of boolean conversion');
                                 this.raise();
                             } else {
                                 this.raise();
@@ -1820,38 +1878,38 @@ window['jaspy'] = (function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method(this.vm, '__bool__')) {
+                        if (this.top0().call_method('__bool__')) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
-                            if (this.top0().call_method(this.vm, '__len__')) {
+                        if (vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method('__len__')) {
                                 this.state = 2;
                                 this.position--;
                                 break;
                             }
-                        } else if (!this.vm.return_value) {
+                        } else if (!vm.return_value) {
                             this.pop();
                             this.raise();
                             break;
                         }
                     case 2:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
+                        if (vm.except(MethodNotFoundError)) {
                             this.position = instruction.argument;
-                        } else if (this.vm.return_value) {
-                            if (this.vm.return_value instanceof PyInt) {
-                                if (this.vm.return_value.value) {
+                        } else if (vm.return_value) {
+                            if (vm.return_value instanceof PyInt) {
+                                if (vm.return_value.value) {
                                     this.position = instruction.argument;
                                 } else {
                                     this.pop();
                                 }
                             } else {
                                 this.pop();
-                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                vm.raise(TypeError, 'invalid result type of boolean conversion');
                                 this.raise();
                             }
                         } else {
@@ -1873,36 +1931,36 @@ window['jaspy'] = (function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method(this.vm, '__bool__')) {
+                        if (this.top0().call_method('__bool__')) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0;
-                        if (this.vm.except(MethodNotFoundError)) {
-                            if (this.top0().call_method(this.vm, '__len__')) {
+                        if (vm.except(MethodNotFoundError)) {
+                            if (this.top0().call_method('__len__')) {
                                 this.state = 2;
                                 this.position--;
                                 break;
                             }
-                        } else if (!this.vm.return_value) {
+                        } else if (!vm.return_value) {
                             this.pop();
                             this.raise();
                             break;
                         }
                     case 2:
                         this.state = 0;
-                        if (!this.vm.except(MethodNotFoundError)) {
-                            if (this.vm.return_value instanceof PyInt) {
-                                if (!this.vm.return_value.value) {
+                        if (!vm.except(MethodNotFoundError)) {
+                            if (vm.return_value instanceof PyInt) {
+                                if (!vm.return_value.value) {
                                     this.position = instruction.argument;
                                 } else {
                                     this.pop();
                                 }
-                            } else if (this.vm.return_value) {
+                            } else if (vm.return_value) {
                                 this.pop();
-                                this.vm.raise(TypeError, 'invalid result type of boolean conversion');
+                                vm.raise(TypeError, 'invalid result type of boolean conversion');
                                 this.raise();
                             } else {
                                 this.pop();
@@ -1916,22 +1974,22 @@ window['jaspy'] = (function () {
             case OPCODES.FOR_ITER:
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method(this.vm, '__next__')) {
+                        if (this.top0().call_method('__next__')) {
                             this.state = 1;
                             this.position--;
                             break;
                         }
                     case 1:
                         this.state = 0
-                        if (this.vm.except(MethodNotFoundError)) {
+                        if (vm.except(MethodNotFoundError)) {
                             this.pop();
-                            this.vm.raise(TypeError, 'object does not support iteration');
+                            vm.raise(TypeError, 'object does not support iteration');
                             this.raise();
-                        } else if (this.vm.except(StopIteration)) {
+                        } else if (vm.except(StopIteration)) {
                             this.pop();
                             this.position += instruction.argument;
-                        } else if (this.vm.return_value) {
-                            this.push(this.vm.return_value);
+                        } else if (vm.return_value) {
+                            this.push(vm.return_value);
                         } else {
                             this.pop();
                             this.raise();
@@ -1985,7 +2043,7 @@ window['jaspy'] = (function () {
                     error('unsupported raise format');
                 }
                 exc_type = this.pop();
-                this.vm.raise(exc_type, None, None);
+                vm.raise(exc_type, None, None);
                 this.raise();
                 break;
 
@@ -2087,11 +2145,11 @@ window['jaspy'] = (function () {
     NativeFrame.prototype.step = function () {
         assert(!this.code.simple);
         try {
-            var result = this.code.func(this.vm, this, this.args);
+            var result = this.code.func(this, this.args);
         } catch (error) {
             if (error instanceof PyObject) {
-                this.vm.raise(error.cls, error);
-                this.vm.frame = this.back;
+                vm.raise(error.cls, error);
+                vm.frame = this.back;
                 return;
             }
             throw error;
@@ -2138,12 +2196,18 @@ window['jaspy'] = (function () {
             // TODO: create traceback
             //console.log('error in line: ' + this.frame.get_line_number());
             exc_tb = None;
+            console.log(exc_value);
             exc_value.dict.set('__traceback__', exc_tb);
         }
         this.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
     };
     VM.prototype.run = function (object, args, kwargs) {
         var old_frame = this.frame;
+        var old_vm = vm;
+        vm = this;
+        if (object instanceof PythonCode) {
+            object = new_code(object);
+        }
         if (object instanceof Frame) {
             this.frame = object;
         } else if (object instanceof PyCode) {
@@ -2158,6 +2222,7 @@ window['jaspy'] = (function () {
             this.frame.step();
         }
         this.frame = old_frame;
+        vm = old_vm;
         if (!this.return_value) {
             console.log(this.last_exception.exc_value.dict.get('args').value[0].value)
         }
@@ -2200,11 +2265,9 @@ window['jaspy'] = (function () {
                         args: args, kwargs: kwargs
                     });
                     try {
-                        result = object.func(vm, vm.frame, vm.frame.args);
+                        result = object.func(vm.frame, vm.frame.args);
                         if (result == undefined || result instanceof PyObject) {
-                            if (result instanceof PyObject) {
-                                vm.return_value = result;
-                            }
+                            vm.return_value = result || None;
                             vm.frame = frame.back;
                             return false;
                         } else {
@@ -2237,7 +2300,7 @@ window['jaspy'] = (function () {
                 args = [object.self].concat(args);
                 object = object.func;
             } else if (object instanceof PyObject) {
-                result = object.call_method(this, '__call__', args, kwargs);
+                result = object.call_method('__call__', args, kwargs);
                 if (vm.except(MethodNotFoundError)) {
                     vm.raise(TypeError, 'object is not callable');
                 }
@@ -2284,28 +2347,20 @@ window['jaspy'] = (function () {
 
 
 
-    py_type.define_method_old('__new__', function (args) {
-        if (!(args['mcs'] instanceof PyType)) {
+    py_type.define_method('__new__', function (mcs, name, bases, attributes) {
+        if (!(mcs instanceof PyType)) {
             raise(TypeError, 'invalid type of "mcs" argument');
         }
-        if (!(args['name'] instanceof PyStr)) {
-            raise(TypeError, 'invalid type of "name" argument');
-        }
-        if (!(args['bases'] instanceof PyTuple)) {
-            raise(TypeError, 'invalid type of "bases" argument');
-        }
-        if (!(args['attributes'] instanceof PyDict)) {
+        if (!(attributes instanceof PyDict)) {
             raise(TypeError, 'invalid type of "attributes" argument')
         }
-        var name = args['name'].value;
-        var bases = args['bases'].value;
-        return new PyType(name, bases, args['attributes'], args['mcs']);
-    }, ['mcs', 'name', 'bases', 'attributes'], {simple: true});
-    py_type.define_method_old('__init__', function (args) {
+        return new PyType(unpack_str(name), unpack_tuple(bases), attributes, mcs);
+    }, ['name', 'bases', 'attributes']);
+    py_type.define_method('__init__', function (cls, name, bases, attributes) {
 
-    }, ['cls', 'name', 'bases', 'attributes'], {simple: true});
+    }, ['name', 'bases', 'attributes']);
 
-    py_type.define_method_old('__call__', function (vm, frame, args) {
+    py_type.define_method_old('__call__', function (frame, args) {
         switch (frame.position) {
             case 0:
                 if (args['cls'].call_classmethod(vm, '__new__', args['var_args'], args['var_kwargs'])) {
@@ -2316,7 +2371,7 @@ window['jaspy'] = (function () {
                     return null;
                 }
                 frame.store['instance'] = vm.return_value;
-                if (frame.store['instance'].call_method(vm, '__init__', args['var_args'], args['var_kwargs'])) {
+                if (frame.store['instance'].call_method('__init__', args['var_args'], args['var_kwargs'])) {
                     return 2;
                 }
             case 2:
@@ -2340,22 +2395,23 @@ window['jaspy'] = (function () {
     }, ['mcs', 'bases'], {simple: true});
 
 
-    py_object.define_method_old('__new__', function (args) {
-        if (!(args.cls instanceof PyType)) {
+    py_object.define_method('__new__', function (cls, var_args, var_kwargs) {
+        if (!(cls instanceof PyType)) {
             raise(TypeError, 'object.__new__(X): X is not a type object');
         }
-        if (args.cls.native !== py_object) {
-            raise(TypeError, 'object.__new__() is not safe, use ' + args.cls.native.cls + '.__new__()');
+        if (cls.native !== py_object) {
+            raise(TypeError, 'object.__new__() is not safe, use ' + cls.native.name + '.__new__()');
         }
-        return new PyObject(args.cls, new PyDict());
-    }, ['cls', 'var_args', 'var_kwargs'], {
+        return new PyObject(cls, new PyDict());
+    }, ['var_args', 'var_kwargs'], {
         flags: CODE_FLAGS.VAR_ARGS | CODE_FLAGS.VAR_KWARGS,
-        simple: true
     });
-    py_object.define_method_old('__init__', function (vm, frame, args) {
 
-    }, ['self']);
-    py_object.define_method_old('__getattribute__', function (vm, frame, args) {
+    py_object.define_method('__init__', function (self) {
+
+    });
+
+    py_object.define_method_old('__getattribute__', function (frame, args) {
         var value;
         switch (frame.position) {
             case 0:
@@ -2366,7 +2422,7 @@ window['jaspy'] = (function () {
                 if (!value) {
                     value = args.self.cls.lookup(args.name);
                     if (value) {
-                        if (value.call_method(vm, '__get__', [args['self'], args['self'].cls])) {
+                        if (value.call_method('__get__', [args['self'], args['self'].cls])) {
                             return 1;
                         }
                     } else {
@@ -2386,7 +2442,7 @@ window['jaspy'] = (function () {
                 }
         }
     }, ['self', 'name']);
-    py_object.define_method_old('__setattr__', function (vm, frame, args) {
+    py_object.define_method_old('__setattr__', function (frame, args) {
         switch (frame.position) {
             case 0:
                 if (!(args['name'] instanceof PyStr)) {
@@ -2397,7 +2453,7 @@ window['jaspy'] = (function () {
                 }
                 var value = args['self'].cls.lookup(args['name']);
                 if (value && value.cls.lookup('__set__')) {
-                    if (value.call_method(vm, '__set__', [args['self'], args['item']])) {
+                    if (value.call_method('__set__', [args['self'], args['item']])) {
                         return 1;
                     }
                 } else {
@@ -2409,15 +2465,15 @@ window['jaspy'] = (function () {
         }
     }, ['self', 'name', 'item']);
 
-    py_object.define_method_old('__str__', function (args) {
-        var module = args.self.cls.dict.get('__module__');
-        var address = ('0000000000000' + args.self.get_id().toString(16)).substr(-13);
+    py_object.define_method('__str__', function (self) {
+        var module = self.cls.dict.get('__module__');
+        var address = ('0000000000000' + self.get_id().toString(16)).substr(-13);
         if (module instanceof PyStr) {
-            return new_str('<' + module.value + '.' + args.self.cls.name + ' object at 0x' + address + '>');
+            return new_str('<' + module.value + '.' + self.cls.name + ' object at 0x' + address + '>');
         } else {
-            return new_str('<' + args.self.cls.name + ' object at 0x' + address +'>');
+            return new_str('<' + self.cls.name + ' object at 0x' + address +'>');
         }
-    }, ['self'], {simple: true});
+    });
 
 
     None.cls.define_method_old('__new__', function (args) {
@@ -2435,7 +2491,7 @@ window['jaspy'] = (function () {
     //py_function.define_method_old('__str__', )
 
 
-    var getattr = new_native(function (vm, frame, args) {
+    var getattr = new_native(function (frame, args) {
         var slot;
         while (true) {
             switch (frame.position) {
@@ -2466,7 +2522,7 @@ window['jaspy'] = (function () {
         defaults: {fallback: null}
     });
 
-    var print = new_native(function (vm, frame, args) {
+    var print = new_native(function (frame, args) {
         var slot, object;
         while (true) {
             switch (frame.position) {
@@ -2478,7 +2534,7 @@ window['jaspy'] = (function () {
                         if (object.cls == py_str) {
                             vm.return_value = object;
                         } else {
-                            if (object.call_method(vm, '__str__')) return 1;
+                            if (object.call_method('__str__')) return 1;
                         }
                         frame.position = 1;
                     } else {
@@ -2524,13 +2580,13 @@ window['jaspy'] = (function () {
     });
 
 
-    py_int.define_method_old('__neg__', function (vm, frame, args) {
+    py_int.define_method_old('__neg__', function (frame, args) {
         if (!args.self.is_instance_of(py_int)) {
             raise(TypeError, 'invalid operand type');
         }
         return new_int(-args.self.value)
     }, ['self']);
-    py_int.define_method_old('__str__', function (vm, frame, args) {
+    py_int.define_method_old('__str__', function (frame, args) {
         if (!(args.self instanceof PyInt)) {
             raise(TypeError, 'invalid type');
         }
@@ -2628,7 +2684,7 @@ window['jaspy'] = (function () {
         return args.self;
     }, ['self'], {simple: true});
 
-    py_dict.define_method_old('__setitem__', function (vm, frame, args) {
+    py_dict.define_method_old('__setitem__', function (frame, args) {
         if (!(args['self'] instanceof PyDict)) {
             raise(TypeError, 'invalid type of \'self\' argument');
         }
@@ -2636,7 +2692,7 @@ window['jaspy'] = (function () {
             case 0:
                 if (args['key'].cls === py_str) {
                     vm.return_value = args['key'];
-                } else if (args['key'].call_method(this.vm, '__hash__')) {
+                } else if (args['key'].call_method('__hash__')) {
                     return 1;
                 }
             case 1:
@@ -2724,23 +2780,23 @@ window['jaspy'] = (function () {
     var py_range = new PyType('range');
     py_range.define_method_old('__init__', function (args) {
         if (args['stop'] === None) {
-            args['self'].set_attr('start', new_int(0));
-            args['self'].set_attr('stop', args['start']);
+            args['self'].setattr('start', new_int(0));
+            args['self'].setattr('stop', args['start']);
         } else {
-            args['self'].set_attr('start', args['start']);
-            args['stop'].set_attr('stop', args['stop']);
+            args['self'].setattr('start', args['start']);
+            args['stop'].setattr('stop', args['stop']);
         }
         if (args['step'] === None) {
-            args['self'].set_attr('step', new_int(1));
+            args['self'].setattr('step', new_int(1));
         } else {
-            args['self'].set_attr('step', args['step']);
+            args['self'].setattr('step', args['step']);
         }
     }, ['self', 'start', 'stop', 'step'], {
         simple: true,
         defaults: {'stop': None, 'step': None}
     });
     py_range.define_method_old('__iter__', function (args) {
-        return new PyRangeIterator(args['self'].get_attr('start'), args['self'].get_attr('stop'), args['self'].get_attr('step'));
+        return new PyRangeIterator(args['self'].getattr('start'), args['self'].getattr('stop'), args['self'].getattr('step'));
     }, ['self'], {simple: true});
 
 
@@ -2748,7 +2804,7 @@ window['jaspy'] = (function () {
 
 
 
-    var build_class = new_native(function (vm, frame, args) {
+    var build_class = new_native(function (frame, args) {
         var possible_meta_classes, index, good, bases;
         if (!(args['func'].cls == py_function)) {
             raise(TypeError, 'invalid type of \'func\' argument');
@@ -2822,7 +2878,7 @@ window['jaspy'] = (function () {
                     return null;
                 }
                 frame.store.cls = vm.return_value;
-                if (vm.return_value.call_method(vm, '__init__', [args['name'], new_tuple(vm.return_value.bases), frame.store.namespace], args['keywords'])) {
+                if (vm.return_value.call_method('__init__', [args['name'], new_tuple(vm.return_value.bases), frame.store.namespace], args['keywords'])) {
                     return 4;
                 }
             case 4:
@@ -2838,7 +2894,7 @@ window['jaspy'] = (function () {
         defaults: {'metaclass': None}
     });
 
-    py_property.define_method_old('__get__', function (vm, frame, args) {
+    py_property.define_method_old('__get__', function (frame, args) {
         switch (frame.position) {
             case 0:
                 if (vm.call_object(args.self.getattr('fget'), [args.instance])) {
@@ -2849,7 +2905,7 @@ window['jaspy'] = (function () {
         }
     }, ['self', 'instance', 'owner']);
 
-    py_property.define_method_old('__set__', function (vm, frame, args) {
+    py_property.define_method_old('__set__', function (frame, args) {
         switch (frame.position) {
             case 0:
                 if (vm.call_object(args.self.getattr('fset'), [args.instance, args.value])) {
@@ -2859,6 +2915,15 @@ window['jaspy'] = (function () {
                 break;
         }
     }, ['self', 'instance', 'value']);
+
+    py_module.define_method('__getattribute__', function (self, name) {
+        var value = self.dict.get(name);
+        if (!value) {
+            raise(AttributeError, 'module has no attribute \'' + name + '\'');
+        }
+        console.log('module', value);
+        return value;
+    }, ['name']);
 
     var append_body = new PyType('test');
 
@@ -2879,7 +2944,7 @@ window['jaspy'] = (function () {
         'tuple': py_tuple,
 
         'None': None,
-        'NotImplemented': NotImplemented,
+        NotImplemented: NotImplemented,
         'Ellipsis': Ellipsis,
         'False': False,
         'True': True,
@@ -2913,7 +2978,7 @@ window['jaspy'] = (function () {
         'TabError': TabError,
         'SystemError': SystemError,
         'SystemExit': SystemExit,
-        'TypeError': TypeError,
+        TypeError: TypeError,
         'UnboundLocalError': UnboundLocalError,
         'UnicodeError': UnicodeError,
         'UnicodeEncodeError': UnicodeEncodeError,
@@ -2969,23 +3034,31 @@ window['jaspy'] = (function () {
 
     function PythonModule(name, code, depends) {
         Module.call(this, name, depends);
+        this.code = code;
     }
 
     function NativeModule(name, func, depends) {
         Module.call(this, name, depends);
         this.namespace = func.apply(null, [this].concat(this.depends.map(get_namespace)));
     }
-    NativeModule.prototype.define_function = function () {
-
+    NativeModule.prototype.define_function = function (name, func, signature, options) {
+        options = options || {};
+        options.module = this.name;
+        options.name = name;
+        options.qualname = name;
+        return new_native(func, signature, options);
     };
     NativeModule.prototype.define_type = function (name, bases, mcs) {
         return new PyType(name, bases, new PyDict(), mcs);
     };
 
     function define_module(name, code_or_func, depends) {
+        if (code_or_func instanceof PyCode) {
+            code_or_func = code_or_func.value
+        }
         if (typeof code_or_func == 'function') {
             return new NativeModule(name, code_or_func, depends);
-        } else if (typeof code_or_func instanceof PythonCode) {
+        } else if (code_or_func instanceof PythonCode) {
             return new PythonModule(name, code_or_func, depends);
         } else {
             throw new Error('invalid type of code or function');
@@ -2996,12 +3069,69 @@ window['jaspy'] = (function () {
        return builtins;
     });
 
+    define_module('js', function (module) {
+        return {
+            'JSError': JSError
+        }
+    });
+
+
+
+    function main(name) {
+        if (!vm) {
+            vm = new VM();
+        }
+        vm.run(modules[name].code);
+    }
+
+    function Loader() {
+        this.root = './';
+        this.modules = {};
+        this.pending = {};
+    }
+    Loader.prototype.error = function (name) {
+        console.log(name);
+    };
+    Loader.prototype.success = function (name, source) {
+        console.log(name, source);
+    };
+    Loader.prototype.load = function (name, success, error) {
+        if (name in this.modules) {
+            return this.module[name];
+        }
+        if (name in this.pending) {
+            this.pending[name].push({success: success, error: error})
+            return;
+        }
+        this.pending[name] = [{success: success, error: error}]
+        var filename = this.root + name.split('.').join('/') + '.js';
+        var request = new XMLHttpRequest();
+        request.open('GET', filename, true);
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+                if (request.status == 200) {
+                    jaspy.loader.success(name, request.responseText);
+                } else {
+                    jaspy.loader.error(name);
+                }
+            }
+        };
+        request.send();
+    };
+
+    var loader = new Loader();
 
 
     return {
+        'main': main,
+
+        'loader': loader,
+
         'define_module': define_module,
 
         'unpack_str': unpack_str,
+
+        raise: raise,
 
         'builtins': builtins,
 
