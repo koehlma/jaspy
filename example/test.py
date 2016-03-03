@@ -3,8 +3,12 @@ import time
 
 
 print(__name__)
+print(dom)
+print(time)
 
 wrapper = dom.Element()
+print('wrapper', wrapper)
+print('css', wrapper.css)
 wrapper.css('background', '#FF0000')
 print(wrapper.css('background'))
 

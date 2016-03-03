@@ -59,6 +59,7 @@ def disassemble(const):
         if isinstance(const, types.CodeType):
             disassemble(const)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('module', type=argparse.FileType('r'))
