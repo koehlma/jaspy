@@ -1,6 +1,6 @@
 var DEBUG = false;
 
-var PRINT_TRACEBACK = true;
+var TRACEBACK_ON_EXCEPTION = true;
 
 var CODE_FLAGS = {
     OPTIMIZED: 1 << 0,

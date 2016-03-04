@@ -988,8 +988,8 @@ PythonFrame.prototype.step = function () {
             if (instruction.argument != 1) {
                 error('unsupported raise format');
             }
-            exc_type = this.pop();
-            raise(exc_type, None, None);
+            exc_value = this.pop();
+            raise(exc_value.cls, exc_value);
             this.raise();
             break;
 

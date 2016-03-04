@@ -37,6 +37,7 @@ window['jaspy'] = (function () {
     // #include "builtins/py_property.js"
     // #include "builtins/py_module.js"
     // #include "builtins/py_none.js"
+    // #include "builtins/py_exception.js"
 
     // #include "builtins/py_builtins.js"
 

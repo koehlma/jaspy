@@ -34,23 +34,23 @@ function raise(exc_type, exc_value, exc_tb) {
     }
 
     if (!exc_tb) {
-        if (PRINT_TRACEBACK) {
-            console.log('Traceback (most recent call last):');
+        if (TRACEBACK_ON_EXCEPTION) {
+            var message = [];
             frame = vm.frame;
             while (frame) {
-                console.log('    File "' + frame.code.filename + '", line ' + frame.get_line_number() + ', in ' + frame.code.name);
+                message.push('    File "' + frame.code.filename + '", line ' + frame.get_line_number() + ', in ' + frame.code.name);
                 frame = frame.back;
             }
+            message.push('Traceback (most recent call last):');
+            message = message.reverse();
             if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').value[0] instanceof PyStr) {
-                console.log(exc_type.name + ': ' + exc_value.getattr('args').value[0].value);
+                message.push(exc_type.name + ': ' + exc_value.getattr('args').value[0].value);
             } else {
-                console.log(exc_type.name);
+                message.push(exc_type.name);
             }
-
+            console.error(message.join('\n'));
         }
-
         exc_tb = None;
-        //console.log(exc_value);
         exc_value.dict.set('__traceback__', exc_tb);
     }
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
@@ -68,11 +68,12 @@ function run(object, args, kwargs) {
     if (object instanceof Frame) {
         vm.frame = object;
     } else if (object instanceof PyCode) {
+        var namespace = {
+            '__name__': new_str('__main__')
+        };
         vm.frame = new PythonFrame(object.value, {
             vm: vm, builtins: builtins,
-            globals: {
-                '__name__': new_str('__main__')
-            }
+            locals: namespace, globals: namespace
         })
     } else {
         error('object is not runnable');

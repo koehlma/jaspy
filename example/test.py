@@ -96,6 +96,37 @@ print(str(dom))
 print('abc'.startswith('a'))
 
 
+class ABC:
+    def __init__(self):
+        raise TypeError()
+
+try:
+    ABC()
+except TypeError:
+    pass
+
+
+def abc():
+    int(None)
+
+
+try:
+    abc()
+except TypeError:
+    pass
+
+
+def recursion(value):
+    if value <= 0:
+        raise Exception('check propagation')
+    recursion(value - 1)
+
+try:
+    recursion(10)
+except Exception:
+    pass
+
+
 x = True
 while True:
     time.sleep(0.5)
