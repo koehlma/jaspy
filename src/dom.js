@@ -73,7 +73,6 @@ jaspy.define_module('dom', function (module, builtins) {
     }, ['other']);
 
 
-
     module.define_function('get_body', function () {
         if (document.body) {
             var element = new jaspy.PyObject(Element, new jaspy.PyDict());
