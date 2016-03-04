@@ -1,5 +1,7 @@
 var DEBUG = false;
 
+var PRINT_TRACEBACK = true;
+
 var CODE_FLAGS = {
     OPTIMIZED: 1 << 0,
     NEWLOCALS: 1 << 1,

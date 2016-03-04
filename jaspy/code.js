@@ -204,6 +204,7 @@ function NativeCode(func, options, signature) {
     options = options || {};
     options.flags = (options.flags || 0) | CODE_FLAGS.NATIVE;
     options.name = options.name || '<native>';
+    options.filename = options.filename || '<js>';
 
     Code.call(this, native_signature(signature), options);
 

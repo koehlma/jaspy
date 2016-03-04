@@ -201,7 +201,7 @@ PythonFrame.prototype.step = function () {
             break;
 
         case OPCODES.GET_YIELD_FROM_ITER:
-            if (this.state === 0 && is_iterable(this.top0())) {
+            if (this.state === 0 && isiterable(this.top0())) {
                 break;
             }
         case OPCODES.UNARY_POSITIVE:

@@ -22,6 +22,8 @@ function except(exc_type) {
 }
 
 function raise(exc_type, exc_value, exc_tb) {
+    var frame;
+
     if (typeof exc_value == 'string') {
         exc_value = new_exception(exc_type, exc_value);
     }
@@ -32,7 +34,21 @@ function raise(exc_type, exc_value, exc_tb) {
     }
 
     if (!exc_tb) {
-        // TODO: create traceback
+        if (PRINT_TRACEBACK) {
+            console.log('Traceback (most recent call last):');
+            frame = vm.frame;
+            while (frame) {
+                console.log('    File "' + frame.code.filename + '", line ' + frame.get_line_number() + ', in ' + frame.code.name);
+                frame = frame.back;
+            }
+            if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').value[0] instanceof PyStr) {
+                console.log(exc_type.name + ': ' + exc_value.getattr('args').value[0].value);
+            } else {
+                console.log(exc_type.name);
+            }
+
+        }
+
         exc_tb = None;
         //console.log(exc_value);
         exc_value.dict.set('__traceback__', exc_tb);
