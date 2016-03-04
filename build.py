@@ -19,7 +19,7 @@ import os
 INCLUDE_REGEX = re.compile('^(\s*)//\s*#include\s*"(.+)"\s*$', re.MULTILINE)
 
 
-os.chdir(os.path.join(os.path.dirname(__file__), 'src'))
+os.chdir(os.path.join(os.path.dirname(__file__), 'jaspy'))
 
 with open('__init__.js') as init:
     source = init.read()
