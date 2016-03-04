@@ -18,9 +18,9 @@ jaspy.define_module('time', function (module, builtins) {
         switch (state) {
             case 0:
                 setTimeout(function () {
-                    jaspy.vm.run(frame);
+                    jaspy.run(frame);
                 }, jaspy.unpack_float(seconds) * 1000);
-                jaspy.vm.pause();
+                jaspy.pause();
                 return 1;
             case 1:
                 break;

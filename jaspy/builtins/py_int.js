@@ -21,7 +21,7 @@ py_int.define_method('__new__', function (cls, initializer, base, state, frame) 
                 return 1;
             }
         case 1:
-            if (vm.except(MethodNotFoundError)) {
+            if (except(MethodNotFoundError)) {
                 raise(TypeError, 'invalid type of int initializer');
             } else if (vm.return_value) {
                 return vm.return_value;

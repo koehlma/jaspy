@@ -13,6 +13,7 @@ var CODE_FLAGS = {
     PYTHON: 1 << 10,
     NATIVE: 1 << 11
 };
+
 var BLOCK_TYPES = {
     BASE: 0,
     LOOP: 1,
@@ -40,18 +41,17 @@ var COMPARE_OPS = {
     NIS: 9,
     EXC: 10
 };
-var COMPARE_SLOTS = (function () {
-    var map = new Array(8);
-    map[COMPARE_OPS.LT] = '__lt__';
-    map[COMPARE_OPS.LE] = '__le__';
-    map[COMPARE_OPS.EQ] = '__eq__';
-    map[COMPARE_OPS.NE] = '__ne__';
-    map[COMPARE_OPS.GT] = '__gt__';
-    map[COMPARE_OPS.GE] = '__ge__';
-    map[COMPARE_OPS.IN] = '__contains__';
-    map[COMPARE_OPS.NIN] = '__contains__';
-    return map;
-})();
+
+var COMPARE_SLOTS = [
+    '__lt__',
+    '__le__',
+    '__eq__',
+    '__ne__',
+    '__gt__',
+    '__ge__',
+    '__contains__',
+    '__contains__'
+];
 
 var OPCODES = {
     BEFORE_ASYNC_WITH: 52,
@@ -169,6 +169,7 @@ var OPCODES = {
     YIELD_FROM: 72,
     YIELD_VALUE: 86
 };
+
 var OPCODES_EXTRA = (function () {
     var map = new Array(200);
     map[OPCODES.UNARY_POSITIVE] = '__pos__';

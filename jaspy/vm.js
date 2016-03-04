@@ -1,30 +1,34 @@
-function VM() {
-    this.frame = null;
+var vm = {};
 
-    this.return_value = None;
-    this.last_exception = null;
+vm.frame = null;
+
+vm.return_value = None;
+vm.last_exception = null;
+
+function pause() {
+    vm.frame = null;
 }
-VM.prototype.pause = function () {
-    this.frame = null;
-};
-VM.prototype.step = function () {
-    this.frame.step();
-};
-VM.prototype.except = function (exc_type) {
-    if (!this.return_value && this.last_exception.exc_type.is_subclass_of(exc_type)) {
-        this.return_value = None;
+
+function step() {
+    vm.frame.step();
+}
+
+function except(exc_type) {
+    if (!vm.return_value && issubclass(vm.last_exception.exc_type, exc_type)) {
+        vm.return_value = None;
         return true;
     }
     return false;
-};
-VM.prototype.raise = function (exc_type, exc_value, exc_tb) {
+}
+
+function raise(exc_type, exc_value, exc_tb) {
     if (typeof exc_value == 'string') {
         exc_value = new_exception(exc_type, exc_value);
     }
-    if (this.return_value === null) {
-        exc_value.dict.set('__context__', this.last_exception.exc_value);
+    if (vm.return_value === null) {
+        exc_value.dict.set('__context__', vm.last_exception.exc_value);
     } else {
-        this.return_value = null;
+        vm.return_value = null;
     }
 
     if (!exc_tb) {
@@ -33,21 +37,23 @@ VM.prototype.raise = function (exc_type, exc_value, exc_tb) {
         //console.log(exc_value);
         exc_value.dict.set('__traceback__', exc_tb);
     }
-    this.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
-};
-VM.prototype.run = function (object, args, kwargs) {
-    var old_frame = this.frame;
-    var old_vm = vm;
-    vm = this;
-    jaspy.vm = this;
+    vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
+
+    if (vm.frame instanceof NativeFrame) {
+        throw exc_value;
+    }
+}
+
+function run(object, args, kwargs) {
+    var old_frame = vm.frame;
     if (object instanceof PythonCode) {
         object = new_code(object);
     }
     if (object instanceof Frame) {
-        this.frame = object;
+        vm.frame = object;
     } else if (object instanceof PyCode) {
-        this.frame = new PythonFrame(object.value, {
-            vm: this, builtins: builtins,
+        vm.frame = new PythonFrame(object.value, {
+            vm: vm, builtins: builtins,
             globals: {
                 '__name__': new_str('__main__')
             }
@@ -55,20 +61,20 @@ VM.prototype.run = function (object, args, kwargs) {
     } else {
         error('object is not runnable');
     }
-    while (this.frame) {
-        this.frame.step();
+    while (vm.frame) {
+        vm.frame.step();
     }
-    this.frame = old_frame;
-    vm = old_vm;
-    if (!this.return_value) {
-        console.log(this.last_exception.exc_value.dict.get('args').value[0].value)
+    vm.frame = old_frame;
+    if (!vm.return_value) {
+        console.log(vm.last_exception.exc_value.dict.get('args').value[0].value)
     }
-};
-VM.prototype.call_object = function (object, args, kwargs, defaults, closure) {
-    var code, result, frame, vm = this;
+}
+
+function call_object(object, args, kwargs, defaults, closure) {
+    var code, result, frame;
     while (true) {
         if (object instanceof PythonCode) {
-            this.frame = new PythonFrame(object, {
+            vm.frame = new PythonFrame(object, {
                 vm: vm, back: vm.frame, defaults: defaults,
                 args: args, kwargs: kwargs, closure: closure
             });
@@ -81,16 +87,16 @@ VM.prototype.call_object = function (object, args, kwargs, defaults, closure) {
                     vm.return_value = result || None;
                 } catch (error) {
                     if (error instanceof PyObject) {
-                        vm.raise(error.cls, error);
-                        this.frame = this.frame.back;
+                        raise(error.cls, error);
+                        vm.frame = vm.frame.back;
                     } else {
                         throw error;
                     }
                 }
                 return false;
             } else {
-                this.frame = frame = new NativeFrame(object, {
-                    vm: vm, back: vm.frame, defaults: defaults,
+                vm.frame = frame = new NativeFrame(object, {
+                    back: vm.frame, defaults: defaults,
                     args: args, kwargs: kwargs
                 });
                 try {
@@ -107,8 +113,7 @@ VM.prototype.call_object = function (object, args, kwargs, defaults, closure) {
                     }
                 } catch (error) {
                     if (error instanceof PyObject) {
-                        vm.raise(error.cls, error);
-                        this.frame = this.frame.back;
+                        vm.frame = vm.frame.back;
                         return false;
                     } else {
                         throw error;
@@ -125,20 +130,19 @@ VM.prototype.call_object = function (object, args, kwargs, defaults, closure) {
                     closure = closure.value;
                 }
             } else {
-                this.raise(TypeError, 'invalid type of function code')
+                raise(TypeError, 'invalid type of function code')
             }
         } else if (object instanceof PyMethod) {
             args = [object.self].concat(args);
             object = object.func;
         } else if (object instanceof PyObject) {
             result = object.call_method('__call__', args, kwargs);
-            if (vm.except(MethodNotFoundError)) {
-                vm.raise(TypeError, 'object is not callable');
+            if (except(MethodNotFoundError)) {
+                raise(TypeError, 'object is not callable');
             }
             return result;
         } else {
             error('invalid callable');
         }
     }
-};
-var vm
+}

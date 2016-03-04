@@ -91,6 +91,9 @@ window['jaspy'] = (function () {
         'True': True,
 
         'PythonCode': PythonCode,
-        'NativeCode': NativeCode
+        'NativeCode': NativeCode,
+
+        'run': run,
+        'pause': pause
     }
 })();

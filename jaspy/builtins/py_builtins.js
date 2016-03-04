@@ -52,7 +52,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
                 return null;
             }
             frame.namespace = vm.return_value;
-            assert(vm.call_object(func));
+            assert(call_object(func));
             vm.frame.namespace = frame.namespace;
             return 2;
         case 2:

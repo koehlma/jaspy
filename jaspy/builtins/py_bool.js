@@ -11,7 +11,7 @@ py_bool.define_method('__new__', function (cls, initializer, state, frame) {
                 return 1;
             }
         case 1:
-            if (vm.except(MethodNotFoundError)) {
+            if (except(MethodNotFoundError)) {
                 if (initializer.call_method('__len__')) {
                     return 2;
                 }
@@ -21,7 +21,7 @@ py_bool.define_method('__new__', function (cls, initializer, state, frame) {
                 return null;
             }
         case 2:
-            if (vm.except(MethodNotFoundError)) {
+            if (except(MethodNotFoundError)) {
                 return new PyInt(1, cls);
             } else if (vm.return_value) {
                 if (unpack_int(vm.return_value) == 0) {

@@ -34,5 +34,3 @@ Loader.prototype.load = function (name, success, error) {
 };
 
 var loader = new Loader();
-
-vm = new VM();

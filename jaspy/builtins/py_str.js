@@ -15,7 +15,7 @@ py_str.define_method('__new__', function (cls, initializer, state, frame) {
                 return 1;
             }
         case 1:
-            if (vm.except(MethodNotFoundError)) {
+            if (except(MethodNotFoundError)) {
                 raise(TypeError, 'invalid type of str initializer');
             } else if (vm.return_value) {
                 return vm.return_value;

@@ -27,7 +27,7 @@ py_object.define_method('__getattribute__', function (self, name, state, frame) 
                 return value;
             }
         case 1:
-            if (vm.except(MethodNotFoundError)) {
+            if (except(MethodNotFoundError)) {
                 return value;
             } else if (vm.return_value) {
                 return vm.return_value

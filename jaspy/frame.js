@@ -218,8 +218,8 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
-                        vm.raise(TypeError, 'unsupported operand type');
+                    if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                        raise(TypeError, 'unsupported operand type');
                         this.raise();
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
@@ -256,7 +256,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
+                    if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.pop();
                         left = this.pop();
@@ -275,8 +275,8 @@ PythonFrame.prototype.step = function () {
                     }
                 case 2:
                     this.state = 0;
-                    if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
-                        vm.raise(TypeError, 'unsupported operand type');
+                    if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                        raise(TypeError, 'unsupported operand type');
                         this.raise();
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
@@ -313,8 +313,8 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
-                        vm.raise(TypeError, 'unsupported operand type');
+                    if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                        raise(TypeError, 'unsupported operand type');
                         this.raise();
                     } else if (vm.return_value) {
                         if (instruction.opcode != OPCODES.DELETE_SUBSCR) {
@@ -340,8 +340,8 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
-                        vm.raise(TypeError, 'unsupported operand type');
+                    if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                        raise(TypeError, 'unsupported operand type');
                         this.raise();
                     } else if (!vm.return_value) {
                         this.raise();
@@ -403,7 +403,7 @@ PythonFrame.prototype.step = function () {
                 exc_type = this.pop();
                 exc_value = this.pop();
                 exc_tb = this.pop();
-                vm.raise(exc_type, exc_value, exc_tb);
+                raise(exc_type, exc_value, exc_tb);
             } else {
                 vm.return_value = None;
             }
@@ -459,8 +459,8 @@ PythonFrame.prototype.step = function () {
                         }
                     case 1:
                         this.state = 0;
-                        if (vm.except(MethodNotFoundError)) {
-                            vm.raise(TypeError, 'invalid namespace');
+                        if (except(MethodNotFoundError)) {
+                            raise(TypeError, 'invalid namespace');
                             this.raise();
                         } else if (!vm.return_value) {
                             this.raise();
@@ -473,7 +473,7 @@ PythonFrame.prototype.step = function () {
                 } else if (name in this.locals) {
                     delete this.locals[name];
                 } else {
-                    vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                    raise(NameError, 'name \'' + name + '\' is not defined');
                     this.raise();
                 }
             }
@@ -497,13 +497,13 @@ PythonFrame.prototype.step = function () {
                         this.state = 0;
                         if (vm.return_value) {
                             this.push(vm.return_value);
-                        } else if (vm.except(MethodNotFoundError) || vm.except(KeyError)) {
+                        } else if (except(MethodNotFoundError) || except(KeyError)) {
                             if (name in this.globals) {
                                 this.push(this.globals[name]);
                             } else if (name in this.builtins) {
                                 this.push(this.builtins[name]);
                             } else {
-                                vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                                raise(NameError, 'name \'' + name + '\' is not defined');
                                 this.raise();
                             }
                         } else {
@@ -519,7 +519,7 @@ PythonFrame.prototype.step = function () {
                 } else if (name in this.builtins) {
                     this.push(this.builtins[name]);
                 } else {
-                    vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                    raise(NameError, 'name \'' + name + '\' is not defined');
                     this.raise();
                 }
             }
@@ -535,7 +535,7 @@ PythonFrame.prototype.step = function () {
             if (name in this.globals) {
                 delete this.globals[name];
             } else {
-                vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                raise(NameError, 'name \'' + name + '\' is not defined');
                 this.raise();
             }
             break;
@@ -547,7 +547,7 @@ PythonFrame.prototype.step = function () {
             } else if (name in this.builtins) {
                 this.push(this.builtins[name]);
             } else {
-                vm.raise(NameError, 'name \'' + name + '\' is not defined');
+                raise(NameError, 'name \'' + name + '\' is not defined');
                 this.raise();
             }
             break;
@@ -571,11 +571,11 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         if (instruction.opcode === OPCODES.STORE_ATTR) {
-                            vm.raise(TypeError, 'object does not support attribute assignment');
+                            raise(TypeError, 'object does not support attribute assignment');
                         } else {
-                            vm.raise(TypeError, 'object does not support attribute deletion');
+                            raise(TypeError, 'object does not support attribute deletion');
                         }
                         this.raise();
                     } else if (!vm.return_value) {
@@ -601,7 +601,7 @@ PythonFrame.prototype.step = function () {
                         this.push(vm.return_value);
                         break;
                     }
-                    if (vm.except(AttributeError) || vm.except(MethodNotFoundError)) {
+                    if (except(AttributeError) || except(MethodNotFoundError)) {
                         if (this.pop().call_method('__getattr__', [new_str(name)])) {
                             this.state = 2;
                             this.position -= 3;
@@ -614,8 +614,8 @@ PythonFrame.prototype.step = function () {
                     }
                 case 2:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
-                        vm.raise(TypeError, 'object does not support attribute access');
+                    if (except(MethodNotFoundError)) {
+                        raise(TypeError, 'object does not support attribute access');
                         this.raise();
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
@@ -656,7 +656,7 @@ PythonFrame.prototype.step = function () {
             if (name in modules) {
                 this.push(new PyModule(modules[name].namespace));
             } else {
-                vm.raise(ImportError)
+                raise(ImportError)
                 this.raise();
             }
             break;
@@ -700,8 +700,8 @@ PythonFrame.prototype.step = function () {
                                 break;
                             }
                         case 1:
-                            if (vm.return_value === NotImplemented || vm.except(MethodNotFoundError)) {
-                                vm.raise(TypeError, 'unsupported boolean operator');
+                            if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                                raise(TypeError, 'unsupported boolean operator');
                                 this.raise();
                             } else if (vm.return_value) {
                                 this.push(vm.return_value);
@@ -735,7 +735,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         if (this.top0().call_method('__len__')) {
                             this.state = 2;
                             this.position--;
@@ -749,7 +749,7 @@ PythonFrame.prototype.step = function () {
                 case 2:
                     this.state = 0;
                     this.pop();
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         this.position = instruction.argument;
                     } else if (vm.return_value) {
                         if (vm.return_value instanceof PyInt) {
@@ -757,7 +757,7 @@ PythonFrame.prototype.step = function () {
                                 this.position = instruction.argument;
                             }
                         } else {
-                            vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            raise(TypeError, 'invalid result type of boolean conversion');
                             this.raise();
                         }
                     } else {
@@ -783,7 +783,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         if (this.top0().call_method('__len__')) {
                             this.state = 2;
                             this.position--;
@@ -797,13 +797,13 @@ PythonFrame.prototype.step = function () {
                 case 2:
                     this.state = 0;
                     this.pop();
-                    if (!vm.except(MethodNotFoundError)) {
+                    if (!except(MethodNotFoundError)) {
                         if (vm.return_value instanceof PyInt) {
                             if (!vm.return_value.value) {
                                 this.position = instruction.argument;
                             }
                         } else if (vm.return_value) {
-                            vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            raise(TypeError, 'invalid result type of boolean conversion');
                             this.raise();
                         } else {
                             this.raise();
@@ -831,7 +831,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         if (this.top0().call_method('__len__')) {
                             this.state = 2;
                             this.position--;
@@ -844,7 +844,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 2:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         this.position = instruction.argument;
                     } else if (vm.return_value) {
                         if (vm.return_value instanceof PyInt) {
@@ -855,7 +855,7 @@ PythonFrame.prototype.step = function () {
                             }
                         } else {
                             this.pop();
-                            vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            raise(TypeError, 'invalid result type of boolean conversion');
                             this.raise();
                         }
                     } else {
@@ -884,7 +884,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0;
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         if (this.top0().call_method('__len__')) {
                             this.state = 2;
                             this.position--;
@@ -897,7 +897,7 @@ PythonFrame.prototype.step = function () {
                     }
                 case 2:
                     this.state = 0;
-                    if (!vm.except(MethodNotFoundError)) {
+                    if (!except(MethodNotFoundError)) {
                         if (vm.return_value instanceof PyInt) {
                             if (!vm.return_value.value) {
                                 this.position = instruction.argument;
@@ -906,7 +906,7 @@ PythonFrame.prototype.step = function () {
                             }
                         } else if (vm.return_value) {
                             this.pop();
-                            vm.raise(TypeError, 'invalid result type of boolean conversion');
+                            raise(TypeError, 'invalid result type of boolean conversion');
                             this.raise();
                         } else {
                             this.pop();
@@ -927,11 +927,11 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.state = 0
-                    if (vm.except(MethodNotFoundError)) {
+                    if (except(MethodNotFoundError)) {
                         this.pop();
-                        vm.raise(TypeError, 'object does not support iteration');
+                        raise(TypeError, 'object does not support iteration');
                         this.raise();
-                    } else if (vm.except(StopIteration)) {
+                    } else if (except(StopIteration)) {
                         this.pop();
                         this.position += instruction.argument;
                     } else if (vm.return_value) {
@@ -989,7 +989,7 @@ PythonFrame.prototype.step = function () {
                 error('unsupported raise format');
             }
             exc_type = this.pop();
-            vm.raise(exc_type, None, None);
+            raise(exc_type, None, None);
             this.raise();
             break;
 
@@ -1009,7 +1009,7 @@ PythonFrame.prototype.step = function () {
                     }
                     args = this.popn(low);
                     func = this.pop();
-                    if (vm.call_object(func, args, kwargs)) {
+                    if (call_object(func, args, kwargs)) {
                         this.state = 1;
                         this.position -= 3;
                         break;
@@ -1091,7 +1091,7 @@ NativeFrame.prototype.step = function () {
         result = this.code.func.apply(null, this.args.concat([this.position, this]));
     } catch (error) {
         if (error instanceof PyObject) {
-            vm.raise(error.cls, error);
+            raise(error.cls, error);
             vm.frame = this.back;
             return;
         }

@@ -23,8 +23,5 @@ function is_iterable(object) {
 }
 
 function main(name) {
-    if (!vm) {
-        vm = new VM();
-    }
-    vm.run(modules[name].code);
+    run(modules[name].code);
 }

@@ -60,7 +60,7 @@ PyObject.prototype.is_native = function () {
 PyObject.prototype.call_method = function (name, args, kwargs) {
     var method = this.cls.lookup(name);
     if (method) {
-        return vm.call_object(method, [this].concat(args || []), kwargs);
+        return call_object(method, [this].concat(args || []), kwargs);
     } else {
         vm.return_value = null;
         vm.last_exception = METHOD_NOT_FOUND;
@@ -168,7 +168,7 @@ PyType.prototype.define_classmethod = function (name, func, signature, options) 
 PyType.prototype.call_classmethod = function (name, args, kwargs) {
     var method = this.lookup(name);
     if (method) {
-        return vm.call_object(method, [this].concat(args || []), kwargs);
+        return call_object(method, [this].concat(args || []), kwargs);
     } else {
         vm.return_value = null;
         vm.last_exception = METHOD_NOT_FOUND;
@@ -178,7 +178,7 @@ PyType.prototype.call_classmethod = function (name, args, kwargs) {
 PyType.prototype.call_staticmethod = function (name, args, kwargs) {
     var method = this.lookup(name);
     if (method) {
-        return vm.call_object(method, args, kwargs);
+        return call_object(method, args, kwargs);
     } else {
         vm.return_value = null;
         vm.last_exception = METHOD_NOT_FOUND;
@@ -782,4 +782,11 @@ function new_property(getter, setter) {
         'fget': getter || None,
         'fset': setter || None
     }));
+}
+
+function issubclass(object, cls) {
+    if (!(object instanceof PyType)) {
+        return false;
+    }
+    return object.is_subclass_of(cls);
 }
