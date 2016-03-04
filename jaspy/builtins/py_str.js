@@ -41,3 +41,7 @@ py_str.define_method('__hash__', function (self) {
 py_str.define_method('startswith', function (self, prefix) {
     return unpack_str(self).indexOf(unpack_str(prefix)) == 0 ? True : False;
 }, ['prefix']);
+
+function str(object) {
+    return py_str.call_classmethod('__new__', [object]);
+}
