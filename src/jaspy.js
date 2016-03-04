@@ -237,6 +237,7 @@ window['jaspy'] = (function () {
     })();
     var OPCODES_ARGUMENT = 90;
 
+
     var vm = null;
 
 
@@ -3001,10 +3002,6 @@ window['jaspy'] = (function () {
                     func.dict.set('__closure__', this.pop());
                 }
                 this.push(func);
-                break;
-
-
-                error('opcode is not supported');
                 break;
 
             case OPCODES.BUILD_SLICE:
