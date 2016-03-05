@@ -50,7 +50,7 @@ py_int.$def('__str__', function (self) {
 });
 
 py_int.$def('__bool__', function (self) {
-    return self.ne(0);
+    return self.ne(False);
 });
 
 py_int.$def('__neg__', function (self) {

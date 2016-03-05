@@ -15,11 +15,18 @@
 
 PythonFrame.prototype.step = function () {
     var slot, right, left, name, value, block, exc_type, exc_value, exc_tb, temp;
-    var low, mid, high, args, kwargs, index, code, defaults, globals, func;
-    var instruction = this.fetch();
+    var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
+
+    if (!vm.return_value && this.unwind_cause != UNWIND_CAUSES.EXCEPTION && this.state == 0) {
+        this.raise();
+    }
+
+    instruction = this.fetch();
+
     if (DEBUG) {
         console.log('executing instruction', instruction);
     }
+
     switch (instruction.opcode) {
         case OPCODES.NOP:
             break;
@@ -65,11 +72,8 @@ PythonFrame.prototype.step = function () {
                     this.reset_state();
                     if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                         raise(TypeError, 'unsupported operand type');
-                        this.raise();
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
-                    } else {
-                        this.raise();
                     }
                     break;
             }
@@ -158,13 +162,10 @@ PythonFrame.prototype.step = function () {
                     this.reset_state();
                     if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                         raise(TypeError, 'unsupported operand type');
-                        this.raise();
                     } else if (vm.return_value) {
                         if (instruction.opcode != OPCODES.DELETE_SUBSCR) {
                             this.push(vm.return_value);
                         }
-                    } else {
-                        this.raise();
                     }
                     break;
             }
@@ -248,6 +249,7 @@ PythonFrame.prototype.step = function () {
                 raise(exc_type, exc_value, exc_tb);
             } else {
                 vm.return_value = None;
+                this.unwind_cause = null;
             }
             break;
 
@@ -587,34 +589,28 @@ PythonFrame.prototype.step = function () {
                 case 1:
                     this.reset_state();
                     if (except(MethodNotFoundError)) {
-                        if (this.top0().call_method('__len__')) {
+                        if (this.pop().call_method('__len__')) {
                             this.set_state(2);
                             return;
                         }
-                    } else if (!vm.return_value) {
-                        this.pop();
-                        this.raise();
-                        break;
                     }
                 case 2:
                     this.reset_state();
-                    this.pop();
+                    if (!vm.return_value) {
+                        break;
+                    }
                     if (except(MethodNotFoundError)) {
                         this.position = instruction.argument;
                         return;
                     } else if (vm.return_value) {
                         if (vm.return_value instanceof PyInt) {
                             if (vm.return_value.bool()) {
-                                this.backward();
                                 this.position = instruction.argument;
                                 return;
                             }
                         } else {
                             raise(TypeError, 'invalid result type of boolean conversion');
-                            this.raise();
                         }
-                    } else {
-                        this.raise();
                     }
                     break;
             }

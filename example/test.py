@@ -1,3 +1,18 @@
+def try_test1():
+    try:
+        try:
+            return 4
+        finally:
+            raise TypeError()
+    except TypeError:
+        pass
+    return 5
+
+assert try_test1() == 5
+
+
+
+
 import dom
 import time
 import sys
@@ -60,6 +75,9 @@ x.__class__ = Test2
 print(x)
 
 print(int('ff', 16))
+
+
+
 
 
 def hello(name='World'):
