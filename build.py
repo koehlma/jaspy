@@ -27,7 +27,12 @@ with open('__init__.js') as init:
 
 CONSTANTS = {
     'BIGINT': True,
+    'BIGINT_INCLUDE': False
 }
+
+if CONSTANTS['BIGINT'] and CONSTANTS['BIGINT_INCLUDE']:
+    with open('../libs/biginteger/BigInteger.js') as bigint:
+        source = bigint.read() + source
 
 match = INCLUDE_REGEX.search(source)
 while match:
