@@ -133,6 +133,8 @@ except Exception:
 
 print(int.__implementation__)
 
+print(sys.__name__)
+
 
 x = True
 while True:
