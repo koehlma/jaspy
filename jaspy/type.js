@@ -111,7 +111,7 @@ PyType.prototype.$def = function (name, func, signature, options) {
     options.qualname = options.qualname || (this.name + '.' + options.name);
     return this.define(name, new_native(func, ['self'].concat(signature || []), options));
 };
-PyType.prototype.define_property = function (name, getter, setter) {
+PyType.prototype.$def_property = function (name, getter, setter) {
     var options = {name: name, qualname: this.name + '.' + name};
     if (getter) {
         getter = new_native(getter, ['self'], options);
@@ -121,7 +121,7 @@ PyType.prototype.define_property = function (name, getter, setter) {
     }
     return this.define(name, new new_property(getter, setter));
 };
-PyType.prototype.define_classmethod = function (name, func, signature, options) {
+PyType.prototype.$def_classmethod = function (name, func, signature, options) {
     options = options || {};
     options.name = options.name || name;
     options.qualname = options.qualname || (this.name + '.' + options.name);

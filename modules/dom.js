@@ -53,13 +53,13 @@ jaspy.module('dom', function ($, module, builtins) {
         }
     }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
-    Element.define_property('text', function (self) {
+    Element.$def_property('text', function (self) {
         return jaspy.pack_str(self.unpack('element').textContent)
     }, function (self, value) {
         self.unpack('element').textContent = jaspy.unpack_str(value);
     });
 
-    Element.define_property('html', function (self) {
+    Element.$def_property('html', function (self) {
         return jaspy.pack_str(self.unpack('element').innerHTML)
     }, function (self, value) {
         self.unpack('element').innerHTML = jaspy.unpack_str(value);

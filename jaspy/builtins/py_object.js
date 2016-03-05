@@ -87,7 +87,7 @@ py_object.$def('__eq__', function (self, other) {
     return self === other ? True : False;
 }, ['other']);
 
-py_object.define_property('__class__', function (self) {
+py_object.$def_property('__class__', function (self) {
     return self.unpack('cls');
 }, function (self, value) {
     if (!(value instanceof PyType) || value.native != py_object) {

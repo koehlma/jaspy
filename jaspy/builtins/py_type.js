@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_type.define_classmethod('__prepare__', function (mcs, bases) {
+py_type.$def_classmethod('__prepare__', function (mcs, bases) {
     return new PyDict();
 }, ['bases']);
 
@@ -62,12 +62,12 @@ py_type.$def('__str__', function (cls) {
     }
 });
 
-py_type.define_property('__name__', function (cls) {
+py_type.$def_property('__name__', function (cls) {
     return pack_str(cls.unpack('name'));
 }, function (cls, value) {
     cls.pack('name', unpack_str(value));
 });
 
-py_type.define_property('__mro__', function (cls) {
+py_type.$def_property('__mro__', function (cls) {
     return pack_tuple(cls.unpack('mro'));
 });
