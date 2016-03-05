@@ -48,14 +48,10 @@ window['jaspy'] = (function () {
     // #include "frame.js"
     // #include "vm.js"
 
-    // #include "loader.js"
-
     return {
         vm: vm,
 
         main: main,
-
-        loader: loader,
 
         define_module: define_module,
 
