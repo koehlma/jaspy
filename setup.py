@@ -31,7 +31,7 @@ setup(
     long_description=long_description,
     author='Maximilian Köhl',
     author_email='mail@koehlma.de',
-    url='https://www.koehlma.de/jaspy',
+    url='https://github.com/koehlma/jaspy',
     license='LGPLv3',
     scripts=['build', 'jaspy'],
     classifiers=[
