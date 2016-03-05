@@ -497,13 +497,24 @@ PythonFrame.prototype.step = function () {
             break;
 
         case OPCODES.IMPORT_NAME:
-            name = this.code.names[instruction.argument];
-            this.popn(2);
-            if (name in modules) {
-                this.push(new PyModule(modules[name].namespace));
-            } else {
-                raise(ImportError);
-                this.raise();
+            switch (this.state) {
+                case 0:
+                    name = this.code.names[instruction.argument];
+                    this.popn(2);
+                    if (!(name in modules)) {
+                        raise(ImportError, 'unable to import module ' + name);
+                    }
+                    if (modules[name] instanceof NativeModule) {
+                        this.push(new PyModule(modules[name].namespace));
+                        break;
+                    }
+                    assert(call_object(modules[name]));
+                    this.state = 1;
+                    this.position -= 3;
+                    break;
+                case 1:
+                    name = this.code.names[instruction.argument];
+                    this.push(new PyModule(modules[name].namespace));
             }
             break;
 
@@ -908,6 +919,7 @@ PythonFrame.prototype.step = function () {
             if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
                 func.namespace['__closure__'] = this.pop();
             }
+            func.setattr('__globals__', new PyDict(this.globals));
             this.push(func);
             break;
 

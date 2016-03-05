@@ -2,6 +2,11 @@ import dom
 import time
 import sys
 
+import example
+
+print(example)
+example.example()
+
 print('Implementation:', sys.implementation)
 
 print(__name__)

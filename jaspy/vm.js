@@ -114,13 +114,14 @@ function main(module) {
     return run();
 }
 
-function call_object(object, args, kwargs, defaults, closure) {
+function call_object(object, args, kwargs, defaults, closure, globals) {
     var code, result, frame;
     while (true) {
         if (object instanceof PythonCode) {
             vm.frame = new PythonFrame(object, {
                 vm: vm, back: vm.frame, defaults: defaults,
-                args: args, kwargs: kwargs, closure: closure
+                args: args, kwargs: kwargs, closure: closure,
+                globals: globals
             });
             return true;
         } else if (object instanceof NativeCode) {
@@ -168,6 +169,10 @@ function call_object(object, args, kwargs, defaults, closure) {
         } else if (object.cls === py_function) {
             code = object.namespace['__code__'];
             closure = object.namespace['__closure__'];
+            if (object.namespace['__globals__']) {
+                globals = object.namespace['__globals__'].table;
+            }
+
             if (code.cls === py_code) {
                 defaults = object.defaults;
                 object = code.value;
@@ -186,6 +191,12 @@ function call_object(object, args, kwargs, defaults, closure) {
                 raise(TypeError, 'object is not callable');
             }
             return result;
+        } else if (object instanceof PythonModule) {
+            vm.frame = new PythonFrame(object.code, {
+                builtins: builtins, locals: object.namespace,
+                globals: object.namespace, back: vm.frame
+            });
+            return true;
         } else {
             error('invalid callable');
         }

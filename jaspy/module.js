@@ -55,6 +55,7 @@ function PythonModule(name, code, depends) {
 
 PythonModule.prototype = new Module();
 
+
 function NativeModule(name, func, depends) {
     Module.call(this, name, depends);
     this.func = func;
