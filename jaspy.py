@@ -73,7 +73,7 @@ def main():
     name = os.path.basename(arguments.module.name).partition('.')[0]
 
     with open(arguments.module.name + '.js', 'w') as output:
-        output.write('jaspy.define_module(%r, %s);' % (name, source))
+        output.write('jaspy.module(%r, %s);' % (name, source))
 
     if arguments.debug:
         disassemble(code)

@@ -82,3 +82,9 @@ function define_module(name, code_or_func, depends) {
         throw new Error('invalid type of code or function');
     }
 }
+
+
+$.get_module = get_module;
+$.get_namespace = get_namespace;
+
+$.module = define_module;

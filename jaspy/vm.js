@@ -175,3 +175,10 @@ function call_object(object, args, kwargs, defaults, closure) {
         }
     }
 }
+
+
+$.vm = vm;
+
+$.pause = pause;
+$.resume = resume;
+$.main = main;

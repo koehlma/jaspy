@@ -9,3 +9,7 @@ function raise(exc_type, exc_value, exc_tb) {
 function assert(condition, message) {
     if (!condition) { error(message); }
 }
+
+$.error = error;
+$.raise = raise;
+$.assert = assert;

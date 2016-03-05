@@ -235,3 +235,7 @@ NativeCode.prototype = new Code;
 NativeCode.prototype.get_line_number = function (position) {
     return position;
 };
+
+
+$.PythonCode = PythonCode;
+$.NativeCode = NativeCode;

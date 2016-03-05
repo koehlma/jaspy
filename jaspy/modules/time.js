@@ -18,7 +18,7 @@ jaspy.module('time', function ($, module, builtins) {
         switch (state) {
             case 0:
                 setTimeout(function () {
-                    jaspy.run(frame);
+                    jaspy.resume(frame);
                 }, jaspy.unpack_float(seconds) * 1000);
                 jaspy.pause();
                 return 1;

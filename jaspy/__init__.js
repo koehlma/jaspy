@@ -16,18 +16,20 @@
 window['jaspy'] = (function () {
     'use strict';
 
+    var $ = {};
+    var jaspy = $;
+
     // #include "constants.js"
     // #include "base.js"
 
     // #include "code.js"
 
-
-
-
-
     // #include "module.js"
 
+
+    // object model bootstraping
     // #include "objects.js"
+
 
     // #include "builtins/py_object.js"
     // #include "builtins/py_type.js"
@@ -45,62 +47,10 @@ window['jaspy'] = (function () {
 
     // #include "builtins/py_builtins.js"
 
+
     // #include "frame.js"
     // #include "vm.js"
 
-    var jaspy = {
-        vm: vm,
-
-        main: main,
-
-        define_module: define_module,
-        module: define_module,
-
-        unpack_int: unpack_int,
-        unpack_float: unpack_float,
-        unpack_str: unpack_str,
-        unpack_bytes: unpack_bytes,
-        unpack_tuple: unpack_tuple,
-        unpack_code: unpack_code,
-
-        raise: raise,
-        error: error,
-        assert: assert,
-
-        'builtins': builtins,
-
-        'PyObject': PyObject,
-        'PyType': PyType,
-        'PyDict': PyDict,
-        'PyInt': PyInt,
-        'PyFloat': PyFloat,
-        'PyStr': PyStr,
-        'PyBytes': PyBytes,
-        'PyTuple': PyTuple,
-        'PyCode': PyCode,
-
-        'new_int': new_int,
-        'new_float': new_float,
-        'new_str': new_str,
-        'new_bytes': new_bytes,
-        'new_tuple': new_tuple,
-        'new_code': new_code,
-
-        'None': None,
-        'NotImplemented': NotImplemented,
-        'Ellipsis': Ellipsis,
-        'False': False,
-        'True': True,
-
-        'PythonCode': PythonCode,
-        'NativeCode': NativeCode,
-
-        'run': resume,
-        'pause': pause,
-
-        'get_module': get_module,
-        'get_namespace': get_namespace
-    };
 
     return jaspy;
 })();

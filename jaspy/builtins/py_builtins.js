@@ -212,3 +212,12 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
 }, ['*objects', 'sep', 'end', 'file', 'flush'], {
     defaults: {sep: new_str(' '), end: new_str('\n'), file: None, flush: False}
 });
+
+
+$.builtins = builtins;
+
+$.None = None;
+$.NotImplemented = NotImplemented;
+$.Ellipsis = Ellipsis;
+$.False = False;
+$.True = True;

@@ -804,3 +804,28 @@ function isiterable(object) {
 function main(name) {
     resume(modules[name].code);
 }
+
+
+$.new_int = new_int;
+$.new_float = new_float;
+$.new_str = new_str;
+$.new_bytes = new_bytes;
+$.new_tuple = new_tuple;
+$.new_code = new_code;
+
+$.PyObject = PyObject;
+$.PyType = PyType;
+$.PyDict = PyDict;
+$.PyInt = PyInt;
+$.PyFloat = PyFloat;
+$.PyStr = PyStr;
+$.PyBytes = PyBytes;
+$.PyTuple = PyTuple;
+$.PyCode = PyCode;
+
+$.unpack_int = unpack_int;
+$.unpack_float = unpack_float;
+$.unpack_str = unpack_str;
+$.unpack_bytes = unpack_bytes;
+$.unpack_tuple = unpack_tuple;
+$.unpack_code = unpack_code;
