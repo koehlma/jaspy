@@ -3,20 +3,9 @@ function error(message) {
 }
 
 function raise(exc_type, exc_value, exc_tb) {
-    error('exception occurred before vm has been initialized')
+    error('exception occurred before jaspy has been fully initialized');
 }
 
 function assert(condition, message) {
-    if (!condition) { error(message) }
-}
-
-
-
-function isiterable(object) {
-    return object.cls.lookup('__next__') != undefined;
-}
-
-
-function main(name) {
-    run(modules[name].code);
+    if (!condition) { error(message); }
 }

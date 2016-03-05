@@ -24,6 +24,7 @@ function except(exc_type) {
 function raise(exc_type, exc_value, exc_tb) {
     var frame;
 
+
     if (typeof exc_value == 'string') {
         exc_value = new_exception(exc_type, exc_value);
     }

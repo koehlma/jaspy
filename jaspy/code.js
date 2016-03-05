@@ -1,9 +1,10 @@
-function Signature(argnames, poscount, star_args, star_kwargs) {
+function Signature(argnames, poscount, var_args, var_kwargs) {
     this.argnames = argnames || [];
-    this.poscount = poscount == undefined ? this.argnames.length : poscount;
-    this.star_args = star_args || false;
-    this.star_kwargs = star_kwargs || false;
+    this.poscount = poscount || 0;
+    this.var_args = var_args || false;
+    this.var_kwargs = var_kwargs || false;
 }
+
 Signature.prototype.parse = function (args, kwargs, defaults, namespace) {
     args = args || [];
     kwargs = kwargs || {};
@@ -41,7 +42,7 @@ Signature.prototype.parse = function (args, kwargs, defaults, namespace) {
             raise(TypeError, 'missing positional argument \'' + name + '\'');
         }
     }
-    if (this.star_args) {
+    if (this.var_args) {
         if (namespace) {
             namespace[this.argnames[index]] = args.slice(this.poscount);
         } else {
@@ -53,7 +54,7 @@ Signature.prototype.parse = function (args, kwargs, defaults, namespace) {
     }
 
     length = this.argnames.length;
-    if (this.star_kwargs) {
+    if (this.var_kwargs) {
         length--;
     }
     for (; index < length; index++) {
@@ -75,7 +76,7 @@ Signature.prototype.parse = function (args, kwargs, defaults, namespace) {
             raise(TypeError, 'missing keyword argument \'' + name + '\'');
         }
     }
-    if (this.star_kwargs) {
+    if (this.var_kwargs) {
         if (namespace) {
             namespace[this.argnames[index]] = kwargs;
         } else {
@@ -92,22 +93,37 @@ Signature.prototype.parse = function (args, kwargs, defaults, namespace) {
     return result;
 };
 
-function native_signature(signature) {
+Signature.prototype.toString = function () {
+    var argnames;
+    if (!this.var_args && !this.var_kwargs) {
+        return this.argnames.join(',');
+    }
+    argnames = new Array(this.argnames);
+    if (this.var_args) {
+        argnames[this.poscount] = '*' + argnames[this.poscount];
+    }
+    if (this.var_kwargs) {
+        argnames[argnames.length - 1] = '**' + argnames[argnames.length - 1];
+    }
+    return argnames.join(',');
+};
+
+Signature.from_spec = function (spec) {
     var index, name, star_args, star_kwargs;
     var poscount = 0;
     var argnames = [];
 
-    for (index = 0; index < signature.length; index++) {
-        name = signature[index];
+    for (index = 0; index < spec.length; index++) {
+        name = spec[index];
         if (name.indexOf('**') == 0) {
-            if (index != signature.length - 1) {
-                raise(TypeError, 'invalid native signature');
+            if (index != spec.length - 1) {
+                raise(TypeError, 'invalid native signature specification');
             }
             name = name.substring(2);
             star_kwargs = true;
         } else if (name.indexOf('*') == 0) {
             if (star_args) {
-                raise(TypeError, 'invalid native signature');
+                raise(TypeError, 'invalid native signature specification');
             }
             name = name.substring(1);
             star_args = true;
@@ -118,28 +134,29 @@ function native_signature(signature) {
     }
 
     return new Signature(argnames, poscount, star_args, star_kwargs);
-}
+};
 
-function python_signature(varnames, argcount, kwargcount, flags) {
+Signature.from_python = function (varnames, argcount, kwargcount, flags) {
     var index;
     var argnames = [];
-    var star_args = (flags & CODE_FLAGS.STAR_ARGS) != 0;
-    var star_kwargs = (flags & CODE_FLAGS.STAR_KWARGS) != 0;
+    var var_args = (flags & CODE_FLAGS.STAR_ARGS) != 0;
+    var var_kwargs = (flags & CODE_FLAGS.STAR_KWARGS) != 0;
 
     for (index = 0; index < argcount; index++) {
         argnames.push(varnames[index]);
     }
-    if (star_args) {
+    if (var_args) {
         argnames.push(varnames[argcount + kwargcount + 1]);
     }
     for (; index < argcount + kwargcount; index++) {
         argnames.push(varnames[index]);
     }
-    if (star_kwargs) {
+    if (var_kwargs) {
         argnames.push(varnames[argcount + kwargcount + 1]);
     }
-    return new Signature(argnames, argcount, star_args, star_kwargs);
-}
+
+    return new Signature(argnames, argcount, var_args, var_kwargs);
+};
 
 
 function Code(signature, options) {
@@ -152,18 +169,19 @@ function Code(signature, options) {
 
     this.flags = options.flags || 0;
 }
+
 Code.prototype.parse_args = function (args, kwargs, defaults, namespace) {
     return this.signature.parse(args, kwargs, defaults, namespace);
 };
 
-function PythonCode(bytecode, options) {
-    var signature;
 
+function PythonCode(bytecode, options) {
     this.bytecode = bytecode;
 
     options = options || {};
     options.flags = (options.flags || 0) | CODE_FLAGS.PYTHON;
     options.name = options.name || '<module>';
+    options.filename = options.filename || '<string>';
 
     this.names = options.names || [];
     this.varnames = options.varnames || [];
@@ -173,16 +191,16 @@ function PythonCode(bytecode, options) {
     this.argcount = options.argcount || 0;
     this.kwargcount = options.kwargcount || 0;
 
-    signature = python_signature(this.varnames, this.argcount, this.kwargcount, options.flags);
-
-    Code.call(this, signature, options);
+    Code.call(this, Signature.from_python(this.varnames, this.argcount, this.kwargcount, options.flags), options);
 
     this.constants = options.constants || [];
 
     this.firstline = options.firstline || 1;
     this.lnotab = options.lnotab || '';
 }
+
 PythonCode.prototype = new Code;
+
 PythonCode.prototype.get_line_number = function (position) {
     var line_number = this.firstline, offset = 0;
     var index, offset_increment, line_increment;
@@ -198,19 +216,22 @@ PythonCode.prototype.get_line_number = function (position) {
     return line_number;
 };
 
-function NativeCode(func, options, signature) {
+
+function NativeCode(func, options, spec) {
     this.func = func;
 
     options = options || {};
     options.flags = (options.flags || 0) | CODE_FLAGS.NATIVE;
-    options.name = options.name || '<native>';
+    options.name = options.name || func.name;
     options.filename = options.filename || '<native>';
 
-    Code.call(this, native_signature(signature), options);
+    Code.call(this, Signature.from_spec(spec), options);
 
     this.simple = func.length == this.signature.argnames.length;
 }
+
 NativeCode.prototype = new Code;
+
 NativeCode.prototype.get_line_number = function (position) {
     return position;
 };

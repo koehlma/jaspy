@@ -790,3 +790,12 @@ function issubclass(object, cls) {
     }
     return object.is_subclass_of(cls);
 }
+
+function isiterable(object) {
+    return object.cls.lookup('__next__') != undefined;
+}
+
+
+function main(name) {
+    run(modules[name].code);
+}
