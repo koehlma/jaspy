@@ -29,7 +29,7 @@ function raise(exc_type, exc_value, exc_tb) {
         exc_value = new_exception(exc_type, exc_value);
     }
     if (vm.return_value === null) {
-        exc_value.dict.set('__context__', vm.last_exception.exc_value);
+        exc_value.namespace['__context__'] = vm.last_exception.exc_value;
     } else {
         vm.return_value = null;
     }
@@ -52,7 +52,7 @@ function raise(exc_type, exc_value, exc_tb) {
             console.error(message.join('\n'));
         }
         exc_tb = None;
-        exc_value.dict.set('__traceback__', exc_tb);
+        exc_value.namespace['__traceback__'] = exc_tb;
     }
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
 
@@ -150,8 +150,8 @@ function call_object(object, args, kwargs, defaults, closure) {
                 }
             }
         } else if (object.cls === py_function) {
-            code = object.dict.get('__code__');
-            closure = object.dict.get('__closure__');
+            code = object.namespace['__code__'];
+            closure = object.namespace['__closure__'];
             if (code.cls === py_code) {
                 defaults = object.defaults;
                 object = code.value;

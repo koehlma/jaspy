@@ -41,7 +41,10 @@ PythonModule.prototype = new Module();
 
 function NativeModule(name, func, depends) {
     Module.call(this, name, depends);
-    func.apply(null, [jaspy, this].concat(this.depends.map(get_namespace)));
+    this.func = func;
+    if (func) {
+        func.apply(null, [jaspy, this].concat(this.depends.map(get_namespace)));
+    }
 }
 
 NativeModule.prototype = new Module();
@@ -63,7 +66,7 @@ NativeModule.prototype.$set = function (name, value) {
 };
 
 NativeModule.prototype.$class = function (name, bases, mcs) {
-    this.namespace[name] = new PyType(name, bases, new PyDict(), mcs);
+    this.namespace[name] = new PyType(name, bases, null, mcs);
     return this.namespace[name];
 };
 

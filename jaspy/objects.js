@@ -37,16 +37,16 @@ function compute_mro(cls) {
 
 var object_id_counter = 0;
 
-function PyObject(cls, dict) {
+function PyObject(cls, namespace) {
     this.cls = cls;
-    this.dict = dict || null;
-    this.id = null;
+    this.identity = null;
+    this.namespace = namespace || {};
 }
 PyObject.prototype.get_id = function () {
-    if (this.id === null) {
-        this.id = object_id_counter++;
+    if (this.identity === null) {
+        this.identity = object_id_counter++;
     }
-    return this.id;
+    return this.identity;
 };
 PyObject.prototype.get_address = function () {
     return ('0000000000000' + this.get_id().toString(16)).substr(-13);
@@ -68,16 +68,22 @@ PyObject.prototype.call_method = function (name, args, kwargs) {
     }
 };
 PyObject.prototype.setattr = function (name, value) {
-    if (!this.dict) {
+    if (!this.namespace) {
         raise(TypeError, 'object does not support attribute access');
     }
-    this.dict.set(name, value);
+    if (name instanceof PyStr) {
+        name = name.value;
+    }
+    this.namespace[name] = value;
 };
 PyObject.prototype.getattr = function (name) {
-    if (!this.dict) {
+    if (!this.namespace) {
         raise(TypeError, 'object does not support attribute access');
     }
-    return this.dict.get(name)
+    if (name instanceof PyStr) {
+        name = name.value;
+    }
+    return this.namespace[name]
 };
 PyObject.prototype.unpack = function (name) {
     var item = this[name];
@@ -93,7 +99,7 @@ PyObject.prototype.pack = function (name, value) {
 
 function PyType(name, bases, attributes, mcs) {
     var index, native;
-    PyObject.call(this, mcs || py_type, attributes || new PyDict());
+    PyObject.call(this, mcs || py_type, attributes || {});
     this.name = name;
     this.bases = bases || [py_object];
     this.mro = compute_mro(this);
@@ -130,14 +136,14 @@ PyType.prototype.is_native = function () {
 PyType.prototype.lookup = function (name) {
     var index, value;
     for (index = 0; index < this.mro.length; index++) {
-        value = this.mro[index].dict.get(name);
+        value = this.mro[index].getattr(name);
         if (value) {
             return value;
         }
     }
 };
 PyType.prototype.define = function (name, item) {
-    this.dict.set(name, item);
+    this.namespace[name] = item;
     return item;
 };
 PyType.prototype.define_alias = function (name, alias) {
@@ -276,13 +282,12 @@ function new_native_type(name, bases, attributes, mcs) {
     return type;
 }
 
-
 var py_object = new_native_type('object', []);
 var py_type = new_native_type('type', [py_object]);
-var py_dict = new_native_type('dict', [py_object]);
+var py_dict = new_native_type('namespace', [py_object]);
 
 py_object.cls = py_type.cls = py_dict.cls = py_type;
-py_object.dict.cls = py_type.dict.cls = py_dict.dict.cls = py_dict;
+py_object.namespace.cls = py_type.namespace.cls = py_dict.namespace.cls = py_dict;
 
 var py_int = new_native_type('int');
 var py_bool = new_native_type('bool', [py_int]);
@@ -685,7 +690,7 @@ var BUILTINS_STR = new_str('builtins');
 function new_native(func, signature, options) {
     options = options || {};
     var code = new NativeCode(func, options, signature);
-    func = new PyObject(py_function, new PyDict());
+    func = new PyObject(py_function);
     func.setattr('__name__', new_str(options.name || '<unkown>'));
     func.setattr('__qualname__', new_str(options.qualname || '<unkown>'));
     func.setattr('__doc__', new_str(options.doc || ''));
@@ -765,23 +770,23 @@ var JSError = new PyType('JSError', [Exception]);
 
 
 function pack_error(error) {
-    return new PyObject(JSError, new PyDict({
+    return new PyObject(JSError, {
         'args': new_tuple([new_str(error.name), new_str(error.message)])
-    }));
+    });
 }
 
 function new_exception(cls, message) {
-    var exc_value = new PyObject(cls, new PyDict());
-    exc_value.dict.set('args', new_tuple([new_str(message)]));
+    var exc_value = new PyObject(cls);
+    exc_value.namespace['args'] = new_tuple([new_str(message)]);
     return exc_value;
 }
 
 
 function new_property(getter, setter) {
-    return new PyObject(py_property, new PyDict({
+    return new PyObject(py_property, {
         'fget': getter || None,
         'fset': setter || None
-    }));
+    });
 }
 
 function issubclass(object, cls) {

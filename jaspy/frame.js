@@ -1056,12 +1056,12 @@ PythonFrame.prototype.step = function () {
                 defaults[code.value.signature.argnames[index]] = this.pop();
             }
             globals = this.globals;
-            func = new PyObject(py_function, new PyDict());
-            func.dict.set('__name__', new_str(name));
-            func.dict.set('__code__', code);
+            func = new PyObject(py_function);
+            func.namespace['__name__'] = new_str(name);
+            func.namespace['__code__'] = code;
             func.defaults = defaults;
             if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
-                func.dict.set('__closure__', this.pop());
+                func.namespace['__closure__'] = this.pop();
             }
             this.push(func);
             break;
