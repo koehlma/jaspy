@@ -36,6 +36,7 @@ window['jaspy'] = (function () {
     // #include "builtins/__init__.js"
 
     // #include "frame.js"
+    // #include "eval.js"
     // #include "vm.js"
 
 
