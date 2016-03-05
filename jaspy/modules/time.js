@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('time', function ($, module, builtins) {
+jaspy.module('time', function ($, module, builtins) {
     module.$def('sleep', function (seconds, state, frame) {
         switch (state) {
             case 0:

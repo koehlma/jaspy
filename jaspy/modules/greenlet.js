@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('greenlet', function ($, module, builtins) {
+jaspy.module('greenlet', function ($, module, builtins) {
     var Greenlet = module.$class('greenlet');
     var GreenletExit = module.$class('GreenletExit', [builtins.Exception]);
 

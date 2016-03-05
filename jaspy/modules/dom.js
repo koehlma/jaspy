@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('dom', function ($, module, builtins) {
+jaspy.module('dom', function ($, module, builtins) {
     var MetaElement = module.$class('MetaElement', [builtins.type]);
     var Element = module.$class('Element', [builtins.object], MetaElement);
 
