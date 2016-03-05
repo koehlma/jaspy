@@ -13,21 +13,5 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.module('time', function ($, module, builtins) {
-    module.$def('sleep', function (seconds, state, frame) {
-        switch (state) {
-            case 0:
-                setTimeout(function () {
-                    $.resume(frame);
-                }, $.unpack_float(seconds) * 1000);
-                $.pause();
-                return 1;
-            case 1:
-                break;
-        }
-    }, ['seconds']);
-
-    module.$def('time', function () {
-        return $.pack_float((new Date()).getTime() / 1000);
-    });
-}, ['builtins']);
+// #include 'native/dict.js'
+// #include 'native/int_big.js' if BIGINT else 'native/int_small.js'

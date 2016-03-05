@@ -16,7 +16,7 @@
 import re
 import os
 
-INCLUDE_REGEX = re.compile('^(\s*)//\s*#include\s*"(.+)"\s*$', re.MULTILINE)
+INCLUDE_REGEX = re.compile('^(\s*)//\s*#include\s*(.+)\s*$', re.MULTILINE)
 
 
 os.chdir(os.path.join(os.path.dirname(__file__), 'jaspy'))
@@ -25,10 +25,14 @@ with open('__init__.js') as init:
     source = init.read()
 
 
+CONSTANTS = {
+    'BIGINT': True,
+}
+
 match = INCLUDE_REGEX.search(source)
 while match:
     indentation = match.group(1).count(' ') * ' '
-    name = match.group(2)
+    name = eval(match.group(2), CONSTANTS)
     with open(name) as include:
         inject = ''.join((indentation + line for line in include))
         source = source[:match.start()] + inject + source[match.end():]

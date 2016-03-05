@@ -131,6 +131,9 @@ except Exception:
     pass
 
 
+print(int.__implementation__)
+
+
 x = True
 while True:
     time.sleep(0.5)

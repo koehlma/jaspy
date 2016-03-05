@@ -15,7 +15,7 @@ py_int.$def('__new__', function (cls, initializer, base, state, frame) {
                 }
             }
             if (initializer instanceof PyStr) {
-                return pack_int(parseInt(initializer.value, unpack_int(base)));
+                return PyInt.parse(initializer.value, base);
             }
             if (initializer.call_method('__int__')) {
                 return 1;
@@ -31,15 +31,15 @@ py_int.$def('__new__', function (cls, initializer, base, state, frame) {
 }, ['initializer', 'base'], {defaults: {initializer: pack_int(0), base: pack_int(10)}});
 
 py_int.$def('__str__', function (self) {
-    return pack_str(unpack_int(self).toString());
+    return pack_str(self.toString());
 });
 
 py_int.$def('__bool__', function (self) {
-    return unpack_int(self) == 0 ? False : True;
+    return self.ne(0);
 });
 
 py_int.$def('__neg__', function (self) {
-    return pack_int(-unpack_int(self));
+    return self.neg();
 });
 
 py_int.$def('__pos__', function (self) {
@@ -47,117 +47,99 @@ py_int.$def('__pos__', function (self) {
 });
 
 py_int.$def('__lt__', function (self, other) {
-    return unpack_int(self) < unpack_float(other) ? True : False;
+    return self.lt(other);
 }, ['other']);
 
 py_int.$def('__le__', function (self, other) {
-    return unpack_int(self) <= unpack_float(other) ? True : False;
+    return self.le(other);
 }, ['other']);
 
 py_int.$def('__eq__', function (self, other) {
-    return unpack_int(self) == unpack_float(other) ? True : False;
+    return self.eq(other);
 }, ['other']);
 
 py_int.$def('__ne__', function (self, other) {
-    return unpack_int(self) != unpack_float(other) ? True : False;
+    return self.ne(other);
 }, ['other']);
 
 py_int.$def('__gt__', function (self, other) {
-    return unpack_int(self) > unpack_float(other) ? True : False;
+    return self.gt(other);
 }, ['other']);
 
 py_int.$def('__ge__', function (self, other) {
-    return unpack_int(self) <= unpack_float(other) ? True : False;
+    return self.ge(other);
 }, ['other']);
 
 py_int.$def('__pow__', function (self, other) {
-    if (other instanceof PyFloat) {
-        return pack_float(Math.pow(unpack_int(self), unpack_float(other)));
-    } else {
-        return pack_int(Math.pow(unpack_int(self), unpack_int(other)));
-    }
+    return self.pow(other);
 }, ['other']);
 py_int.define_alias('__pow__', '__ipow__');
 py_int.define_alias('__pow__', '__rpow__');
 
 py_int.$def('__mul__', function (self, other) {
-    if (other instanceof PyFloat) {
-        return pack_float(unpack_int(self) * unpack_float(other));
-    } else {
-        return pack_int(unpack_int(self) * unpack_int(other));
-    }
+    return self.mul(other);
 }, ['other']);
 py_int.define_alias('__mul__', '__imul__');
 py_int.define_alias('__mul__', '__rmul__');
 
 py_int.$def('__floordiv__', function (self, other) {
-    return pack_int(Math.floor(unpack_int(self) / unpack_float(other)));
+    return self.floordiv(other);
 }, ['other']);
 py_int.define_alias('__floordiv__', '__ifloordiv__');
 py_int.define_alias('__floordiv__', '__rfloordiv__');
 
 py_int.$def('__truediv__', function (self, other) {
-    return pack_float(unpack_int(self) / unpack_float(other));
+    return self.truediv(other);
 }, ['other']);
 py_int.define_alias('__truediv__', '__itruediv__');
 py_int.define_alias('__truediv__', '__rtruediv__');
 
 py_int.$def('__mod__', function (self, other) {
-    if (other instanceof PyFloat) {
-        return pack_float(unpack_int(self) % unpack_float(other));
-    } else {
-        return pack_int(unpack_int(self) % unpack_int(other));
-    }
+    return self.mod(other);
 }, ['other']);
 py_int.define_alias('__mod__', '__imod__');
 py_int.define_alias('__mod__', '__rmod__');
 
 py_int.$def('__add__', function (self, other) {
-    if (other instanceof PyFloat) {
-        return pack_float(unpack_int(self) + unpack_float(other));
-    } else {
-        return pack_int(unpack_int(self) + unpack_int(other));
-    }
+    return self.add(other);
 }, ['other']);
 py_int.define_alias('__add__', '__iadd__');
 py_int.define_alias('__add__', '__radd__');
 
 py_int.$def('__sub__', function (self, other) {
-    if (other instanceof PyFloat) {
-        return pack_float(unpack_int(self) - unpack_float(other));
-    } else {
-        return pack_int(unpack_int(self) - unpack_int(other));
-    }
+    return self.sub(other);
 }, ['other']);
 py_int.define_alias('__sub__', '__isub__');
 py_int.define_alias('__sub__', '__rsub__');
 
 py_int.$def('__lshift__', function (self, other) {
-    return pack_int(unpack_int(self) >> unpack_int(other));
+    return self.lshift(other);
 }, ['other']);
 py_int.define_alias('__lshift__', '__ilshift__');
 py_int.define_alias('__lshift__', '__rlshift__');
 
 py_int.$def('__rshift__', function (self, other) {
-    return pack_int(unpack_int(self) << unpack_int(other));
+    return self.rshift(other);
 }, ['other']);
 py_int.define_alias('__rshift__', '__irshift__');
 py_int.define_alias('__rshift__', '__rrshift__');
 
 py_int.$def('__and__', function (self, other) {
-    return pack_int(unpack_int(self) & unpack_int(other));
+    return self.and(other);
 }, ['other']);
 py_int.define_alias('__and__', '__iand__');
 py_int.define_alias('__and__', '__rand__');
 
 py_int.$def('__xor__', function (self, other) {
-    return pack_int(unpack_int(self) ^ unpack_int(other));
+    return self.xor(other);
 }, ['other']);
 py_int.define_alias('__xor__', '__ixor__');
 py_int.define_alias('__xor__', '__rxor__');
 
 py_int.$def('__or__', function (self, other) {
-    return pack_int(unpack_int(self) | unpack_int(other));
+    return self.or(other);
 }, ['other']);
 py_int.define_alias('__or__', '__ior__');
 py_int.define_alias('__or__', '__ror__');
+
+py_int.setattr('__implementation__', pack_str(PyInt.implementation));

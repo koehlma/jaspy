@@ -172,7 +172,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                     object = objects[0];
                     if (object.cls === py_str) {
                         vm.return_value = object;
-                    } else if (str(object)) {
+                    } else if (object.call_method('__str__')) {
                         return 1;
                     }
                     state = 1;

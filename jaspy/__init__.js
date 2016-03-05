@@ -26,9 +26,12 @@ window['jaspy'] = (function () {
 
     // #include "module.js"
 
+    // #include "object.js"
+    // #include "type.js"
 
-    // object model bootstraping
-    // #include "objects.js"
+    // #include "native/__init__.js"
+
+    // #include "boot.js"
 
 
     // #include "builtins/py_object.js"

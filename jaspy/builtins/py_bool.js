@@ -24,15 +24,11 @@ py_bool.$def('__new__', function (cls, initializer, state, frame) {
             if (except(MethodNotFoundError)) {
                 return new PyInt(1, cls);
             } else if (vm.return_value) {
-                if (unpack_int(vm.return_value) == 0) {
-                    return new PyInt(0, cls);
-                } else {
-                    return new PyInt(1, cls);
-                }
+                return vm.return_value.ne(0) ? True : False;
             }
     }
 }, ['initializer'], {defaults: {initializer: False}});
 
 py_bool.$def('__str__', function (self) {
-    return unpack_int(self) != 0 ? TRUE_STR : FALSE_STR;
+    return self.ne(False) ? TRUE_STR : FALSE_STR;
 });

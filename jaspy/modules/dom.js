@@ -23,12 +23,12 @@ jaspy.module('dom', function ($, module, builtins) {
     }, ['tag'], {defaults: {'tag': builtins.None}});
 
     Element.$def('__str__', function (self) {
-        return jaspy.new_str('<' + self.unpack('element').nodeName.toLowerCase() + ' element at 0x' + self.get_address() + '>');
+        return jaspy.pack_str('<' + self.unpack('element').nodeName.toLowerCase() + ' element at 0x' + self.get_address() + '>');
     });
 
     Element.$def('__getitem__', function (self, name) {
         name = jaspy.unpack_str(name);
-        return jaspy.new_str(self.unpack('element').getAttribute(name));
+        return jaspy.pack_str(self.unpack('element').getAttribute(name));
     }, ['name']);
 
     Element.$def('__setitem__', function (self, name, value) {
@@ -46,7 +46,7 @@ jaspy.module('dom', function ($, module, builtins) {
     Element.$def('css', function (self, name, value) {
         name = jaspy.unpack_str(name);
         if (value === builtins.NotImplemented) {
-            return jaspy.new_str(self.unpack('element').style[name])
+            return jaspy.pack_str(self.unpack('element').style[name])
         } else {
             value = jaspy.unpack_str(value, '');
             self.unpack('element').style[name] = value;
@@ -54,13 +54,13 @@ jaspy.module('dom', function ($, module, builtins) {
     }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
     Element.define_property('text', function (self) {
-        return jaspy.new_str(self.unpack('element').textContent)
+        return jaspy.pack_str(self.unpack('element').textContent)
     }, function (self, value) {
         self.unpack('element').textContent = jaspy.unpack_str(value);
     });
 
     Element.define_property('html', function (self) {
-        return jaspy.new_str(self.unpack('element').innerHTML)
+        return jaspy.pack_str(self.unpack('element').innerHTML)
     }, function (self, value) {
         self.unpack('element').innerHTML = jaspy.unpack_str(value);
     });

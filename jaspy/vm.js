@@ -145,7 +145,8 @@ function call_object(object, args, kwargs, defaults, closure) {
                         vm.frame = vm.frame.back;
                         return false;
                     } else {
-                        throw error;
+                        vm.frame = vm.frame.back;
+                        raise(RuntimeError, '[' + error.name + '] ' + error.message);
                     }
                 }
             }

@@ -1,314 +1,33 @@
-function get_mro(cls) {
-    return cls.mro;
-}
+var py_object = PyType.native('object', []);
+var py_type = PyType.native('type', [py_object]);
 
-function compute_mro(cls) {
-    var pending = cls.bases.map(get_mro), result = [cls];
-    var index, head, good;
-    while (pending.length != 0) {
-        for (index = 0; index < pending.length; index++) {
-            head = pending[index][0];
-            good = true;
-            pending.forEach(function (base_mro) {
-                base_mro.slice(1, base_mro.length).forEach(function (base_cls) {
-                    good &= base_cls != head;
-                })
-            });
-            if (good) {
-                result.push(head);
-                break;
-            }
-        }
-        if (!good) {
-            raise(TypeError, 'unable to linearize class hierarchy');
-        }
-        for (index = 0; index < pending.length; index++) {
-            pending[index] = pending[index].filter(function (base_cls) {
-                return base_cls != head;
-            })
-        }
-        pending = pending.filter(function (base_mro) {
-            return base_mro.length > 0;
-        });
-    }
-    return result;
-}
+py_object.cls = py_type;
+py_type.cls = py_type;
+
+var py_dict = PyType.native('dict');
+
+var py_int = PyType.native('int');
+var py_bool = PyType.native('bool', [py_int]);
+
+var py_float = PyType.native('float');
+
+var py_str = PyType.native('str');
+var py_bytes = PyType.native('bytes');
+
+var py_tuple = PyType.native('tuple');
+
+var py_code = PyType.native('code');
+
+var py_list = PyType.native('list');
 
 
-var object_id_counter = 0;
 
-function PyObject(cls, namespace) {
-    this.cls = cls;
-    this.identity = null;
-    this.namespace = namespace || {};
-}
-PyObject.prototype.get_id = function () {
-    if (this.identity === null) {
-        this.identity = object_id_counter++;
-    }
-    return this.identity;
-};
-PyObject.prototype.get_address = function () {
-    return ('0000000000000' + this.get_id().toString(16)).substr(-13);
-};
-PyObject.prototype.is_instance_of = function (cls) {
-    return this.cls.is_subclass_of(cls);
-};
-PyObject.prototype.is_native = function () {
-    return this.cls.native === this.cls;
-};
-PyObject.prototype.call_method = function (name, args, kwargs) {
-    var method = this.cls.lookup(name);
-    if (method) {
-        return call_object(method, [this].concat(args || []), kwargs);
-    } else {
-        vm.return_value = null;
-        vm.last_exception = METHOD_NOT_FOUND;
-        return false;
-    }
-};
-PyObject.prototype.setattr = function (name, value) {
-    if (!this.namespace) {
-        raise(TypeError, 'object does not support attribute access');
-    }
-    if (name instanceof PyStr) {
-        name = name.value;
-    }
-    this.namespace[name] = value;
-};
-PyObject.prototype.getattr = function (name) {
-    if (!this.namespace) {
-        raise(TypeError, 'object does not support attribute access');
-    }
-    if (name instanceof PyStr) {
-        name = name.value;
-    }
-    return this.namespace[name]
-};
-PyObject.prototype.unpack = function (name) {
-    var item = this[name];
-    if (!item) {
-        raise(TypeError, 'unable to unpack ' + name + ' from object');
-    }
-    return item;
-};
-PyObject.prototype.pack = function (name, value) {
-    this[name] = value;
-};
+var py_cell = PyType.native('cell');
+var py_frame = PyType.native('frame');
 
-
-function PyType(name, bases, attributes, mcs) {
-    var index, native;
-    PyObject.call(this, mcs || py_type, attributes || {});
-    this.name = name;
-    this.bases = bases || [py_object];
-    this.mro = compute_mro(this);
-    this.native = null;
-    for (index = 0; index < this.mro.length; index++) {
-        native = this.mro[index].native;
-        if (native === py_object) {
-            continue;
-        }
-        if (this.native && this.native !== native && native) {
-            raise(TypeError, 'invalid native type hierarchy');
-        }
-        this.native = native;
-    }
-    this.native = this.native || py_object;
-}
-PyType.prototype = new PyObject;
-PyType.prototype.is_subclass_of = function (cls) {
-    var index;
-    if (cls === this) {
-        return true;
-    } else {
-        for (index = 0; index < this.mro.length; index++) {
-            if (this.mro[index] === cls) {
-                return true;
-            }
-        }
-    }
-    return false;
-};
-PyType.prototype.is_native = function () {
-    return this.native === this;
-};
-PyType.prototype.lookup = function (name) {
-    var index, value;
-    for (index = 0; index < this.mro.length; index++) {
-        value = this.mro[index].getattr(name);
-        if (value) {
-            return value;
-        }
-    }
-};
-PyType.prototype.define = function (name, item) {
-    this.namespace[name] = item;
-    return item;
-};
-PyType.prototype.define_alias = function (name, alias) {
-    return this.define(alias, this.lookup(name));
-};
-PyType.prototype.$def = function (name, func, signature, options) {
-    options = options || {};
-    options.name = options.name || name;
-    options.qualname = options.qualname || (this.name + '.' + options.name);
-    return this.define(name, new_native(func, ['self'].concat(signature || []), options));
-};
-PyType.prototype.define_property = function (name, getter, setter) {
-    var options = {name: name, qualname: this.name + '.' + name};
-    if (getter) {
-        getter = new_native(getter, ['self'], options);
-    }
-    if (setter) {
-        setter = new_native(setter, ['self', 'value'], options);
-    }
-    return this.define(name, new new_property(getter, setter));
-};
-PyType.prototype.define_classmethod = function (name, func, signature, options) {
-    options = options || {};
-    options.name = options.name || name;
-    options.qualname = options.qualname || (this.name + '.' + options.name);
-    return this.define(name, new_native(func, ['cls'].concat(signature || []), options));
-};
-PyType.prototype.call_classmethod = function (name, args, kwargs) {
-    var method = this.lookup(name);
-    if (method) {
-        return call_object(method, [this].concat(args || []), kwargs);
-    } else {
-        vm.return_value = null;
-        vm.last_exception = METHOD_NOT_FOUND;
-        return false;
-    }
-};
-PyType.prototype.call_staticmethod = function (name, args, kwargs) {
-    var method = this.lookup(name);
-    if (method) {
-        return call_object(method, args, kwargs);
-    } else {
-        vm.return_value = null;
-        vm.last_exception = METHOD_NOT_FOUND;
-        return false;
-    }
-};
-PyType.prototype.create = function (args, kwargs) {
-    if (this.call_method('__call__', args, kwargs)) {
-        raise(TypeError, 'invalid call to python code during object creation')
-    }
-    return vm.return_value;
-};
-
-
-function PyDict(initializer, cls) {
-    var name;
-    PyObject.call(this, cls || py_dict);
-    this.table = {};
-    if (initializer) {
-        for (name in initializer) {
-            if (initializer.hasOwnProperty(name)) {
-                this.set(name, initializer[name]);
-            }
-        }
-    }
-}
-PyDict.prototype = new PyObject;
-PyDict.prototype.get = function (str_key) {
-    var current;
-    if (str_key instanceof PyStr) {
-        str_key = str_key.value;
-    } else if (typeof str_key != 'string') {
-        raise(TypeError, 'invalid primitive dict key type');
-    }
-    current = this.table[str_key];
-    while (current) {
-        if (current.key.value === str_key) {
-            return current.value;
-        }
-        current = current.next;
-    }
-};
-PyDict.prototype.set = function (str_key, value) {
-    var current;
-    if (typeof str_key == 'string') {
-        str_key = pack_str(str_key);
-    } else if (!(str_key instanceof PyStr)) {
-        raise(TypeError, 'invalid primitive dict key type');
-    }
-    current = this.table[str_key];
-    while (current) {
-        if (current.key.value === str_key.value) {
-            current.value = value;
-            return;
-        }
-        current = current.next;
-    }
-    this.table[str_key.value] = {key: str_key, value: value, next: this.table[str_key]}
-};
-PyDict.prototype.pop = function (str_key) {
-    var current, value;
-    if (str_key instanceof PyStr) {
-        str_key = str_key.value;
-    } else if (typeof str_key != 'string') {
-        raise(TypeError, 'invalid primitive dict key type');
-    }
-    current = this.table[str_key];
-    if (current) {
-        if (current.key.value === str_key) {
-            if (!(this.table[str_key] = current.next)) {
-                delete this.table[str_key];
-            }
-            return current.value;
-        } else {
-            while (current) {
-                if (current.next && current.next.key.value === str_key) {
-                    value = current.next.value;
-                    current.next = current.next.next;
-                    return value;
-                }
-                current = current.next;
-            }
-        }
-    }
-};
-
-
-function new_type(name, bases, attributes, mcs) {
-    return new PyType(name, bases, attributes, mcs);
-}
-
-function new_native_type(name, bases, attributes, mcs) {
-    var type = new PyType(name, bases, attributes, mcs);
-    type.native = type;
-    return type;
-}
-
-var py_object = new_native_type('object', []);
-var py_type = new_native_type('type', [py_object]);
-var py_dict = new_native_type('namespace', [py_object]);
-
-py_object.cls = py_type.cls = py_dict.cls = py_type;
-
-var py_int = new_native_type('int');
-var py_bool = new_native_type('bool', [py_int]);
-
-var py_float = new_native_type('float');
-
-var py_str = new_native_type('str');
-var py_bytes = new_native_type('bytes');
-
-var py_tuple = new_native_type('tuple');
-
-var py_code = new_native_type('code');
-
-var py_list = new_native_type('list');
-
-var py_namespace = new_native_type('namespace');
-var py_cell = new_native_type('cell');
-var py_frame = new_native_type('frame');
-
-var py_js_object = new_native_type('JSObject');
-var py_js_array = new_native_type('JSArray');
-var py_js_function = new_native_type('JSFunction');
+var py_js_object = PyType.native('JSObject');
+var py_js_array = PyType.native('JSArray');
+var py_js_function = PyType.native('JSFunction');
 
 var py_traceback = new_type('traceback');
 
@@ -327,11 +46,14 @@ var py_module = new_type('ModuleType');
 var py_property = new_type('property');
 
 
-function PyInt(value, cls) {
-    PyObject.call(this, cls || py_int);
-    this.value = value;
-}
-PyInt.prototype = new PyObject;
+
+
+
+
+
+
+
+
 
 function PyFloat(value, cls) {
     PyObject.call(this, cls || py_float);
@@ -499,23 +221,7 @@ PyList.prototype.copy = function () {
     return this.concat([]);
 };
 
-function PyNamespace(namespace) {
-    PyObject.call(this, py_namespace);
-    this.namespace = namespace || {};
-}
-PyNamespace.prototype = new PyObject();
-PyNamespace.prototype.load = function (name) {
-    var current;
-    if (name instanceof PyStr) {
-        name = name.value;
-    } else if (typeof name != 'string') {
-        raise(TypeError, 'invalid namespace name type');
-    }
-    return this.namespace[name];
-};
-PyNamespace.prototype.store = function (name, value) {
-    this.namespace[name] = value;
-};
+
 
 function PyCell(item) {
     PyObject.call(this, py_cell);
@@ -582,10 +288,6 @@ function pack_code(value) {
     return new PyCode(value);
 }
 
-function new_namespace(namespace) {
-    return new PyNamespace(namespace);
-}
-
 function new_cell(item) {
     return new PyCell(item);
 }
@@ -607,15 +309,14 @@ function new_js_function(func) {
 }
 
 
-var None = new PyObject(new_native_type('NoneType'));
-var NotImplemented = new PyObject(new_native_type('NotImplemented'));
-var Ellipsis = new PyObject(new_native_type('Ellipsis'));
+var None = new PyObject(PyType.native('NoneType'));
+var NotImplemented = new PyObject(PyType.native('NotImplemented'));
+var Ellipsis = new PyObject(PyType.native('Ellipsis'));
 
 var False = new PyInt(0, py_bool);
 var True = new PyInt(1, py_bool);
 
-
-function unpack_int(object, fallback) {
+function unpack_int_old(object, fallback) {
     if (object === None && fallback) {
         return fallback;
     }
@@ -695,7 +396,7 @@ function new_native(func, signature, options) {
     func.setattr('__doc__', pack_str(options.doc || ''));
     func.setattr('__module__', options.module ? pack_str(options.module) : BUILTINS_STR);
     func.setattr('__code__', pack_code(code));
-    func.setattr('__defaults__', new_namespace(options.defaults));
+    func.setattr('__defaults__', new PyDict(options.defaults));
     func.defaults = options.defaults;
     return func;
 }
@@ -804,25 +505,28 @@ function main(name) {
     resume(modules[name].code);
 }
 
+function pack_bool(object) {
+    return object ? True : False;
+}
 
-$.new_int = pack_int;
-$.new_float = pack_float;
-$.new_str = pack_str;
-$.new_bytes = pack_bytes;
-$.new_tuple = pack_tuple;
-$.new_code = pack_code;
+
+$.pack_int = pack_int;
+$.pack_float = pack_float;
+$.pack_str = pack_str;
+$.pack_bytes = pack_bytes;
+$.pack_tuple = pack_tuple;
+$.pack_code = pack_code;
 
 $.PyObject = PyObject;
 $.PyType = PyType;
 $.PyDict = PyDict;
-$.PyInt = PyInt;
 $.PyFloat = PyFloat;
 $.PyStr = PyStr;
 $.PyBytes = PyBytes;
 $.PyTuple = PyTuple;
 $.PyCode = PyCode;
 
-$.unpack_int = unpack_int;
+//$.unpack_int = unpack_int;
 $.unpack_float = unpack_float;
 $.unpack_str = unpack_str;
 $.unpack_bytes = unpack_bytes;

@@ -1,5 +1,5 @@
 jaspy.module('sys', function ($, module) {
-    module.$set('byteorder', $.new_str('big'));
+    module.$set('byteorder', $.pack_str('big'));
 
-    module.$set('implementation', $.new_str('jaspy'));
+    module.$set('implementation', $.pack_str('jaspy'));
 });
