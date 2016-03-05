@@ -75,7 +75,7 @@ PythonFrame.prototype.step = function () {
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
                     }
-                    break;
+                    return;
             }
             break;
 
@@ -112,26 +112,21 @@ PythonFrame.prototype.step = function () {
                             this.set_state(2);
                             return;
                         }
-                    } else if (vm.return_value) {
-                        this.popn(2);
-                        this.push(vm.return_value);
-                        break;
                     } else {
                         this.popn(2);
-                        this.raise();
-                        break;
+                        if (vm.return_value) {
+                            this.push(vm.return_value);
+                        }
+                        return;
                     }
                 case 2:
                     this.reset_state();
                     if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                         raise(TypeError, 'unsupported operand type');
-                        this.raise();
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
-                    } else {
-                        this.raise();
                     }
-                    break;
+                    return;
             }
             break;
 
@@ -167,7 +162,7 @@ PythonFrame.prototype.step = function () {
                             this.push(vm.return_value);
                         }
                     }
-                    break;
+                    return;
             }
             break;
 
@@ -185,11 +180,8 @@ PythonFrame.prototype.step = function () {
                     this.reset_state();
                     if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                         raise(TypeError, 'unsupported operand type');
-                        this.raise();
-                    } else if (!vm.return_value) {
-                        this.raise();
                     }
-                    break;
+                    return;
             }
             break;
 
@@ -224,8 +216,6 @@ PythonFrame.prototype.step = function () {
 
         case OPCODES.YIELD_VALUE:
             error('opcode not implemented');
-            vm.return_value = this.pop();
-            vm.frame = this.back;
             break;
 
         case OPCODES.YIELD_FROM:
@@ -304,9 +294,6 @@ PythonFrame.prototype.step = function () {
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
                             raise(TypeError, 'invalid namespace');
-                            this.raise();
-                        } else if (!vm.return_value) {
-                            this.raise();
                         }
                         break;
                 }
@@ -317,7 +304,6 @@ PythonFrame.prototype.step = function () {
                     delete this.locals[name];
                 } else {
                     raise(NameError, 'name \'' + name + '\' is not defined');
-                    this.raise();
                 }
             }
             break;
@@ -347,12 +333,9 @@ PythonFrame.prototype.step = function () {
                                 this.push(this.builtins[name]);
                             } else {
                                 raise(NameError, 'name \'' + name + '\' is not defined');
-                                this.raise();
                             }
-                        } else {
-                            this.raise();
                         }
-                        break;
+                        return;
                 }
             } else {
                 if (name in this.locals) {
@@ -363,7 +346,6 @@ PythonFrame.prototype.step = function () {
                     this.push(this.builtins[name]);
                 } else {
                     raise(NameError, 'name \'' + name + '\' is not defined');
-                    this.raise();
                 }
             }
             break;
@@ -379,7 +361,6 @@ PythonFrame.prototype.step = function () {
                 delete this.globals[name];
             } else {
                 raise(NameError, 'name \'' + name + '\' is not defined');
-                this.raise();
             }
             break;
 
@@ -391,7 +372,6 @@ PythonFrame.prototype.step = function () {
                 this.push(this.builtins[name]);
             } else {
                 raise(NameError, 'name \'' + name + '\' is not defined');
-                this.raise();
             }
             break;
 
@@ -420,9 +400,6 @@ PythonFrame.prototype.step = function () {
                         } else {
                             raise(TypeError, 'object does not support attribute deletion');
                         }
-                        this.raise();
-                    } else if (!vm.return_value) {
-                        this.raise();
                     }
                     break;
             }
@@ -449,18 +426,14 @@ PythonFrame.prototype.step = function () {
                         }
                     } else {
                         this.pop();
-                        this.raise();
                         break;
                     }
                 case 2:
                     this.reset_state();
                     if (except(MethodNotFoundError)) {
                         raise(TypeError, 'object does not support attribute access');
-                        this.raise();
                     } else if (vm.return_value) {
                         this.push(vm.return_value);
-                    } else {
-                        this.raise();
                     }
                     break;
             }
@@ -556,11 +529,8 @@ PythonFrame.prototype.step = function () {
                             console.log(vm.return_value, vm.last_exception);
                             if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                                 raise(TypeError, 'unsupported boolean operator');
-                                this.raise();
                             } else if (vm.return_value) {
                                 this.push(vm.return_value);
-                            } else {
-                                this.raise();
                             }
                             break;
                     }
@@ -638,7 +608,6 @@ PythonFrame.prototype.step = function () {
                         }
                     } else if (!vm.return_value) {
                         this.pop();
-                        this.raise();
                         break;
                     }
                 case 2:
@@ -652,9 +621,6 @@ PythonFrame.prototype.step = function () {
                             }
                         } else if (vm.return_value) {
                             raise(TypeError, 'invalid result type of boolean conversion');
-                            this.raise();
-                        } else {
-                            this.raise();
                         }
                     }
                     break;
@@ -685,7 +651,6 @@ PythonFrame.prototype.step = function () {
                         }
                     } else if (!vm.return_value) {
                         this.pop();
-                        this.raise();
                         break;
                     }
                 case 2:
@@ -702,11 +667,9 @@ PythonFrame.prototype.step = function () {
                         } else {
                             this.pop();
                             raise(TypeError, 'invalid result type of boolean conversion');
-                            this.raise();
                         }
                     } else {
                         this.pop();
-                        this.raise();
                     }
                     break;
             }
@@ -770,19 +733,16 @@ PythonFrame.prototype.step = function () {
                     }
                 case 1:
                     this.reset_state();
-                    if (except(MethodNotFoundError)) {
+                    if (!vm.return_value) {
                         this.pop();
-                        raise(TypeError, 'object does not support iteration');
-                        this.raise();
-                    } else if (except(StopIteration)) {
-                        this.pop();
-                        this.position += instruction.argument;
-                        return;
-                    } else if (vm.return_value) {
-                        this.push(vm.return_value);
+                        if (except(MethodNotFoundError)) {
+                            raise(TypeError, 'object does not support iteration');
+                        } else if (except(StopIteration)) {
+                            this.position += instruction.argument;
+                            return;
+                        }
                     } else {
-                        this.pop();
-                        this.raise();
+                        this.push(vm.return_value);
                     }
                     break;
             }
@@ -833,7 +793,6 @@ PythonFrame.prototype.step = function () {
             }
             exc_value = this.pop();
             raise(exc_value.cls, exc_value);
-            this.raise();
             break;
 
         case OPCODES.LOAD_CONST:
@@ -859,8 +818,6 @@ PythonFrame.prototype.step = function () {
                     this.reset_state();
                     if (vm.return_value) {
                         this.push(vm.return_value);
-                    } else {
-                        this.raise();
                     }
                     break;
             }
