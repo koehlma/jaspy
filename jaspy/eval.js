@@ -480,10 +480,8 @@ PythonFrame.prototype.step = function () {
                     return;
                 case 1:
                     this.reset_state();
-                    console.error('import fin');
                     name = this.code.names[instruction.argument];
                     this.push(new PyModule(modules[name].namespace));
-                    console.log(this.top0());
             }
             break;
 
@@ -520,13 +518,11 @@ PythonFrame.prototype.step = function () {
                             slot = COMPARE_SLOTS[instruction.argument];
                             right = this.pop();
                             left = this.pop();
-                            console.log(slot, right, left, this);
                             if (left.call_method(slot, [right])) {
                                 this.set_state(1);
                                 return;
                             }
                         case 1:
-                            console.log(vm.return_value, vm.last_exception);
                             if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                                 raise(TypeError, 'unsupported boolean operator');
                             } else if (vm.return_value) {
