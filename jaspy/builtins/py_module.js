@@ -3,7 +3,7 @@ function PyModule(namespace) {
 }
 PyModule.prototype = new PyObject;
 
-py_module.define_method('__getattribute__', function (self, name) {
+py_module.$def('__getattribute__', function (self, name) {
     var value = self.dict.get(name);
     if (!value) {
         raise(AttributeError, 'module has no attribute \'' + name + '\'');

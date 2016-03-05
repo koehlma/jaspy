@@ -13,8 +13,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('time', function (module, builtins) {
-    module.define_function('sleep', function (seconds, state, frame) {
+jaspy.define_module('time', function ($, module, builtins) {
+    module.$def('sleep', function (seconds, state, frame) {
         switch (state) {
             case 0:
                 setTimeout(function () {
@@ -27,7 +27,7 @@ jaspy.define_module('time', function (module, builtins) {
         }
     }, ['seconds']);
 
-    module.define_function('time', function () {
+    module.$def('time', function () {
         return jaspy.new_float((new Date()).getTime() / 1000);
     });
 }, ['builtins']);

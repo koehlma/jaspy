@@ -1,4 +1,4 @@
-py_object.define_method('__new__', function (cls, args, kwargs) {
+py_object.$def('__new__', function (cls, args, kwargs) {
     if (!(cls instanceof PyType)) {
         raise(TypeError, 'object.__new__(X): X is not a type object');
     }
@@ -8,7 +8,7 @@ py_object.define_method('__new__', function (cls, args, kwargs) {
     return new PyObject(cls, new PyDict());
 }, ['*args', '**kwargs']);
 
-py_object.define_method('__getattribute__', function (self, name, state, frame) {
+py_object.$def('__getattribute__', function (self, name, state, frame) {
     var value;
     switch (state) {
         case 0:
@@ -37,7 +37,7 @@ py_object.define_method('__getattribute__', function (self, name, state, frame) 
     }
 }, ['name']);
 
-py_object.define_method('__setattr__', function (self, name, item, state, frame) {
+py_object.$def('__setattr__', function (self, name, item, state, frame) {
     var descriptor;
     switch (state) {
         case 0:
@@ -55,7 +55,7 @@ py_object.define_method('__setattr__', function (self, name, item, state, frame)
     }
 }, ['name', 'item']);
 
-py_object.define_method('__str__', function (self) {
+py_object.$def('__str__', function (self) {
     var module = self.cls.getattr('__module__');
     if (module instanceof PyStr) {
         return new_str('<' + module.value + '.' + self.cls.name + ' object at 0x' + self.get_address() + '>');
@@ -64,11 +64,11 @@ py_object.define_method('__str__', function (self) {
     }
 });
 
-py_object.define_method('__hash__', function (self) {
+py_object.$def('__hash__', function (self) {
     return new_str('object: ' + self.get_address());
 });
 
-py_object.define_method('__eq__', function (self, other) {
+py_object.$def('__eq__', function (self, other) {
     return self === other ? True : False;
 }, ['other']);
 

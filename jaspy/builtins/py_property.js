@@ -1,4 +1,4 @@
-py_property.define_method('__get__', function (self, instance, owner, state, frame) {
+py_property.$def('__get__', function (self, instance, owner, state, frame) {
     switch (state) {
         case 0:
             if (call_object(self.getattr('fget'), [instance])) {
@@ -9,7 +9,7 @@ py_property.define_method('__get__', function (self, instance, owner, state, fra
     }
 }, ['instance', 'owner']);
 
-py_property.define_method('__set__', function (self, instance, value, state, frame) {
+py_property.$def('__set__', function (self, instance, value, state, frame) {
     switch (state) {
         case 0:
             if (call_object(self.getattr('fset'), [instance, value])) {

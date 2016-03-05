@@ -13,15 +13,15 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('greenlet', function (module, builtins) {
-    var Greenlet = module.define_type('greenlet');
-    var GreenletExit = module.define_type('GreenletExit', [builtins.Exception]);
+jaspy.define_module('greenlet', function ($, module, builtins) {
+    var Greenlet = module.$class('greenlet');
+    var GreenletExit = module.$class('GreenletExit', [builtins.Exception]);
 
 
     var current = builtins.None;
 
-    Greenlet.define_method('__init__', function (self, run) {
+    Greenlet.$def('__init__', function (self, run) {
 
-    }, ['run', 'parent'], {defaults: {run: builtins.None, parent: builtins.None}});
+    }, ['resume', 'parent'], {defaults: {run: builtins.None, parent: builtins.None}});
 
 }, ['builtins']);

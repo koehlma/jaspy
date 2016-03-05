@@ -1,4 +1,4 @@
-py_dict.define_method('__setitem__', function (self, key, value, state, frame) {
+py_dict.$def('__setitem__', function (self, key, value, state, frame) {
     if (!(self instanceof PyDict)) {
         raise(TypeError, 'invalid type of \'self\' argument');
     }

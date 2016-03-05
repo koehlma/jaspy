@@ -1,7 +1,7 @@
 var TRUE_STR = new_str('True');
 var FALSE_STR = new_str('False');
 
-py_bool.define_method('__new__', function (cls, initializer, state, frame) {
+py_bool.$def('__new__', function (cls, initializer, state, frame) {
     switch (state) {
         case 0:
             if (!(cls.is_subclass_of(py_bool))) {
@@ -33,6 +33,6 @@ py_bool.define_method('__new__', function (cls, initializer, state, frame) {
     }
 }, ['initializer'], {defaults: {initializer: False}});
 
-py_bool.define_method('__str__', function (self) {
+py_bool.$def('__str__', function (self) {
     return unpack_int(self) != 0 ? TRUE_STR : FALSE_STR;
 });

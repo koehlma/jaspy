@@ -13,37 +13,37 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.define_module('dom', function (module, builtins) {
-    var MetaElement = module.define_type('MetaElement', [builtins.type]);
-    var Element = module.define_type('Element', [builtins.object], MetaElement);
+jaspy.define_module('dom', function ($, module, builtins) {
+    var MetaElement = module.$class('MetaElement', [builtins.type]);
+    var Element = module.$class('Element', [builtins.object], MetaElement);
 
 
-    Element.define_method('__init__', function (self, tag) {
+    Element.$def('__init__', function (self, tag) {
         self.pack('element', document.createElement(jaspy.unpack_str(tag, 'div')));
     }, ['tag'], {defaults: {'tag': builtins.None}});
 
-    Element.define_method('__str__', function (self) {
+    Element.$def('__str__', function (self) {
         return jaspy.new_str('<' + self.unpack('element').nodeName.toLowerCase() + ' element at 0x' + self.get_address() + '>');
     });
 
-    Element.define_method('__getitem__', function (self, name) {
+    Element.$def('__getitem__', function (self, name) {
         name = jaspy.unpack_str(name);
         return jaspy.new_str(self.unpack('element').getAttribute(name));
     }, ['name']);
 
-    Element.define_method('__setitem__', function (self, name, value) {
+    Element.$def('__setitem__', function (self, name, value) {
         name = jaspy.unpack_str(name);
         value = jaspy.unpack_str(value);
         self.unpack('element').setAttribute(name, value);
     }, ['name', 'value']);
 
-    Element.define_method('__getattr__', function (self, name) {
+    Element.$def('__getattr__', function (self, name) {
         var child = Element.create(name);
         self.unpack('element').appendChild(child.unpack('element'));
         return child;
     }, ['name']);
 
-    Element.define_method('css', function (self, name, value) {
+    Element.$def('css', function (self, name, value) {
         name = jaspy.unpack_str(name);
         if (value === builtins.NotImplemented) {
             return jaspy.new_str(self.unpack('element').style[name])
@@ -65,7 +65,7 @@ jaspy.define_module('dom', function (module, builtins) {
         self.unpack('element').innerHTML = jaspy.unpack_str(value);
     });
 
-    Element.define_method('append', function (self, other) {
+    Element.$def('append', function (self, other) {
         if (!(other.is_instance_of(Element))) {
             jaspy.raise(builtins.TypeError, 'invalid type of \'other\' argument');
         }
@@ -73,7 +73,7 @@ jaspy.define_module('dom', function (module, builtins) {
     }, ['other']);
 
 
-    module.define_function('get_body', function () {
+    module.$def('get_body', function () {
         if (document.body) {
             var element = new jaspy.PyObject(Element, new jaspy.PyDict());
             element.pack('element', document.body);

@@ -61,31 +61,42 @@ function raise(exc_type, exc_value, exc_tb) {
     }
 }
 
-function run(object, args, kwargs) {
-    var old_frame = vm.frame;
-    if (object instanceof PythonCode) {
-        object = new_code(object);
-    }
-    if (object instanceof Frame) {
-        vm.frame = object;
-    } else if (object instanceof PyCode) {
-        var namespace = {
-            '__name__': new_str('__main__')
-        };
-        vm.frame = new PythonFrame(object.value, {
-            vm: vm, builtins: builtins,
-            locals: namespace, globals: namespace
-        })
-    } else {
-        error('object is not runnable');
-    }
+function run() {
     while (vm.frame) {
         vm.frame.step();
     }
-    vm.frame = old_frame;
-    if (!vm.return_value) {
-        console.log(vm.last_exception.exc_value.dict.get('args').value[0].value)
+    if (vm.return_value) {
+        return vm.return_value;
+    } else {
+        console.error('An unhandled Exception occoured during execution!');
     }
+}
+
+function resume(frame) {
+    if (!(frame instanceof Frame)) {
+        raise(TypeError, 'invalid type of object to resume from');
+    }
+    if (vm.frame) {
+        raise(RuntimeError, 'interpreter is already running');
+    }
+    vm.frame = frame;
+    return run();
+}
+
+function main(module) {
+    if (vm.frame) {
+        raise(RuntimeError, 'interpreter is already running');
+    }
+    if (!(module instanceof PythonModule)) {
+        raise(TypeError, 'unable to run module native module');
+    }
+    register_module('__main__', module);
+    module.namespace['__name__'] = new_str('__main__');
+    vm.frame = new PythonFrame(module.code, {
+        builtins: builtins, locals: module.namespace,
+        globals: module.namespace
+    });
+    return run();
 }
 
 function call_object(object, args, kwargs, defaults, closure) {

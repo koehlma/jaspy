@@ -1,6 +1,8 @@
 import dom
 import time
+import sys
 
+print('Implementation:', sys.implementation)
 
 print(__name__)
 print(dom)
@@ -100,10 +102,12 @@ class ABC:
     def __init__(self):
         raise TypeError()
 
+
 try:
     ABC()
 except TypeError:
     pass
+
 
 
 def abc():

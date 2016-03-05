@@ -2,7 +2,7 @@ py_type.define_classmethod('__prepare__', function (mcs, bases) {
     return new PyDict();
 }, ['bases']);
 
-py_type.define_method('__new__', function (mcs, name, bases, attributes) {
+py_type.$def('__new__', function (mcs, name, bases, attributes) {
     if (!(mcs instanceof PyType)) {
         raise(TypeError, 'invalid type of \'mcs\' argument');
     }
@@ -12,7 +12,7 @@ py_type.define_method('__new__', function (mcs, name, bases, attributes) {
     return new PyType(unpack_str(name), unpack_tuple(bases), attributes, mcs);
 }, ['name', 'bases', 'attributes']);
 
-py_type.define_method('__call__', function (cls, args, kwargs, state, frame) {
+py_type.$def('__call__', function (cls, args, kwargs, state, frame) {
     switch (state) {
         case 0:
             if (cls.call_classmethod('__new__', args, kwargs)) {
@@ -35,7 +35,7 @@ py_type.define_method('__call__', function (cls, args, kwargs, state, frame) {
     }
 }, ['*args', '**kwargs']);
 
-py_type.define_method('__str__', function (cls) {
+py_type.$def('__str__', function (cls) {
     var module = cls.getattr('__module__');
     if (!(cls instanceof PyType)) {
         raise(TypeError, 'invalid type of \'cls\' argument');

@@ -48,12 +48,13 @@ window['jaspy'] = (function () {
     // #include "frame.js"
     // #include "vm.js"
 
-    return {
+    var jaspy = {
         vm: vm,
 
         main: main,
 
         define_module: define_module,
+        module: define_module,
 
         unpack_int: unpack_int,
         unpack_float: unpack_float,
@@ -94,7 +95,14 @@ window['jaspy'] = (function () {
         'PythonCode': PythonCode,
         'NativeCode': NativeCode,
 
-        'run': run,
-        'pause': pause
-    }
+        'run': resume,
+        'pause': pause,
+
+        'get_module': get_module,
+        'get_namespace': get_namespace
+    };
+
+    return jaspy;
 })();
+
+// #include "modules/sys.js"

@@ -151,17 +151,17 @@ var builtins = {
 };
 
 
-var module_builtins = define_module('builtins', function (module) {
+var module_builtins = define_module('builtins', function ($, module) {
     module.namespace = builtins;
 });
 
-define_module('js', function (module) {
+define_module('js', function ($, module) {
     return {
         'JSError': JSError
     }
 });
 
-module_builtins.define_function('print', function (objects, sep, end, file, flush, state, frame) {
+module_builtins.$def('print', function (objects, sep, end, file, flush, state, frame) {
     var object;
     while (true) {
         switch (state) {

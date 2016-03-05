@@ -2,31 +2,51 @@ var modules = {};
 var pending = {};
 
 function get_module(name) {
-    return modules[name];
-}
-function get_namespace(name) {
     if (name in modules) {
-        return modules[name].namespace;
+        return modules[name];
+    } else {
+        raise(ImportError, 'no module named \'' + name + '\'');
     }
 }
+
+function get_namespace(name) {
+    return get_module(name).namespace;
+}
+
+function register_module(name, module) {
+    modules[name] = module;
+}
+
+function unregister_module(name) {
+    delete modules[name];
+}
+
 
 function Module(name, depends) {
     this.name = name;
     this.depends = depends || [];
-    modules[this.name] = this;
+    this.namespace = {};
+    if (this.name) {
+        register_module(this.name, this);
+    }
 }
+
 
 function PythonModule(name, code, depends) {
     Module.call(this, name, depends);
     this.code = code;
 }
 
+PythonModule.prototype = new Module();
+
 function NativeModule(name, func, depends) {
     Module.call(this, name, depends);
-    this.namespace = {};
-    func.apply(null, [this].concat(this.depends.map(get_namespace)));
+    func.apply(null, [jaspy, this].concat(this.depends.map(get_namespace)));
 }
-NativeModule.prototype.define_function = function (name, func, signature, options) {
+
+NativeModule.prototype = new Module();
+
+NativeModule.prototype.$def = function (name, func, signature, options) {
     options = options || {};
     signature = signature || [];
     options.module = this.name;
@@ -36,7 +56,13 @@ NativeModule.prototype.define_function = function (name, func, signature, option
     this.namespace[name] = new_native(func, signature, options);
     return this.namespace[name];
 };
-NativeModule.prototype.define_type = function (name, bases, mcs) {
+
+NativeModule.prototype.$set = function (name, value) {
+    this.namespace[name] = value;
+    return this.namespace[name];
+};
+
+NativeModule.prototype.$class = function (name, bases, mcs) {
     this.namespace[name] = new PyType(name, bases, new PyDict(), mcs);
     return this.namespace[name];
 };

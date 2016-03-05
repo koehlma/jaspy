@@ -143,7 +143,7 @@ PyType.prototype.define = function (name, item) {
 PyType.prototype.define_alias = function (name, alias) {
     return this.define(alias, this.lookup(name));
 };
-PyType.prototype.define_method = function (name, func, signature, options) {
+PyType.prototype.$def = function (name, func, signature, options) {
     options = options || {};
     options.name = options.name || name;
     options.qualname = options.qualname || (this.name + '.' + options.name);
@@ -797,5 +797,5 @@ function isiterable(object) {
 
 
 function main(name) {
-    run(modules[name].code);
+    resume(modules[name].code);
 }
