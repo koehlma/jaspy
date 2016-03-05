@@ -13,13 +13,35 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from distutils.core import setup
 
-setup(name='jaspy',
-      version='0.0.1dev',
-      author='Maximilian Köhl',
-      author_email='mail@koehlma.de',
-      url='https://www.koehlma.de/jaspy',
-      license='LGPLv3',
-      py_modules=['jaspy'],
-      classifiers=[])
+
+LICENSE = 'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)'
+
+with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
+    long_description = readme.read()
+
+
+setup(
+    name='jaspy',
+    version='0.1.0dev',
+    description='Python interpreter in JavaScript',
+    long_description=long_description,
+    author='Maximilian Köhl',
+    author_email='mail@koehlma.de',
+    url='https://www.koehlma.de/jaspy',
+    license='LGPLv3',
+    scripts=['build', 'jaspy'],
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        LICENSE,
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3',
+        'Environment :: Web Environment',
+        'Topic :: Internet',
+        'Topic :: Internet :: WWW/HTTP :: Browsers',
+    ]
+)
