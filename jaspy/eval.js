@@ -14,9 +14,8 @@
  */
 
 PythonFrame.prototype.step = function () {
-    var top, value, low, high, mid, name, code, defaults, globals, index, slot, func;
-    var head, right, left, kwargs, args, type, block, temp;
-    var exc_type, exc_tb, exc_value;
+    var slot, right, left, name, value, block, exc_type, exc_value, exc_tb, temp;
+    var low, mid, high, args, kwargs, index, code, defaults, globals, func;
     var instruction = this.fetch();
     if (DEBUG) {
         console.log('executing instruction', instruction);
@@ -499,11 +498,11 @@ PythonFrame.prototype.step = function () {
 
         case OPCODES.IMPORT_NAME:
             name = this.code.names[instruction.argument];
-            this.popn(2)
+            this.popn(2);
             if (name in modules) {
                 this.push(new PyModule(modules[name].namespace));
             } else {
-                raise(ImportError)
+                raise(ImportError);
                 this.raise();
             }
             break;
@@ -795,8 +794,8 @@ PythonFrame.prototype.step = function () {
         case OPCODES.SETUP_LOOP:
         case OPCODES.SETUP_EXCEPT:
         case OPCODES.SETUP_FINALLY:
-            type = OPCODES_EXTRA[instruction.opcode];
-            this.push_block(type, instruction.argument);
+            temp = OPCODES_EXTRA[instruction.opcode];
+            this.push_block(temp, instruction.argument);
             break;
 
         case OPCODES.LOAD_CLOSURE:
@@ -855,8 +854,7 @@ PythonFrame.prototype.step = function () {
                         kwargs[this.pop().value] = value;
                     }
                     args = this.popn(low);
-                    func = this.pop();
-                    if (call_object(func, args, kwargs)) {
+                    if (call_object(this.pop(), args, kwargs)) {
                         this.state = 1;
                         this.position -= 3;
                         break;
