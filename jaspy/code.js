@@ -5,7 +5,7 @@ function Signature(argnames, poscount, var_args, var_kwargs) {
     this.var_kwargs = var_kwargs || false;
 }
 
-Signature.prototype.parse = function (args, kwargs, defaults, namespace) {
+Signature.prototype.parse_args = function (args, kwargs, defaults, namespace) {
     args = args || [];
     kwargs = kwargs || {};
 
@@ -171,7 +171,7 @@ function Code(signature, options) {
 }
 
 Code.prototype.parse_args = function (args, kwargs, defaults, namespace) {
-    return this.signature.parse(args, kwargs, defaults, namespace);
+    return this.signature.parse_args(args, kwargs, defaults, namespace);
 };
 
 

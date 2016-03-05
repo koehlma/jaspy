@@ -91,7 +91,7 @@ function main(module) {
         raise(TypeError, 'unable to run module native module');
     }
     register_module('__main__', module);
-    module.namespace['__name__'] = new_str('__main__');
+    module.namespace['__name__'] = pack_str('__main__');
     vm.frame = new PythonFrame(module.code, {
         builtins: builtins, locals: module.namespace,
         globals: module.namespace

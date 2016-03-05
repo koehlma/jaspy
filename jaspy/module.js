@@ -70,14 +70,14 @@ NativeModule.prototype.$class = function (name, bases, mcs) {
     return this.namespace[name];
 };
 
-function define_module(name, code_or_func, depends) {
-    if (code_or_func instanceof PyCode) {
-        code_or_func = code_or_func.value
+function define_module(name, initializer, depends) {
+    if (initializer instanceof PyCode) {
+        initializer = initializer.value
     }
-    if (typeof code_or_func == 'function') {
-        return new NativeModule(name, code_or_func, depends);
-    } else if (code_or_func instanceof PythonCode) {
-        return new PythonModule(name, code_or_func, depends);
+    if (typeof initializer == 'function') {
+        return new NativeModule(name, initializer, depends);
+    } else if (initializer instanceof PythonCode) {
+        return new PythonModule(name, initializer, depends);
     } else {
         throw new Error('invalid type of code or function');
     }

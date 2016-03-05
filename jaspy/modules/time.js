@@ -18,9 +18,9 @@ jaspy.module('time', function ($, module, builtins) {
         switch (state) {
             case 0:
                 setTimeout(function () {
-                    jaspy.resume(frame);
-                }, jaspy.unpack_float(seconds) * 1000);
-                jaspy.pause();
+                    $.resume(frame);
+                }, $.unpack_float(seconds) * 1000);
+                $.pause();
                 return 1;
             case 1:
                 break;
@@ -28,6 +28,6 @@ jaspy.module('time', function ($, module, builtins) {
     }, ['seconds']);
 
     module.$def('time', function () {
-        return jaspy.new_float((new Date()).getTime() / 1000);
+        return $.new_float((new Date()).getTime() / 1000);
     });
 }, ['builtins']);

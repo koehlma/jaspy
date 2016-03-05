@@ -1,4 +1,4 @@
-var NONE_STR = new_str('None');
+var NONE_STR = pack_str('None');
 
 None.cls.$def('__new__', function (cls) {
     return None;

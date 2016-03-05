@@ -24,17 +24,17 @@ def convert(const):
     if const is None or isinstance(const, bool):
         js.append('jaspy.%r' % const)
     elif isinstance(const, int):
-        js.append('jaspy.new_int(%r)' % const)
+        js.append('jaspy.pack_int(%r)' % const)
     elif isinstance(const, float):
-        js.append('jaspy.new_float(%r)' % const)
+        js.append('jaspy.pack_float(%r)' % const)
     elif isinstance(const, str):
-        js.append('jaspy.new_str(%r)' % const)
+        js.append('jaspy.pack_str(%r)' % const)
     elif isinstance(const, bytes):
-        js.append('jaspy.new_bytes(%r)' % ', '.join(map(int, const)))
+        js.append('jaspy.pack_bytes(%r)' % ', '.join(map(int, const)))
     elif isinstance(const, tuple):
-        js.append('jaspy.new_tuple([%s])' % ', '.join(map(convert, const)))
+        js.append('jaspy.pack_tuple([%s])' % ', '.join(map(convert, const)))
     elif isinstance(const, types.CodeType):
-        js.append('jaspy.new_code(new jaspy.PythonCode(\'%s\', {' % repr(const.co_code)[2:-1])
+        js.append('jaspy.pack_code(new jaspy.PythonCode(\'%s\', {' % repr(const.co_code)[2:-1])
         js.append('name: %r,' % const.co_name)
         js.append('filename: %r,' % const.co_filename)
         js.append('constants: [%s],' % ', '.join(map(convert, const.co_consts)))

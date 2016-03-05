@@ -1,5 +1,5 @@
-var TRUE_STR = new_str('True');
-var FALSE_STR = new_str('False');
+var TRUE_STR = pack_str('True');
+var FALSE_STR = pack_str('False');
 
 py_bool.$def('__new__', function (cls, initializer, state, frame) {
     switch (state) {

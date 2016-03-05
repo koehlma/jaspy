@@ -41,18 +41,18 @@ py_type.$def('__str__', function (cls) {
         raise(TypeError, 'invalid type of \'cls\' argument');
     }
     if (module instanceof PyStr) {
-        return new_str('<class \'' + unpack_str(module) + '.' + cls.name + '\'>');
+        return pack_str('<class \'' + unpack_str(module) + '.' + cls.name + '\'>');
     } else {
-        return new_str('<class \'' + cls.name + '\'>');
+        return pack_str('<class \'' + cls.name + '\'>');
     }
 });
 
 py_type.define_property('__name__', function (cls) {
-    return new_str(cls.unpack('name'));
+    return pack_str(cls.unpack('name'));
 }, function (cls, value) {
     cls.pack('name', unpack_str(value));
 });
 
 py_type.define_property('__mro__', function (cls) {
-    return new_tuple(cls.unpack('mro'));
+    return pack_tuple(cls.unpack('mro'));
 });

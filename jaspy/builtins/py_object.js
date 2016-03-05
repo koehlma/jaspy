@@ -58,14 +58,14 @@ py_object.$def('__setattr__', function (self, name, item, state, frame) {
 py_object.$def('__str__', function (self) {
     var module = self.cls.getattr('__module__');
     if (module instanceof PyStr) {
-        return new_str('<' + module.value + '.' + self.cls.name + ' object at 0x' + self.get_address() + '>');
+        return pack_str('<' + module.value + '.' + self.cls.name + ' object at 0x' + self.get_address() + '>');
     } else {
-        return new_str('<' + self.cls.name + ' object at 0x' + self.get_address() + '>');
+        return pack_str('<' + self.cls.name + ' object at 0x' + self.get_address() + '>');
     }
 });
 
 py_object.$def('__hash__', function (self) {
-    return new_str('object: ' + self.get_address());
+    return pack_str('object: ' + self.get_address());
 });
 
 py_object.$def('__eq__', function (self, other) {

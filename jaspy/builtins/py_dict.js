@@ -16,7 +16,7 @@ py_dict.$def('__setitem__', function (self, key, value, state, frame) {
             if (vm.return_value instanceof PyStr) {
                 self.set(vm.return_value, value);
             } else if (vm.return_value instanceof PyInt) {
-                self.set(new_str(vm.return_value.value.toString()), value);
+                self.set(pack_str(vm.return_value.value.toString()), value);
             } else {
                 raise(TypeError, 'invalid result type of key hash');
             }

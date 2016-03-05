@@ -447,10 +447,10 @@ PythonFrame.prototype.step = function () {
                     case 0:
                         if (instruction.opcode === OPCODES.STORE_NAME) {
                             slot = '__setitem__';
-                            args = [new_str(name), this.pop()];
+                            args = [pack_str(name), this.pop()];
                         } else {
                             slot = '__delitem__';
-                            args = [new_str(name)];
+                            args = [pack_str(name)];
                         }
                         if (this.namespace.call_method(slot, args)) {
                             this.state = 1;
@@ -489,7 +489,7 @@ PythonFrame.prototype.step = function () {
             if (this.namespace) {
                 switch (this.state) {
                     case 0:
-                        if (this.namespace.call_method('__getitem__', [new_str(name)])) {
+                        if (this.namespace.call_method('__getitem__', [pack_str(name)])) {
                             this.state = 1;
                             this.position -= 3;
                         }
@@ -560,10 +560,10 @@ PythonFrame.prototype.step = function () {
                     temp = this.pop();
                     if (instruction.opcode === OPCODES.STORE_ATTR) {
                         slot = '__setattr__';
-                        args = [new_str(name), this.pop()];
+                        args = [pack_str(name), this.pop()];
                     } else {
                         slot = '__delattr__';
-                        args = [new_str(name)];
+                        args = [pack_str(name)];
                     }
                     if (temp.call_method(slot, args)) {
                         this.state = 1;
@@ -589,7 +589,7 @@ PythonFrame.prototype.step = function () {
             name = this.code.names[instruction.argument];
             switch (this.state) {
                 case 0:
-                    if (this.top0().call_method('__getattribute__', [new_str(name)])) {
+                    if (this.top0().call_method('__getattribute__', [pack_str(name)])) {
                         this.state = 1;
                         this.position -= 3;
                         break;
@@ -602,7 +602,7 @@ PythonFrame.prototype.step = function () {
                         break;
                     }
                     if (except(AttributeError) || except(MethodNotFoundError)) {
-                        if (this.pop().call_method('__getattr__', [new_str(name)])) {
+                        if (this.pop().call_method('__getattr__', [pack_str(name)])) {
                             this.state = 2;
                             this.position -= 3;
                             break;
@@ -635,11 +635,11 @@ PythonFrame.prototype.step = function () {
             break;
 
         case OPCODES.BUILD_TUPLE:
-            this.push(new_tuple(this.popn(instruction.argument)));
+            this.push(pack_tuple(this.popn(instruction.argument)));
             break;
 
         case OPCODES.BUILD_LIST:
-            this.push(new_list(this.popn(instruction.argument)));
+            this.push(pack_list(this.popn(instruction.argument)));
             break;
 
         case OPCODES.BUILD_SET:
@@ -1057,7 +1057,7 @@ PythonFrame.prototype.step = function () {
             }
             globals = this.globals;
             func = new PyObject(py_function);
-            func.namespace['__name__'] = new_str(name);
+            func.namespace['__name__'] = pack_str(name);
             func.namespace['__code__'] = code;
             func.defaults = defaults;
             if (instruction.opcode == OPCODES.MAKE_CLOSURE) {

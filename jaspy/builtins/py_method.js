@@ -10,7 +10,7 @@ function new_method(func, instance) {
 }
 
 py_method.$def('__str__', function (self) {
-    return new_str('<bound-method');
+    return pack_str('<bound-method');
 });
 
 py_classmethod.$def('__init__', function (self, func) {

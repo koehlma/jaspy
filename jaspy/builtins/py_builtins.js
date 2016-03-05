@@ -44,7 +44,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
                     raise(TypeError, 'unable to determine most derived metaclass');
                 }
             }
-            if (frame.metaclass.call_classmethod('__prepare__', [new_tuple(bases)], keywords)) {
+            if (frame.metaclass.call_classmethod('__prepare__', [pack_tuple(bases)], keywords)) {
                 return 1;
             }
         case 1:
@@ -64,7 +64,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
             } else {
                 bases = bases.array;
             }
-            if (frame.metaclass.cls.call_method('__call__', [name, new_tuple(bases), frame.namespace], keywords)) {
+            if (frame.metaclass.cls.call_method('__call__', [name, pack_tuple(bases), frame.namespace], keywords)) {
                 return 3;
             }
         case 3:
@@ -210,7 +210,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
         }
     }
 }, ['*objects', 'sep', 'end', 'file', 'flush'], {
-    defaults: {sep: new_str(' '), end: new_str('\n'), file: None, flush: False}
+    defaults: {sep: pack_str(' '), end: pack_str('\n'), file: None, flush: False}
 });
 
 

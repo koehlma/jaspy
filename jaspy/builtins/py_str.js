@@ -8,7 +8,7 @@ py_str.$def('__new__', function (cls, initializer, state, frame) {
                 if (initializer.cls == cls) {
                     return initializer;
                 } else {
-                    return new_str(initializer.value, cls);
+                    return pack_str(initializer.value, cls);
                 }
             }
             if (initializer.call_method('__str__')) {
@@ -29,7 +29,7 @@ py_str.$def('__str__', function (self) {
 });
 
 py_str.$def('__add__', function (self, other) {
-    return new_str(unpack_str(self) + unpack_str(other));
+    return pack_str(unpack_str(self) + unpack_str(other));
 }, ['other']);
 py_str.define_alias('__add__', '__iadd__');
 py_str.define_alias('__add__', '__radd__');

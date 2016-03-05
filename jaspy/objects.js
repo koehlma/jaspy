@@ -230,7 +230,7 @@ PyDict.prototype.get = function (str_key) {
 PyDict.prototype.set = function (str_key, value) {
     var current;
     if (typeof str_key == 'string') {
-        str_key = new_str(str_key);
+        str_key = pack_str(str_key);
     } else if (!(str_key instanceof PyStr)) {
         raise(TypeError, 'invalid primitive dict key type');
     }
@@ -287,7 +287,6 @@ var py_type = new_native_type('type', [py_object]);
 var py_dict = new_native_type('namespace', [py_object]);
 
 py_object.cls = py_type.cls = py_dict.cls = py_type;
-py_object.namespace.cls = py_type.namespace.cls = py_dict.namespace.cls = py_dict;
 
 var py_int = new_native_type('int');
 var py_bool = new_native_type('bool', [py_int]);
@@ -555,31 +554,31 @@ function PyJSFunction(func) {
 PyJSFunction.prototype = new PyObject;
 
 
-function new_int(value, cls) {
+function pack_int(value, cls) {
     return new PyInt(value, cls);
 }
 
-function new_float(value, cls) {
+function pack_float(value, cls) {
     return new PyFloat(value, cls);
 }
 
-function new_str(value, cls) {
+function pack_str(value, cls) {
     return new PyStr(value, cls);
 }
 
-function new_bytes(value, cls) {
+function pack_bytes(value, cls) {
     return new PyBytes(value, cls);
 }
 
-function new_tuple(value, cls) {
+function pack_tuple(value, cls) {
     return new PyTuple(value, cls);
 }
 
-function new_list(array, cls) {
+function pack_list(array, cls) {
     return new PyList(array, cls);
 }
 
-function new_code(value) {
+function pack_code(value) {
     return new PyCode(value);
 }
 
@@ -587,7 +586,7 @@ function new_namespace(namespace) {
     return new PyNamespace(namespace);
 }
 
-function new_call(item) {
+function new_cell(item) {
     return new PyCell(item);
 }
 
@@ -685,17 +684,17 @@ function unpack_code(object, fallback) {
 }
 
 
-var BUILTINS_STR = new_str('builtins');
+var BUILTINS_STR = pack_str('builtins');
 
 function new_native(func, signature, options) {
     options = options || {};
     var code = new NativeCode(func, options, signature);
     func = new PyObject(py_function);
-    func.setattr('__name__', new_str(options.name || '<unkown>'));
-    func.setattr('__qualname__', new_str(options.qualname || '<unkown>'));
-    func.setattr('__doc__', new_str(options.doc || ''));
-    func.setattr('__module__', options.module ? new_str(options.module) : BUILTINS_STR);
-    func.setattr('__code__', new_code(code));
+    func.setattr('__name__', pack_str(options.name || '<unkown>'));
+    func.setattr('__qualname__', pack_str(options.qualname || '<unkown>'));
+    func.setattr('__doc__', pack_str(options.doc || ''));
+    func.setattr('__module__', options.module ? pack_str(options.module) : BUILTINS_STR);
+    func.setattr('__code__', pack_code(code));
     func.setattr('__defaults__', new_namespace(options.defaults));
     func.defaults = options.defaults;
     return func;
@@ -771,13 +770,13 @@ var JSError = new PyType('JSError', [Exception]);
 
 function pack_error(error) {
     return new PyObject(JSError, {
-        'args': new_tuple([new_str(error.name), new_str(error.message)])
+        'args': pack_tuple([pack_str(error.name), pack_str(error.message)])
     });
 }
 
 function new_exception(cls, message) {
     var exc_value = new PyObject(cls);
-    exc_value.namespace['args'] = new_tuple([new_str(message)]);
+    exc_value.namespace['args'] = pack_tuple([pack_str(message)]);
     return exc_value;
 }
 
@@ -806,12 +805,12 @@ function main(name) {
 }
 
 
-$.new_int = new_int;
-$.new_float = new_float;
-$.new_str = new_str;
-$.new_bytes = new_bytes;
-$.new_tuple = new_tuple;
-$.new_code = new_code;
+$.new_int = pack_int;
+$.new_float = pack_float;
+$.new_str = pack_str;
+$.new_bytes = pack_bytes;
+$.new_tuple = pack_tuple;
+$.new_code = pack_code;
 
 $.PyObject = PyObject;
 $.PyType = PyType;
