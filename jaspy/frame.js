@@ -25,9 +25,11 @@ function Frame(code, options) {
 
     this.position = options.position || 0;
 }
+
 Frame.prototype.get_line_number = function () {
     return this.code.get_line_number(this.position);
 };
+
 
 function PythonFrame(code, options) {
     var index;
@@ -60,6 +62,8 @@ function PythonFrame(code, options) {
     }
 
     this.unwind_cause = null;
+
+    this.previous = 0;
 }
 PythonFrame.prototype = new Frame;
 PythonFrame.prototype.top_block = function () {
@@ -96,26 +100,38 @@ PythonFrame.prototype.push = function (item) {
     assert(item instanceof PyObject);
     this.stack.push(item);
 };
-PythonFrame.prototype.fetch = function () {
-    var high, low, ext, argument = null;
+PythonFrame.prototype.fetch = function (position) {
+    this.previous = this.position;
+
+    var high, low, ext;
+    var argument = null;
+
     if (this.position >= this.code.bytecode.length) {
-        error('bytecode overflow');
+        error('bytecode overflow in python frame');
     }
     var opcode = this.code.bytecode.charCodeAt(this.position++);
-    if (DEBUG) {
-        console.log('opcode: ' + opcode + ' | ' + 'position: ' + (this.position - 1));
-    }
     if (opcode >= OPCODES_ARGUMENT) {
         low = this.code.bytecode.charCodeAt(this.position++);
         high = this.code.bytecode.charCodeAt(this.position++);
         argument = high << 8 | low;
     }
     if (opcode === OPCODES.EXTENDED_ARG) {
-        ext = this.fetch();
-        opcode = ext.opcode;
-        argument = argument << 16 | opcode.argument;
+        opcode = this.code.bytecode.charCodeAt(this.position++);
+        low = this.code.bytecode.charCodeAt(this.position++);
+        high = this.code.bytecode.charCodeAt(this.position++);
+        argument = (argument << 16) | (high << 8) | low;
     }
-    return {opcode: opcode, argument: argument};
+    if (DEBUG) {
+        console.log('fetched opcode ' + opcode + ' at position ' + this.previous);
+    }
+    return {opcode: opcode, argument: argument, position: this.previous};
+};
+PythonFrame.prototype.set_state = function (state) {
+    this.position = this.previous;
+    this.state = state;
+};
+PythonFrame.prototype.reset_state = function () {
+    this.state = 0;
 };
 PythonFrame.prototype.unwind = function (cause) {
     if (cause != undefined) {
@@ -180,6 +196,9 @@ PythonFrame.prototype.raise = function () {
     this.push(vm.last_exception.exc_value);
     this.push(vm.last_exception.exc_type);
     this.unwind(UNWIND_CAUSES.EXCEPTION);
+};
+PythonFrame.prototype.get_line_number = function () {
+    return this.code.get_line_number(this.previous);
 };
 
 
