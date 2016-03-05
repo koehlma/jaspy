@@ -14,4 +14,15 @@
  */
 
 // #include 'native/dict.js'
+
 // #include 'native/int_big.js' if BIGINT else 'native/int_small.js'
+
+// #include 'native/float.js'
+
+// #include 'native/str.js'
+// #include 'native/bytes.js'
+
+// #include 'native/tuple.js'
+// #include 'native/list.js'
+
+// #include 'native/code.js'
