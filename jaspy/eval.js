@@ -28,15 +28,15 @@ PythonFrame.prototype.step = function () {
             this.pop();
             break;
         case OPCODES.ROT_TWO:
-            top = this.popn(2);
-            this.push(top[1]);
-            this.push(top[0]);
+            temp = this.popn(2);
+            this.push(temp[1]);
+            this.push(temp[0]);
             break;
         case OPCODES.ROT_THREE:
-            top = this.popn(3);
-            this.push(top[2]);
-            this.push(top[1]);
-            this.push(top[0]);
+            temp = this.popn(3);
+            this.push(temp[2]);
+            this.push(temp[1]);
+            this.push(temp[0]);
             break;
         case OPCODES.DUP_TOP:
             this.push(this.top0());
