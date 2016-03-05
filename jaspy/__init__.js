@@ -33,23 +33,7 @@ window['jaspy'] = (function () {
 
     // #include "boot.js"
 
-
-    // #include "builtins/py_object.js"
-    // #include "builtins/py_type.js"
-    // #include "builtins/py_dict.js"
-    // #include "builtins/py_int.js"
-    // #include "builtins/py_bool.js"
-    // #include "builtins/py_float.js"
-    // #include "builtins/py_str.js"
-    // #include "builtins/py_function.js"
-    // #include "builtins/py_method.js"
-    // #include "builtins/py_property.js"
-    // #include "builtins/py_module.js"
-    // #include "builtins/py_none.js"
-    // #include "builtins/py_exception.js"
-
-    // #include "builtins/py_builtins.js"
-
+    // #include "builtins/__init__.js"
 
     // #include "frame.js"
     // #include "vm.js"
