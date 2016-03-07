@@ -30,16 +30,16 @@ py_bool.$def('__new__', function (cls, initializer, state, frame) {
                 if (initializer.call_method('__len__')) {
                     return 2;
                 }
-            } else if (vm.return_value) {
-                return vm.return_value;
             } else {
-                return null;
+                // FIXME: create object of class cls
+                return new vm.return_value;
             }
         case 2:
             if (except(MethodNotFoundError)) {
-                return new PyInt(1, cls);
+                return True;
             } else if (vm.return_value) {
-                return vm.return_value.ne(0) ? True : False;
+                // FIXME: create object of class cls
+                return vm.return_value.ne(False) ? True : False;
             }
     }
 }, ['initializer'], {defaults: {initializer: False}});

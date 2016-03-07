@@ -111,7 +111,7 @@ print(x)
 
 start = time.time()
 x = 0
-while x < 5: x += 1
+while x < 5000: x += 1
 stop = time.time()
 print(x)
 print(stop - start)
