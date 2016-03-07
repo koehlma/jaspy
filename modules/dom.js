@@ -89,4 +89,13 @@ jaspy.module('dom', function ($, module, builtins) {
             jaspy.raise(builtins.ValueError, 'unable to load body from dom')
         }
     });
+
+    module.$def('set_interval', function (interval, callback) {
+        var handle = $.pack_int(setInterval(function () {
+            $.callback(callback, [handle], {});
+        }, $.unpack_int(interval)));
+        return handle;
+        console.log($.unpack_int(interval));
+    }, ['interval', 'callback']);
+
 }, ['builtins']);

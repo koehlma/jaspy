@@ -168,12 +168,23 @@ print(int.__implementation__)
 print(sys.__name__)
 
 
+def on_interval(handle):
+    print('Hello!!!')
+
+dom.set_interval(5000, on_interval)
+
+
 x = True
+height = 0
 while True:
-    time.sleep(0.5)
-    if x:
-        p.css('background', '#00FF00')
-        x = False
-    else:
-        p.css('background', '#0000FF')
-        x = True
+    time.sleep(0.02)
+    height += 1
+    p.css('height', str(height) + 'px')
+    height %= 100
+    if height == 0:
+        if x:
+            p.css('background', '#00FF00')
+            x = False
+        else:
+            p.css('background', '#0000FF')
+            x = True

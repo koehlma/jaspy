@@ -186,7 +186,11 @@ function pack_bool(object) {
 }
 
 
-//$.unpack_int = unpack_int;
+function unpack_int(object) {
+    return object.number();
+}
+
+$.unpack_int = unpack_int;
 $.unpack_float = unpack_float;
 $.unpack_str = unpack_str;
 $.unpack_bytes = unpack_bytes;
