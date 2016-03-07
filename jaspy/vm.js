@@ -43,12 +43,13 @@ function raise(exc_type, exc_value, exc_tb) {
     if (typeof exc_value == 'string') {
         exc_value = new_exception(exc_type, exc_value);
     }
+
     if (vm.return_value === null) {
         exc_value.namespace['__context__'] = vm.last_exception.exc_value;
-    } else {
-        vm.return_value = null;
     }
+    vm.return_value = null;
 
+    // TODO: create an traceback object
     if (!exc_tb) {
         if (TRACEBACK_ON_EXCEPTION) {
             var message = [];
@@ -69,6 +70,7 @@ function raise(exc_type, exc_value, exc_tb) {
         exc_tb = None;
         exc_value.namespace['__traceback__'] = exc_tb;
     }
+
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
 
     if (vm.frame instanceof NativeFrame) {
