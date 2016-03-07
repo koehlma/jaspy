@@ -72,6 +72,13 @@ jaspy.module('dom', function ($, module, builtins) {
         self.unpack('element').appendChild(other.unpack('element'));
     }, ['other']);
 
+    Element.$def('register_listener', function (self, name, callback) {
+        var element = self.unpack('element');
+        element.addEventListener($.unpack_str(name), function (event) {
+            $.callback(callback, [self], {});
+        });
+    }, ['name', 'callback']);
+
 
     module.$def('get_body', function () {
         if (document.body) {

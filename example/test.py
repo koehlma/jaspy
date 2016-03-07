@@ -37,8 +37,14 @@ print('css', wrapper.css)
 wrapper.css('background', '#FF0000')
 print(wrapper.css('background'))
 
+
+def on_click(element):
+    print('click on element', element)
+
+
 p1 = wrapper.p
 p1.text = 'Hallo Welt!'
+p1.register_listener('click', on_click)
 print(p1)
 print(p1.text)
 

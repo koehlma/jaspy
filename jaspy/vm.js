@@ -165,6 +165,11 @@ function main(module) {
     return run();
 }
 
+function callback(object, args, kwargs) {
+    call_object(object, args, kwargs);
+    run();
+}
+
 function call_object(object, args, kwargs, defaults, closure, globals) {
     var code, result, frame;
     while (true) {
@@ -172,7 +177,7 @@ function call_object(object, args, kwargs, defaults, closure, globals) {
             vm.frame = new PythonFrame(object, {
                 vm: vm, back: vm.frame, defaults: defaults,
                 args: args, kwargs: kwargs, closure: closure,
-                globals: globals
+                globals: globals, builtins: builtins
             });
             return true;
         } else if (object instanceof NativeCode) {
@@ -259,4 +264,5 @@ $.vm = vm;
 
 $.pause = pause;
 $.resume = resume;
+$.callback = callback;
 $.main = main;
