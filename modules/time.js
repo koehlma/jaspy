@@ -20,7 +20,7 @@ jaspy.module('time', function ($, module, builtins) {
                 setTimeout(function () {
                     $.resume(frame);
                 }, $.unpack_float(seconds) * 1000);
-                $.pause();
+                $.suspend();
                 return 1;
             case 1:
                 break;
