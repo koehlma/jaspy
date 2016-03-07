@@ -20,9 +20,6 @@ vm.frame = null;
 vm.return_value = None;
 vm.last_exception = null;
 
-vm.stack = new Array(4);
-vm.level = 0;
-
 function suspend() {
     vm.frame = null;
 }
