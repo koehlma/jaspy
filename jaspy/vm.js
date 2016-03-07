@@ -101,8 +101,6 @@ function run() {
     }
 }
 
-
-
 function main(module) {
     if (vm.frame) {
         raise(RuntimeError, 'interpreter is already running');
@@ -118,8 +116,6 @@ function main(module) {
     });
     return run();
 }
-
-
 
 function call(object, args, kwargs, defaults, closure, globals) {
     var code, result, frame;
