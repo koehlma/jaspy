@@ -198,7 +198,7 @@ function NativeFrame(code, options) {
     this.args = this.code.parse_args(options.args, options.kwargs, options.defaults);
 }
 NativeFrame.prototype = new Frame;
-NativeFrame.prototype.step = function () {
+NativeFrame.prototype.run = function () {
     assert(!this.code.simple);
     var result;
     try {

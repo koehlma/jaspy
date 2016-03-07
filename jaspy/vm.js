@@ -24,8 +24,15 @@ function suspend() {
     vm.frame = null;
 }
 
-function step() {
-    vm.frame.step();
+function resume(frame) {
+    if (!(frame instanceof Frame)) {
+        raise(TypeError, 'invalid type of object to resume from');
+    }
+    if (vm.frame) {
+        raise(RuntimeError, 'interpreter is already running');
+    }
+    vm.frame = frame;
+    return run();
 }
 
 function except(exc_type) {
@@ -80,7 +87,7 @@ function raise(exc_type, exc_value, exc_tb) {
 
 function run() {
     while (vm.frame) {
-        vm.frame.step();
+        vm.frame.run();
     }
     if (vm.return_value) {
         return vm.return_value;
@@ -89,16 +96,7 @@ function run() {
     }
 }
 
-function resume(frame) {
-    if (!(frame instanceof Frame)) {
-        raise(TypeError, 'invalid type of object to resume from');
-    }
-    if (vm.frame) {
-        raise(RuntimeError, 'interpreter is already running');
-    }
-    vm.frame = frame;
-    return run();
-}
+
 
 function main(module) {
     if (vm.frame) {
