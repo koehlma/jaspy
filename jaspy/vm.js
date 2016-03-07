@@ -23,55 +23,7 @@ vm.last_exception = null;
 vm.stack = new Array(4);
 vm.level = 0;
 
-function stack_push(item) {
-    vm.stack[vm.level++] = item;
-}
-
-function stack_pop() {
-    return vm.stack[vm.level--];
-}
-
-function stack_top0() {
-    return vm.stack[vm.level - 1];
-}
-
-function stack_top1() {
-    return vm.stack[vm.level - 2];
-}
-
-function stack_popn(number) {
-    vm.level -= number;
-    return vm.stack.slice(vm.level, vm.level + number);
-}
-
-function stack_topn(number) {
-    return vm.stack.slice(vm.level - number, vm.level);
-}
-
-function stack_enter_frame(size) {
-    var length = vm.stack.length;
-    while (length <= vm.level + size) {
-        length *= 2;
-    }
-    if (length != vm.stack.length) {
-        vm.stack.length = length;
-    }
-    return vm.level;
-}
-
-function stack_exit_frame(level) {
-    var length;
-    vm.level = level;
-    if (vm.stack.length > 4 && vm.stack.length / 4 >= this.level) {
-        length = vm.stack.length / 2;
-        while (length / 4 >= vm.level && length > 4) {
-            length /= 2;
-        }
-        vm.stack.length = length;
-    }
-}
-
-function pause() {
+function suspend() {
     vm.frame = null;
 }
 
@@ -262,7 +214,7 @@ function call_object(object, args, kwargs, defaults, closure, globals) {
 
 $.vm = vm;
 
-$.pause = pause;
+$.suspend = suspend;
 $.resume = resume;
 $.callback = callback;
 $.main = main;
