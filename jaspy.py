@@ -34,7 +34,7 @@ def convert(const):
     elif isinstance(const, tuple):
         js.append('jaspy.pack_tuple([%s])' % ', '.join(map(convert, const)))
     elif isinstance(const, types.CodeType):
-        js.append('jaspy.pack_code(new jaspy.PythonCode(\'%s\', {' % repr(const.co_code)[2:-1])
+        js.append('jaspy.pack_code(new jaspy.PythonCode(%s, {' % repr(const.co_code)[1:])
         js.append('name: %r,' % const.co_name)
         js.append('filename: %r,' % const.co_filename)
         js.append('constants: [%s],' % ', '.join(map(convert, const.co_consts)))
