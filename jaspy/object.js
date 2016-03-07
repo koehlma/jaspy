@@ -41,7 +41,7 @@ PyObject.prototype.is_native = function () {
 PyObject.prototype.call_method = function (name, args, kwargs) {
     var method = this.cls.lookup(name);
     if (method) {
-        return call_object(method, [this].concat(args || []), kwargs);
+        return call(method, [this].concat(args || []), kwargs);
     } else {
         vm.return_value = null;
         vm.last_exception = METHOD_NOT_FOUND;

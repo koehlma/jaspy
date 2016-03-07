@@ -75,9 +75,9 @@ jaspy.module('dom', function ($, module, builtins) {
     Element.$def('register_listener', function (self, name, callback) {
         var element = self.unpack('element');
         element.addEventListener($.unpack_str(name), function (event) {
-            $.callback(callback, [self], {});
+            $.resume(callback, [self], {});
         });
-    }, ['name', 'callback']);
+    }, ['name', 'resume']);
 
 
     module.$def('get_body', function () {
@@ -92,10 +92,10 @@ jaspy.module('dom', function ($, module, builtins) {
 
     module.$def('set_interval', function (interval, callback) {
         var handle = $.pack_int(setInterval(function () {
-            $.callback(callback, [handle], {});
+            $.resume(callback, [handle], {});
         }, $.unpack_int(interval)));
         return handle;
         console.log($.unpack_int(interval));
-    }, ['interval', 'callback']);
+    }, ['interval', 'resume']);
 
 }, ['builtins']);

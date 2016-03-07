@@ -16,7 +16,7 @@
 py_property.$def('__get__', function (self, instance, owner, state, frame) {
     switch (state) {
         case 0:
-            if (call_object(self.getattr('fget'), [instance])) {
+            if (call(self.getattr('fget'), [instance])) {
                 return 1;
             }
         case 1:
@@ -27,7 +27,7 @@ py_property.$def('__get__', function (self, instance, owner, state, frame) {
 py_property.$def('__set__', function (self, instance, value, state, frame) {
     switch (state) {
         case 0:
-            if (call_object(self.getattr('fset'), [instance, value])) {
+            if (call(self.getattr('fset'), [instance, value])) {
                 return 1;
             }
         case 1:

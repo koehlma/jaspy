@@ -478,7 +478,7 @@ PythonFrame.prototype.run = function () {
                             this.push(new PyModule(modules[name].namespace));
                             break;
                         }
-                        assert(call_object(modules[name]));
+                        assert(call(modules[name]));
                         this.set_state(1);
                         return;
                     case 1:
@@ -809,7 +809,7 @@ PythonFrame.prototype.run = function () {
                             kwargs[this.pop().value] = value;
                         }
                         args = this.popn(low);
-                        if (call_object(this.pop(), args, kwargs)) {
+                        if (call(this.pop(), args, kwargs)) {
                             this.set_state(1);
                             return;
                         }

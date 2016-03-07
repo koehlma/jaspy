@@ -24,14 +24,19 @@ function suspend() {
     vm.frame = null;
 }
 
-function resume(frame) {
-    if (!(frame instanceof Frame)) {
-        raise(TypeError, 'invalid type of object to resume from');
-    }
+function resume(object, args, kwargs) {
     if (vm.frame) {
         raise(RuntimeError, 'interpreter is already running');
     }
-    vm.frame = frame;
+
+    if (object instanceof PyObject) {
+        call(object, args, kwargs);
+    } else if (object instanceof Frame) {
+        vm.frame = object;
+    } else {
+        raise(TypeError, 'invalid type of object to resume to');
+    }
+
     return run();
 }
 
@@ -114,12 +119,9 @@ function main(module) {
     return run();
 }
 
-function callback(object, args, kwargs) {
-    call_object(object, args, kwargs);
-    run();
-}
 
-function call_object(object, args, kwargs, defaults, closure, globals) {
+
+function call(object, args, kwargs, defaults, closure, globals) {
     var code, result, frame;
     while (true) {
         if (object instanceof PythonCode) {
@@ -213,5 +215,4 @@ $.vm = vm;
 
 $.suspend = suspend;
 $.resume = resume;
-$.callback = callback;
 $.main = main;

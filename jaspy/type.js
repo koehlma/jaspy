@@ -130,7 +130,7 @@ PyType.prototype.$def_classmethod = function (name, func, signature, options) {
 PyType.prototype.call_classmethod = function (name, args, kwargs) {
     var method = this.lookup(name);
     if (method) {
-        return call_object(method, [this].concat(args || []), kwargs);
+        return call(method, [this].concat(args || []), kwargs);
     } else {
         vm.return_value = null;
         vm.last_exception = METHOD_NOT_FOUND;
@@ -140,7 +140,7 @@ PyType.prototype.call_classmethod = function (name, args, kwargs) {
 PyType.prototype.call_staticmethod = function (name, args, kwargs) {
     var method = this.lookup(name);
     if (method) {
-        return call_object(method, args, kwargs);
+        return call(method, args, kwargs);
     } else {
         vm.return_value = null;
         vm.last_exception = METHOD_NOT_FOUND;
