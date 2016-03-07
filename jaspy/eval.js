@@ -21,7 +21,7 @@ PythonFrame.prototype.step = function () {
         this.raise();
     }
 
-    instruction = this.fetch();
+    instruction = this.code.instructions[this.position++];
 
     if (DEBUG) {
         console.log('executing instruction', instruction);
@@ -494,11 +494,11 @@ PythonFrame.prototype.step = function () {
             break;
 
         case OPCODES.JUMP_FORWARD:
-             this.position += instruction.argument;
+             this.position = instruction.target;
             return;
 
         case OPCODES.JUMP_ABSOLUTE:
-            this.position = instruction.argument;
+            this.position = instruction.target;
             return;
 
         case OPCODES.COMPARE_OP:
@@ -542,7 +542,7 @@ PythonFrame.prototype.step = function () {
         case OPCODES.POP_JUMP_IF_TRUE:
             if (this.top0().cls === py_int) {
                 if (this.pop().bool()) {
-                    this.position = instruction.argument;
+                    this.position = instruction.target;
                 }
                 break;
             }
@@ -566,12 +566,12 @@ PythonFrame.prototype.step = function () {
                         break;
                     }
                     if (except(MethodNotFoundError)) {
-                        this.position = instruction.argument;
+                        this.position = instruction.target;
                         return;
                     } else if (vm.return_value) {
                         if (vm.return_value instanceof PyInt) {
                             if (vm.return_value.bool()) {
-                                this.position = instruction.argument;
+                                this.position = instruction.target;
                                 return;
                             }
                         } else {
@@ -585,7 +585,7 @@ PythonFrame.prototype.step = function () {
         case OPCODES.POP_JUMP_IF_FALSE:
             if (this.top0().cls === py_bool || this.top0().cls === py_int) {
                 if (!this.pop().bool()) {
-                    this.position = instruction.argument;
+                    this.position = instruction.target;
                 }
                 break;
             }
@@ -612,7 +612,7 @@ PythonFrame.prototype.step = function () {
                     if (!except(MethodNotFoundError)) {
                         if (vm.return_value instanceof PyInt) {
                             if (!vm.return_value.bool()) {
-                                this.position = instruction.argument;
+                                this.position = instruction.target;
                                 return;
                             }
                         } else if (vm.return_value) {
@@ -626,7 +626,7 @@ PythonFrame.prototype.step = function () {
         case OPCODES.JUMP_IF_TRUE_OR_POP:
             if (this.top0().cls === py_int) {
                 if (this.top0().bool()) {
-                    this.position = instruction.argument;
+                    this.position = instruction.target;
                 } else {
                     this.pop();
                 }
@@ -652,11 +652,11 @@ PythonFrame.prototype.step = function () {
                 case 2:
                     this.reset_state();
                     if (except(MethodNotFoundError)) {
-                        this.position = instruction.argument;
+                        this.position = instruction.target;
                     } else if (vm.return_value) {
                         if (vm.return_value instanceof PyInt) {
                             if (vm.return_value.bool()) {
-                                this.position = instruction.argument;
+                                this.position = instruction.target;
                             } else {
                                 this.pop();
                             }
@@ -674,7 +674,7 @@ PythonFrame.prototype.step = function () {
         case OPCODES.JUMP_IF_FALSE_OR_POP:
             if (this.top0().cls === py_int) {
                 if (!this.top0().bool()) {
-                    this.position = instruction.argument;
+                    this.position = instruction.target;
                 } else {
                     this.pop();
                 }
@@ -703,7 +703,7 @@ PythonFrame.prototype.step = function () {
                     if (!except(MethodNotFoundError)) {
                         if (vm.return_value instanceof PyInt) {
                             if (!vm.return_value.bool()) {
-                                this.position = instruction.argument;
+                                this.position = instruction.target;
                             } else {
                                 this.pop();
                             }
@@ -734,7 +734,7 @@ PythonFrame.prototype.step = function () {
                         if (except(MethodNotFoundError)) {
                             raise(TypeError, 'object does not support iteration');
                         } else if (except(StopIteration)) {
-                            this.position += instruction.argument;
+                            this.position += instruction.target;
                             return;
                         }
                     } else {
@@ -748,7 +748,7 @@ PythonFrame.prototype.step = function () {
         case OPCODES.SETUP_LOOP:
         case OPCODES.SETUP_EXCEPT:
         case OPCODES.SETUP_FINALLY:
-            this.push_block(OPCODES_EXTRA[instruction.opcode], instruction.argument);
+            this.push_block(OPCODES_EXTRA[instruction.opcode], instruction.target);
             return;
 
         case OPCODES.LOAD_CLOSURE:

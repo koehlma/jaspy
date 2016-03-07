@@ -3,9 +3,12 @@ def try_test1():
         try:
             return 4
         finally:
+            print('finally')
             raise TypeError()
     except TypeError:
+        print('except')
         pass
+    print('return')
     return 5
 
 assert try_test1() == 5

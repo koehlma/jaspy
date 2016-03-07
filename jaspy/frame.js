@@ -69,11 +69,11 @@ PythonFrame.prototype = new Frame;
 PythonFrame.prototype.top_block = function () {
     return this.blocks[this.blocks.length - 1];
 };
-PythonFrame.prototype.push_block = function (type, delta) {
+PythonFrame.prototype.push_block = function (type, target) {
     this.blocks.push({
         type: type,
         position: this.position,
-        delta: delta,
+        target: target,
         active: false,
         level: this.stack.length
     });
@@ -100,39 +100,21 @@ PythonFrame.prototype.push = function (item) {
     assert(item instanceof PyObject);
     this.stack.push(item);
 };
-PythonFrame.prototype.fetch = function (position) {
-    this.previous = this.position;
 
-    var high, low, ext;
-    var argument = null;
-
-    if (this.position >= this.code.bytecode.length) {
-        error('bytecode overflow in python frame');
-    }
-    var opcode = this.code.bytecode.charCodeAt(this.position++);
-    if (opcode >= OPCODES_ARGUMENT) {
-        low = this.code.bytecode.charCodeAt(this.position++);
-        high = this.code.bytecode.charCodeAt(this.position++);
-        argument = high << 8 | low;
-    }
-    if (opcode === OPCODES.EXTENDED_ARG) {
-        opcode = this.code.bytecode.charCodeAt(this.position++);
-        low = this.code.bytecode.charCodeAt(this.position++);
-        high = this.code.bytecode.charCodeAt(this.position++);
-        argument = (argument << 16) | (high << 8) | low;
-    }
-    if (DEBUG) {
-        console.log('fetched opcode ' + opcode + ' at position ' + this.previous);
-    }
-    return {opcode: opcode, argument: argument, position: this.previous};
-};
 PythonFrame.prototype.set_state = function (state) {
-    this.position = this.previous;
+    this.position--;
     this.state = state;
 };
 PythonFrame.prototype.reset_state = function () {
     this.state = 0;
 };
+
+PythonFrame.prototype.print_block_stack = function () {
+    for (var index = 0; index < this.blocks.length; index++) {
+        console.log('Block ' + index + ':', this.blocks[index]);
+    }
+};
+
 PythonFrame.prototype.unwind = function (cause) {
     if (cause != undefined) {
         this.unwind_cause = cause;
@@ -144,14 +126,14 @@ PythonFrame.prototype.unwind = function (cause) {
             continue;
         }
         if (block.type == BLOCK_TYPES.FINALLY) {
-            this.position = block.position + block.delta;
+            this.position = block.target;
             block.active = true;
             return;
         }
         switch (this.unwind_cause) {
             case UNWIND_CAUSES.BREAK:
                 if (block.type == BLOCK_TYPES.LOOP) {
-                    this.position = block.position + block.delta;
+                    this.position = block.target;
                     this.blocks.pop();
                     return;
                 } else {
@@ -168,7 +150,7 @@ PythonFrame.prototype.unwind = function (cause) {
                 break;
             case UNWIND_CAUSES.EXCEPTION:
                 if (block.type == BLOCK_TYPES.EXCEPT) {
-                    this.position = block.position + block.delta;
+                    this.position = block.target;
                     block.active = true;
                     return;
                 } else if (block.type == BLOCK_TYPES.BASE) {

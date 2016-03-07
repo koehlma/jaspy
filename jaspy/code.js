@@ -212,6 +212,8 @@ function PythonCode(bytecode, options) {
 
     this.firstline = options.firstline || 1;
     this.lnotab = options.lnotab || '';
+
+    this.instructions = disassemble(this);
 }
 
 PythonCode.prototype = new Code;
