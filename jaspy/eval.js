@@ -270,10 +270,8 @@ PythonFrame.prototype.step = function () {
         case OPCODES.DELETE_NAME:
             if (instruction.opcode === OPCODES.STORE_FAST) {
                 name = this.code.varnames[instruction.argument];
-                instruction.opcode = OPCODES.STORE_NAME;
             } else if (instruction.opcode === OPCODES.DELETE_FAST) {
                 name = this.code.varnames[instruction.argument];
-                instruction.opcode = OPCODES.DELETE_NAME;
             } else {
                 name = this.code.names[instruction.argument];
             }
@@ -299,7 +297,7 @@ PythonFrame.prototype.step = function () {
                         break;
                 }
             } else {
-                if (instruction.opcode === OPCODES.STORE_NAME) {
+                if (instruction.opcode === OPCODES.STORE_NAME || instruction.opcode === OPCODES.STORE_FAST) {
                     this.locals[name] = this.pop();
                 } else if (name in this.locals) {
                     delete this.locals[name];
