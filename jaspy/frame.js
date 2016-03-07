@@ -84,8 +84,7 @@ PythonFrame.prototype.pop_block = function () {
     return this.blocks.pop();
 };
 PythonFrame.prototype.pop = function () {
-    this.level--;
-    return this.stack[this.level];
+    return this.stack[--this.level];
 };
 PythonFrame.prototype.popn = function (number) {
     this.level -= number;
