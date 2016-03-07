@@ -17,6 +17,7 @@ PythonFrame.prototype.step = function () {
     var slot, right, left, name, value, block, exc_type, exc_value, exc_tb, temp;
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
+    while (vm.frame === this) {
     if (!vm.return_value && this.unwind_cause != UNWIND_CAUSES.EXCEPTION && this.state == 0) {
         this.raise();
     }
@@ -162,7 +163,7 @@ PythonFrame.prototype.step = function () {
                             this.push(vm.return_value);
                         }
                     }
-                    return;
+                    break;
             }
             break;
 
@@ -494,12 +495,12 @@ PythonFrame.prototype.step = function () {
             break;
 
         case OPCODES.JUMP_FORWARD:
-             this.position = instruction.target;
-            return;
+            this.position = instruction.target;
+            break;
 
         case OPCODES.JUMP_ABSOLUTE:
             this.position = instruction.target;
-            return;
+            break;
 
         case OPCODES.COMPARE_OP:
             switch (instruction.argument) {
@@ -869,4 +870,5 @@ PythonFrame.prototype.step = function () {
             error('unknown opcode ' + instruction.opcode);
             break;
     }
+        }
 };

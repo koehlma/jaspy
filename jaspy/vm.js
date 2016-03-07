@@ -177,8 +177,8 @@ function call_object(object, args, kwargs, defaults, closure, globals) {
             return true;
         } else if (object instanceof NativeCode) {
             if (object.simple) {
+                args = object.parse_args(args, kwargs, defaults);
                 try {
-                    args = object.parse_args(args, kwargs, defaults);
                     result = object.func.apply(null, args);
                     vm.return_value = result || None;
                 } catch (error) {

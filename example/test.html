@@ -13,13 +13,22 @@
 
     <script src="test.py.js"></script>
     <script src="example.py.js"></script>
+    <script src="speed.py.js"></script>
 
     <script>
         function on_load() {
-            var start = (new Date()).getTime();
-            jaspy.main(jaspy.get_module('test'));
-            var stop = (new Date()).getTime();
-            console.log('execution time: ' + (stop - start));
+            var counter = 0;
+            function run() {
+                var start = (new Date()).getTime();
+                jaspy.main(jaspy.get_module('speed'));
+                var stop = (new Date()).getTime();
+                console.log('execution time: ' + (stop - start));
+                if (counter < 10) {
+                    setTimeout(run, 500);
+                }
+                counter++;
+            }
+            setTimeout(run, 500);
         }
     </script>
 </head>
