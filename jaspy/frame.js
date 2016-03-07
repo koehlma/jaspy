@@ -43,7 +43,9 @@ function PythonFrame(code, options) {
 
     this.namespace = options.namespace || null;
 
-    this.stack = options.stack || [];
+    this.stack = new Array(this.code.stacksize);
+    this.level = 0;
+
     this.blocks = options.blocks || [];
     if (!options.blocks) {
         this.push_block(BLOCK_TYPES.BASE, 0);
@@ -75,30 +77,35 @@ PythonFrame.prototype.push_block = function (type, target) {
         position: this.position,
         target: target,
         active: false,
-        level: this.stack.length
+        level: this.level
     });
 };
 PythonFrame.prototype.pop_block = function () {
     return this.blocks.pop();
 };
 PythonFrame.prototype.pop = function () {
-    return this.stack.pop();
+    this.level--;
+    return this.stack[this.level];
 };
 PythonFrame.prototype.popn = function (number) {
-    return number > 0 ? this.stack.splice(this.stack.length - number, number) : [];
+    this.level -= number;
+    return this.stack.slice(this.level, this.level + number);
 };
 PythonFrame.prototype.top0 = function () {
-    return this.stack[this.stack.length - 1];
+    return this.stack[this.level - 1];
 };
 PythonFrame.prototype.top1 = function () {
-    return this.stack[this.stack.length - 2];
+    return this.stack[this.level - 2];
 };
 PythonFrame.prototype.topn = function (number) {
-    return number > 0 ? this.stack.slice(this.stack.length - number, number) : [];
+    return this.stack.slice(this.level - number, this.level);
 };
 PythonFrame.prototype.push = function (item) {
     assert(item instanceof PyObject);
-    this.stack.push(item);
+    this.stack[this.level++] = item;
+    if (this.level > this.code.stacksize) {
+        error('stack overflow');
+    }
 };
 
 PythonFrame.prototype.set_state = function (state) {

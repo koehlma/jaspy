@@ -40,6 +40,7 @@ def convert(const):
         js.append('constants: [%s],' % ', '.join(map(convert, const.co_consts)))
         js.append('flags: %r,' % const.co_flags)
         js.append('names: [%s],' % ', '.join(map(repr, const.co_names)))
+        js.append('stacksize: %r,' % const.co_stacksize)
         js.append('argcount: %r,' % const.co_argcount)
         js.append('kwargcount: %r,' % const.co_kwonlyargcount)
         js.append('varnames: [%s],' % ', '.join(map(repr, const.co_varnames)))

@@ -234,10 +234,10 @@ PythonFrame.prototype.step = function () {
             case OPCODES.POP_EXCEPT:
                 block = this.blocks.pop();
                 assert(block.type === BLOCK_TYPES.EXCEPT);
-                while (this.stack.length > block.level + 3) {
+                while (this.level > block.level + 3) {
                     this.pop();
                 }
-                if (this.stack.length == block.level + 3) {
+                if (this.level == block.level + 3) {
                     exc_type = this.pop();
                     exc_value = this.pop();
                     exc_tb = this.pop();
