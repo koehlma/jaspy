@@ -19,3 +19,6 @@ function PyStr(value, cls) {
 }
 
 PyStr.prototype = new PyObject;
+
+
+$.PyStr = PyStr;

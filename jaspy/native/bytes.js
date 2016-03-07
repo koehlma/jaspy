@@ -18,3 +18,6 @@ function PyBytes(value, cls) {
     this.value = value;
 }
 PyBytes.prototype = new PyObject;
+
+
+$.PyBytes = PyBytes;

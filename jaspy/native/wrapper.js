@@ -13,12 +13,20 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyFloat(value, cls) {
-    PyObject.call(this, cls || py_float);
-    this.value = value;
+function PyJSObject(object) {
+    PyObject.call(this, py_js_object);
+    this.object = object;
 }
+PyJSObject.prototype = new PyObject;
 
-PyFloat.prototype = new PyObject;
+function PyJSArray(array) {
+    PyObject.call(this, py_js_array);
+    this.array = array;
+}
+PyJSArray.prototype = new PyObject;
 
-
-$.PyFloat = PyFloat;
+function PyJSFunction(func) {
+    PyObject.call(this, py_js_function);
+    this.func = func;
+}
+PyJSFunction.prototype = new PyObject;

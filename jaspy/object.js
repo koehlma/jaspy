@@ -80,3 +80,6 @@ PyObject.prototype.pack = function (name, value) {
 PyObject.prototype.is = function (other) {
     return this === other;
 };
+
+
+$.PyObject = PyObject;

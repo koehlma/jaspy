@@ -13,12 +13,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyFloat(value, cls) {
-    PyObject.call(this, cls || py_float);
-    this.value = value;
+function PyFrame(frame) {
+    PyObject.call(this, py_frame);
+    this.frame = frame;
 }
-
-PyFloat.prototype = new PyObject;
-
-
-$.PyFloat = PyFloat;
+PyFrame.prototype = new PyObject;

@@ -18,3 +18,6 @@ function PyTuple(value, cls) {
     this.value = value;
 }
 PyTuple.prototype = new PyObject;
+
+
+$.PyTuple = PyTuple;

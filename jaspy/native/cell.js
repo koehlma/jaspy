@@ -13,12 +13,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyFloat(value, cls) {
-    PyObject.call(this, cls || py_float);
-    this.value = value;
+function PyCell(item) {
+    PyObject.call(this, py_cell);
+    this.item = item;
 }
-
-PyFloat.prototype = new PyObject;
-
-
-$.PyFloat = PyFloat;
+PyCell.prototype = new PyObject;
+PyCell.prototype.set = function (item) {
+    this.item = item;
+};
+PyCell.prototype.get = function () {
+    return this.item;
+};

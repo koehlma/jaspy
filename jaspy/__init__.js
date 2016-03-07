@@ -33,6 +33,8 @@ window['jaspy'] = (function () {
 
     // #include "boot.js"
 
+    // #include "bridge.js"
+
     // #include "builtins/__init__.js"
 
     // #include "dis.js"

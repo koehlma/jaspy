@@ -216,7 +216,7 @@ function PythonCode(bytecode, options) {
     this.instructions = disassemble(this);
 }
 
-PythonCode.prototype = new Code;
+PythonCode.prototype = new Code();
 
 PythonCode.prototype.get_line_number = function (position) {
     var line_number = this.firstline, offset = 0;

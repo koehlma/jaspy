@@ -162,3 +162,5 @@ PyType.native = function (name, bases, attributes, mcs) {
 function new_type(name, bases, attributes, mcs) {
     return new PyType(name, bases, attributes, mcs);
 }
+
+$.PyType = PyType;

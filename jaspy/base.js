@@ -25,6 +25,7 @@ function assert(condition, message) {
     if (!condition) { error(message); }
 }
 
+
 $.error = error;
 $.raise = raise;
 $.assert = assert;

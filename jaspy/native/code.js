@@ -18,3 +18,6 @@ function PyCode(value, cls) {
     this.value = value;
 }
 PyCode.prototype = new PyObject;
+
+
+$.PyCode = PyCode;
