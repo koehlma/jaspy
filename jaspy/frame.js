@@ -21,7 +21,7 @@ function Frame(code, options) {
     this.back = options.back || null;
 
     this.globals = options.globals || (this.back ? this.back.globals : {});
-    this.builtins = options.builtins || (this.back ? this.back.builtins : {});
+    this.builtins = options.builtins || (this.back ? this.back.builtins : builtins);
 
     this.position = options.position || 0;
 }

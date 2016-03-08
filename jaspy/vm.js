@@ -51,7 +51,6 @@ function except(exc_type) {
 function raise(exc_type, exc_value, exc_tb) {
     var frame;
 
-
     if (typeof exc_value == 'string') {
         exc_value = new_exception(exc_type, exc_value);
     }
@@ -85,7 +84,7 @@ function raise(exc_type, exc_value, exc_tb) {
 
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
 
-    if (vm.frame instanceof NativeFrame) {
+    if (!(vm.frame instanceof PythonFrame)) {
         throw exc_value;
     }
 }
@@ -106,7 +105,7 @@ function main(module) {
         raise(RuntimeError, 'interpreter is already running');
     }
     if (!(module instanceof PythonModule)) {
-        raise(TypeError, 'unable to run module native module');
+        raise(TypeError, 'invalid type of module');
     }
     register_module('__main__', module);
     module.namespace['__name__'] = pack_str('__main__');
@@ -124,7 +123,7 @@ function call(object, args, kwargs, defaults, closure, globals) {
             vm.frame = new PythonFrame(object, {
                 vm: vm, back: vm.frame, defaults: defaults,
                 args: args, kwargs: kwargs, closure: closure,
-                globals: globals, builtins: builtins
+                globals: globals
             });
             return true;
         } else if (object instanceof NativeCode) {
@@ -196,7 +195,7 @@ function call(object, args, kwargs, defaults, closure, globals) {
             return result;
         } else if (object instanceof PythonModule) {
             vm.frame = new PythonFrame(object.code, {
-                builtins: builtins, locals: object.namespace,
+                locals: object.namespace,
                 globals: object.namespace, back: vm.frame
             });
             return true;
