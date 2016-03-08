@@ -20,8 +20,14 @@ vm.frame = null;
 vm.return_value = None;
 vm.last_exception = null;
 
+vm.simple_depth = 0;
+
 function suspend() {
-    vm.frame = null;
+    if (vm.simple_depth != 0) {
+        raise(RuntimeError, 'unable to suspend interpreter within a simple native frame');
+    } else {
+        vm.frame = null;
+    }
 }
 
 function resume(object, args, kwargs) {
@@ -129,6 +135,7 @@ function call(object, args, kwargs, defaults, closure, globals) {
         } else if (object instanceof NativeCode) {
             if (object.simple) {
                 args = object.parse_args(args, kwargs, defaults);
+                vm.simple_depth++;
                 try {
                     result = object.func.apply(null, args);
                     vm.return_value = result || None;
@@ -139,6 +146,8 @@ function call(object, args, kwargs, defaults, closure, globals) {
                     } else {
                         throw error;
                     }
+                } finally {
+                    vm.simple_depth--;
                 }
                 return false;
             } else {
