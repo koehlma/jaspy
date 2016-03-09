@@ -220,7 +220,7 @@ PythonCode.prototype = new Code();
 
 PythonCode.prototype.get_line_number = function (position) {
     var index, offset_increment, line_increment;
-    var address = this.instructions[position].offset;
+    var address = this.instructions[position].start;
     var line_number = this.firstline;
     var offset = 0;
     for (index = 0; index < this.lnotab.length; index++) {
