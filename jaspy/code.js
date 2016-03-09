@@ -161,7 +161,7 @@ Signature.from_python = function (varnames, argcount, kwargcount, flags) {
         argnames.push(varnames[index]);
     }
     if (var_args) {
-        argnames.push(varnames[argcount + kwargcount + 1]);
+        argnames.push(varnames[argcount + kwargcount]);
     }
     for (; index < argcount + kwargcount; index++) {
         argnames.push(varnames[index]);
@@ -254,6 +254,9 @@ NativeCode.prototype = new Code;
 NativeCode.prototype.get_line_number = function (position) {
     return position;
 };
+
+
+$.Signature = Signature;
 
 
 $.PythonCode = PythonCode;

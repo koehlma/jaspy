@@ -235,3 +235,6 @@ var OPCODES_EXTRA = (function () {
     return map;
 })();
 var OPCODES_ARGUMENT = 90;
+
+
+$.CODE_FLAGS = CODE_FLAGS;
