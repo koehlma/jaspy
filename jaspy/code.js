@@ -219,13 +219,15 @@ function PythonCode(bytecode, options) {
 PythonCode.prototype = new Code();
 
 PythonCode.prototype.get_line_number = function (position) {
-    var line_number = this.firstline, offset = 0;
     var index, offset_increment, line_increment;
+    var address = this.instructions[position].offset;
+    var line_number = this.firstline;
+    var offset = 0;
     for (index = 0; index < this.lnotab.length; index++) {
         offset_increment = this.lnotab.charCodeAt(index++);
         line_increment = this.lnotab.charCodeAt(index);
         offset += offset_increment;
-        if (offset > position) {
+        if (offset > address) {
             break;
         }
         line_number += line_increment;

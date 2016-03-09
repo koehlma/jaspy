@@ -68,6 +68,9 @@ function PythonFrame(code, options) {
     this.previous = 0;
 }
 PythonFrame.prototype = new Frame;
+PythonFrame.prototype.get_line_number = function () {
+    return this.code.get_line_number(this.position - 1);
+};
 PythonFrame.prototype.top_block = function () {
     return this.blocks[this.blocks.length - 1];
 };
