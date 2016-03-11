@@ -41,7 +41,7 @@ function PythonFrame(code, options) {
     this.locals = options.locals || {};
     this.code.parse_args(options.args, options.kwargs, options.defaults, this.locals);
 
-    this.namespace = options.namespace || null;
+    this.dict = options.dict || null;
 
     this.stack = new Array(this.code.stacksize);
     this.level = 0;

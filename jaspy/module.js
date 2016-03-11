@@ -25,12 +25,12 @@ function get_module(name) {
 }
 
 function get_namespace(name) {
-    return get_module(name).namespace;
+    return get_module(name).dict;
 }
 
 function register_module(name, module) {
     modules[name] = module;
-    module.namespace['__name__'] = pack_str(name);
+    module.dict['__name__'] = pack_str(name);
 }
 
 function unregister_module(name) {
@@ -41,7 +41,7 @@ function unregister_module(name) {
 function Module(name, depends) {
     this.name = name;
     this.depends = depends || [];
-    this.namespace = {};
+    this.dict = {};
     if (this.name) {
         register_module(this.name, this);
     }
@@ -73,18 +73,18 @@ NativeModule.prototype.$def = function (name, func, signature, options) {
     options.name = name;
     options.qualname = name;
     options.simple = func.length == signature.length;
-    this.namespace[name] = new_native(func, signature, options);
-    return this.namespace[name];
+    this.dict[name] = new_native(func, signature, options);
+    return this.dict[name];
 };
 
 NativeModule.prototype.$set = function (name, value) {
-    this.namespace[name] = value;
-    return this.namespace[name];
+    this.dict[name] = value;
+    return this.dict[name];
 };
 
 NativeModule.prototype.$class = function (name, bases, mcs) {
-    this.namespace[name] = new PyType(name, bases, null, mcs);
-    return this.namespace[name];
+    this.dict[name] = new PyType(name, bases, null, mcs);
+    return this.dict[name];
 };
 
 function define_module(name, initializer, depends) {

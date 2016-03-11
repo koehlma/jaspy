@@ -279,7 +279,7 @@ PythonFrame.prototype.run = function () {
                 } else {
                     name = this.code.names[instruction.argument];
                 }
-                if (this.namespace) {
+                if (this.dict) {
                     switch (this.state) {
                         case 0:
                             if (instruction.opcode === OPCODES.STORE_NAME) {
@@ -289,7 +289,7 @@ PythonFrame.prototype.run = function () {
                                 slot = '__delitem__';
                                 args = [pack_str(name)];
                             }
-                            if (this.namespace.call_method(slot, args)) {
+                            if (this.dict.call_method(slot, args)) {
                                 this.set_state(1);
                                 return;
                             }
@@ -318,10 +318,10 @@ PythonFrame.prototype.run = function () {
                 } else {
                     name = this.code.names[instruction.argument];
                 }
-                if (this.namespace) {
+                if (this.dict) {
                     switch (this.state) {
                         case 0:
-                            if (this.namespace.call_method('__getitem__', [pack_str(name)])) {
+                            if (this.dict.call_method('__getitem__', [pack_str(name)])) {
                                 this.set_state(1);
                                 return;
                             }
@@ -475,7 +475,7 @@ PythonFrame.prototype.run = function () {
                             raise(ImportError, 'unable to import module ' + name);
                         }
                         if (modules[name] instanceof NativeModule) {
-                            this.push(new PyModule(modules[name].namespace));
+                            this.push(new PyModule(modules[name].dict));
                             break;
                         }
                         assert(call(modules[name]));
@@ -484,7 +484,7 @@ PythonFrame.prototype.run = function () {
                     case 1:
                         this.reset_state();
                         name = this.code.names[instruction.argument];
-                        this.push(new PyModule(modules[name].namespace));
+                        this.push(new PyModule(modules[name].dict));
                 }
                 break;
 
@@ -853,12 +853,12 @@ PythonFrame.prototype.run = function () {
                     defaults[code.value.signature.argnames[index]] = this.pop();
                 }
                 globals = this.globals;
-                func = new PyObject(py_function);
-                func.namespace['__name__'] = pack_str(name);
-                func.namespace['__code__'] = code;
+                func = new PyObject(py_function, {});
+                func.dict['__name__'] = pack_str(name);
+                func.dict['__code__'] = code;
                 func.defaults = defaults;
                 if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
-                    func.namespace['__closure__'] = this.pop();
+                    func.dict['__closure__'] = this.pop();
                 }
                 func.setattr('__globals__', new PyDict(this.globals));
                 this.push(func);

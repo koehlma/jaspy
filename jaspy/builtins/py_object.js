@@ -20,7 +20,7 @@ py_object.$def('__new__', function (cls, args, kwargs) {
     if (cls.native !== py_object) {
         raise(TypeError, 'object.__new__() is not safe, use ' + cls.native.name + '.__new__()');
     }
-    return new PyObject(cls);
+    return new PyObject(cls, {});
 }, ['*args', '**kwargs']);
 
 py_object.$def('__getattribute__', function (self, name, state, frame) {
@@ -28,7 +28,7 @@ py_object.$def('__getattribute__', function (self, name, state, frame) {
     switch (state) {
         case 0:
             name = unpack_str(name);
-            value = self.namespace ? self.getattr(name) : null;
+            value = self.dict ? self.getattr(name) : null;
             if (!value) {
                 value = self.cls.lookup(name);
                 if (value) {

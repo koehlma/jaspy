@@ -15,10 +15,10 @@
 
 var object_id_counter = 0;
 
-function PyObject(cls, namespace) {
+function PyObject(cls, dict) {
     this.cls = cls;
     this.identity = null;
-    this.namespace = namespace || {};
+    this.dict = dict || null;
 }
 PyObject.prototype.bool = function () {
     return true;
@@ -49,22 +49,22 @@ PyObject.prototype.call_method = function (name, args, kwargs) {
     }
 };
 PyObject.prototype.setattr = function (name, value) {
-    if (!this.namespace) {
+    if (!this.dict) {
         raise(TypeError, 'object does not support attribute access');
     }
     if (name instanceof PyStr) {
         name = name.value;
     }
-    this.namespace[name] = value;
+    this.dict[name] = value;
 };
 PyObject.prototype.getattr = function (name) {
-    if (!this.namespace) {
+    if (!this.dict) {
         raise(TypeError, 'object does not support attribute access');
     }
     if (name instanceof PyStr) {
         name = name.value;
     }
-    return this.namespace[name]
+    return this.dict[name]
 };
 PyObject.prototype.unpack = function (name) {
     var item = this[name];

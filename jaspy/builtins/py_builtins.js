@@ -66,9 +66,9 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
             if (!vm.return_value) {
                 return null;
             }
-            frame.namespace = vm.return_value;
+            frame.dict = vm.return_value;
             assert(call(func));
-            vm.frame.namespace = frame.namespace;
+            vm.frame.dict = frame.dict;
             return 2;
         case 2:
             if (!vm.return_value) {
@@ -79,7 +79,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
             } else {
                 bases = bases.array;
             }
-            if (frame.metaclass.cls.call_method('__call__', [name, pack_tuple(bases), frame.namespace], keywords)) {
+            if (frame.metaclass.cls.call_method('__call__', [name, pack_tuple(bases), frame.dict], keywords)) {
                 return 3;
             }
         case 3:
@@ -167,7 +167,7 @@ var builtins = {
 
 
 var module_builtins = define_module('builtins', function ($, module) {
-    module.namespace = builtins;
+    module.dict = builtins;
 });
 
 define_module('js', function ($, module) {

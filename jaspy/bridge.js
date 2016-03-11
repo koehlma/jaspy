@@ -137,7 +137,7 @@ var BUILTINS_STR = pack_str('builtins');
 function new_native(func, signature, options) {
     options = options || {};
     var code = new NativeCode(func, options, signature);
-    func = new PyObject(py_function);
+    func = new PyObject(py_function, {});
     func.setattr('__name__', pack_str(options.name || '<unkown>'));
     func.setattr('__qualname__', pack_str(options.qualname || '<unkown>'));
     func.setattr('__doc__', pack_str(options.doc || ''));
@@ -156,8 +156,8 @@ function pack_error(error) {
 }
 
 function new_exception(cls, message) {
-    var exc_value = new PyObject(cls);
-    exc_value.namespace['args'] = pack_tuple([pack_str(message)]);
+    var exc_value = new PyObject(cls, {});
+    exc_value.dict['args'] = pack_tuple([pack_str(message)]);
     return exc_value;
 }
 

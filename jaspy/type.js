@@ -101,7 +101,7 @@ PyType.prototype.lookup = function (name) {
     }
 };
 PyType.prototype.define = function (name, item) {
-    this.namespace[name] = item;
+    this.dict[name] = item;
     return item;
 };
 PyType.prototype.define_alias = function (name, alias) {

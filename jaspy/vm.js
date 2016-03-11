@@ -62,7 +62,7 @@ function raise(exc_type, exc_value, exc_tb) {
     }
 
     if (vm.return_value === null) {
-        exc_value.namespace['__context__'] = vm.last_exception.exc_value;
+        exc_value.dict['__context__'] = vm.last_exception.exc_value;
     }
     vm.return_value = null;
 
@@ -85,7 +85,7 @@ function raise(exc_type, exc_value, exc_tb) {
             console.error(message.join('\n'));
         }
         exc_tb = None;
-        exc_value.namespace['__traceback__'] = exc_tb;
+        exc_value.dict['__traceback__'] = exc_tb;
     }
 
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
@@ -114,10 +114,10 @@ function main(module) {
         raise(TypeError, 'invalid type of module');
     }
     register_module('__main__', module);
-    module.namespace['__name__'] = pack_str('__main__');
+    module.dict['__name__'] = pack_str('__main__');
     vm.frame = new PythonFrame(module.code, {
-        builtins: builtins, locals: module.namespace,
-        globals: module.namespace
+        builtins: builtins, locals: module.dict,
+        globals: module.dict
     });
     return run();
 }
@@ -178,10 +178,10 @@ function call(object, args, kwargs, defaults, closure, globals) {
                 }
             }
         } else if (object.cls === py_function) {
-            code = object.namespace['__code__'];
-            closure = object.namespace['__closure__'];
-            if (object.namespace['__globals__']) {
-                globals = object.namespace['__globals__'].table;
+            code = object.dict['__code__'];
+            closure = object.dict['__closure__'];
+            if (object.dict['__globals__']) {
+                globals = object.dict['__globals__'].table;
             }
 
             if (code.cls === py_code) {
@@ -204,8 +204,8 @@ function call(object, args, kwargs, defaults, closure, globals) {
             return result;
         } else if (object instanceof PythonModule) {
             vm.frame = new PythonFrame(object.code, {
-                locals: object.namespace,
-                globals: object.namespace, back: vm.frame
+                locals: object.dict,
+                globals: object.dict, back: vm.frame
             });
             return true;
         } else {
