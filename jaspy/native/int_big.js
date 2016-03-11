@@ -18,7 +18,7 @@ function PyInt(value, cls) {
     this.value = bigInt(value);
 }
 
-PyInt.prototype = new PyObject();
+extend(PyInt, PyObject);
 
 PyInt.prototype.toString = function () {
     return this.value.toString();

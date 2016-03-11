@@ -28,7 +28,9 @@ function PyList(initializer, size, cls) {
         }
     }
 }
-PyList.prototype = new PyObject;
+
+extend(PyList, PyObject);
+
 PyList.prototype.check = function (index) {
     if (index < 0) {
         index = this.size - index;

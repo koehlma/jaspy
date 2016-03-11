@@ -24,6 +24,8 @@ function PyInt(value, cls) {
     this.value = value;
 }
 
+extend(PyInt, PyObject);
+
 PyInt.prototype = new PyObject();
 
 PyInt.prototype.toString = function () {

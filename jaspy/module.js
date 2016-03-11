@@ -53,7 +53,7 @@ function PythonModule(name, code, depends) {
     this.code = code;
 }
 
-PythonModule.prototype = new Module();
+extend(PythonModule, Module);
 
 
 function NativeModule(name, func, depends) {
@@ -64,7 +64,7 @@ function NativeModule(name, func, depends) {
     }
 }
 
-NativeModule.prototype = new Module();
+extend(PythonModule, Module);
 
 NativeModule.prototype.$def = function (name, func, signature, options) {
     options = options || {};

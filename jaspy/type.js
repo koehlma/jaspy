@@ -72,7 +72,9 @@ function PyType(name, bases, attributes, mcs) {
     }
     this.native = this.native || py_object;
 }
-PyType.prototype = new PyObject;
+
+extend(PyType, PyObject);
+
 PyType.prototype.is_subclass_of = function (cls) {
     var index;
     if (cls === this) {

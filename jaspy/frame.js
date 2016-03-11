@@ -67,7 +67,9 @@ function PythonFrame(code, options) {
 
     this.previous = 0;
 }
-PythonFrame.prototype = new Frame;
+
+extend(PythonFrame, Frame);
+
 PythonFrame.prototype.top_block = function () {
     return this.blocks[this.blocks.length - 1];
 };
@@ -197,7 +199,9 @@ function NativeFrame(code, options) {
 
     this.args = this.code.parse_args(options.args, options.kwargs, options.defaults);
 }
-NativeFrame.prototype = new Frame;
+
+extend(NativeFrame, Frame);
+
 NativeFrame.prototype.run = function () {
     assert(!this.code.simple);
     var result;

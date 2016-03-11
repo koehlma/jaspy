@@ -18,7 +18,7 @@ function PyDict(namespace, cls) {
     this.table = namespace || {};
 }
 
-PyDict.prototype = new PyObject;
+extend(PyDict, PyObject);
 
 PyDict.prototype.get = function (str_key) {
     if (str_key instanceof PyStr) {

@@ -17,4 +17,5 @@ function PyFrame(frame) {
     PyObject.call(this, py_frame);
     this.frame = frame;
 }
-PyFrame.prototype = new PyObject;
+
+extend(PyFrame, PyObject);

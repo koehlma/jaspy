@@ -25,7 +25,13 @@ function assert(condition, message) {
     if (!condition) { error(message); }
 }
 
+function extend(subclass, superclass) {
+    subclass.prototype = Object.create(superclass.prototype);
+    subclass.prototype.constructor = subclass;
+}
+
 
 $.error = error;
 $.raise = raise;
 $.assert = assert;
+$.extend = extend;

@@ -17,16 +17,16 @@ function PyJSObject(object) {
     PyObject.call(this, py_js_object);
     this.object = object;
 }
-PyJSObject.prototype = new PyObject;
+extend(PyJSObject, PyObject);
 
 function PyJSArray(array) {
     PyObject.call(this, py_js_array);
     this.array = array;
 }
-PyJSArray.prototype = new PyObject;
+extend(PyJSArray, PyObject);
 
 function PyJSFunction(func) {
     PyObject.call(this, py_js_function);
     this.func = func;
 }
-PyJSFunction.prototype = new PyObject;
+extend(PyJSFunction, PyObject);

@@ -18,7 +18,7 @@ function PyFloat(value, cls) {
     this.value = value;
 }
 
-PyFloat.prototype = new PyObject;
+extend(PyFloat, PyObject);
 
 
 $.PyFloat = PyFloat;

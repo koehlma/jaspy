@@ -18,7 +18,7 @@ function PyStr(value, cls) {
     this.value = value;
 }
 
-PyStr.prototype = new PyObject;
+extend(PyStr, PyObject);
 
 
 $.PyStr = PyStr;

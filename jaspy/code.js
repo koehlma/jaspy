@@ -216,7 +216,7 @@ function PythonCode(bytecode, options) {
     this.instructions = disassemble(this);
 }
 
-PythonCode.prototype = new Code();
+extend(PythonCode, Code);
 
 PythonCode.prototype.get_line_number = function (position) {
     var index, offset_increment, line_increment;
@@ -249,7 +249,7 @@ function NativeCode(func, options, spec) {
     this.simple = func.length == this.signature.argnames.length;
 }
 
-NativeCode.prototype = new Code;
+extend(NativeCode, Code);
 
 NativeCode.prototype.get_line_number = function (position) {
     return position;

@@ -17,7 +17,9 @@ function PyCell(item) {
     PyObject.call(this, py_cell);
     this.item = item;
 }
-PyCell.prototype = new PyObject;
+
+extend(PyCell, PyObject);
+
 PyCell.prototype.set = function (item) {
     this.item = item;
 };
