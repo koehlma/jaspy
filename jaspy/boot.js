@@ -18,6 +18,7 @@ var py_type = PyType.native('type', [py_object]);
 
 py_object.cls = py_type;
 py_type.cls = py_type;
+py_type.native = py_type;
 
 var py_dict = PyType.native('dict');
 
