@@ -15,7 +15,7 @@
 
 // #include 'native/dict.js'
 
-// #include 'native/int_big.js' if BIGINT else 'native/int_small.js'
+// #include 'native/int.js'
 
 // #include 'native/float.js'
 

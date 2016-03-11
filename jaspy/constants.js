@@ -234,6 +234,7 @@ var OPCODES_EXTRA = (function () {
 
     return map;
 })();
+
 var OPCODES_ARGUMENT = 90;
 
 

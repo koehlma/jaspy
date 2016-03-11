@@ -7,7 +7,6 @@ aims to replace JavaScript as main web scripting language.
 Features
 --------
 - easily **extensible** with native JavaScript modules (time_, dom_, …)
-- pluggable integer implementations (JS integers, BigInteger.js_, …)
 - **suspendable** interpreter (coroutine and greenlet support)
 - full support for meta-classes and builtin subclassing
 

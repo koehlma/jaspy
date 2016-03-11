@@ -20,15 +20,18 @@ function PyObject(cls, dict) {
     this.identity = null;
     this.dict = dict || null;
 }
+
 PyObject.prototype.bool = function () {
     return true;
 };
+
 PyObject.prototype.get_id = function () {
     if (this.identity === null) {
         this.identity = object_id_counter++;
     }
     return this.identity;
 };
+
 PyObject.prototype.get_address = function () {
     return ('0000000000000' + this.get_id().toString(16)).substr(-13);
 };
