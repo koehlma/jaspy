@@ -69,7 +69,7 @@ PythonFrame.prototype.run = function () {
             case OPCODES.GET_ITER:
                 switch (this.state) {
                     case 0:
-                        if (this.pop().call_method(OPCODES_EXTRA[instruction.opcode])) {
+                        if (this.pop().call(OPCODES_EXTRA[instruction.opcode])) {
                             this.set_state(1);
                             return;
                         }
@@ -103,7 +103,7 @@ PythonFrame.prototype.run = function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.top0();
                         left = this.top1();
-                        if (left.call_method('__' + slot + '__', [right])) {
+                        if (left.call('__' + slot + '__', [right])) {
                             this.set_state(1);
                             return;
                         }
@@ -113,7 +113,7 @@ PythonFrame.prototype.run = function () {
                             slot = OPCODES_EXTRA[instruction.opcode];
                             right = this.pop();
                             left = this.pop();
-                            if (right.call_method('__r' + slot + '__', [left])) {
+                            if (right.call('__r' + slot + '__', [left])) {
                                 this.set_state(2);
                                 return;
                             }
@@ -154,7 +154,7 @@ PythonFrame.prototype.run = function () {
                         slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.pop();
                         left = this.pop();
-                        if (left.call_method(slot, [right])) {
+                        if (left.call(slot, [right])) {
                             this.set_state(1);
                             return;
                         }
@@ -177,7 +177,7 @@ PythonFrame.prototype.run = function () {
                         name = this.pop();
                         left = this.pop();
                         right = this.pop();
-                        if (left.call_method('__setitem__', [name, right])) {
+                        if (left.call('__setitem__', [name, right])) {
                             this.set_state(1);
                             return;
                         }
@@ -289,7 +289,7 @@ PythonFrame.prototype.run = function () {
                                 slot = '__delitem__';
                                 args = [pack_str(name)];
                             }
-                            if (this.dict.call_method(slot, args)) {
+                            if (this.dict.call(slot, args)) {
                                 this.set_state(1);
                                 return;
                             }
@@ -321,7 +321,7 @@ PythonFrame.prototype.run = function () {
                 if (this.dict) {
                     switch (this.state) {
                         case 0:
-                            if (this.dict.call_method('__getitem__', [pack_str(name)])) {
+                            if (this.dict.call('__getitem__', [pack_str(name)])) {
                                 this.set_state(1);
                                 return;
                             }
@@ -391,7 +391,7 @@ PythonFrame.prototype.run = function () {
                             slot = '__delattr__';
                             args = [pack_str(name)];
                         }
-                        if (temp.call_method(slot, args)) {
+                        if (temp.call(slot, args)) {
                             this.set_state(1);
                             return;
                         }
@@ -412,7 +412,7 @@ PythonFrame.prototype.run = function () {
                 name = this.code.names[instruction.argument];
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method('__getattribute__', [pack_str(name)])) {
+                        if (this.top0().call('__getattribute__', [pack_str(name)])) {
                             this.set_state(1);
                         }
                     case 1:
@@ -423,7 +423,7 @@ PythonFrame.prototype.run = function () {
                             break;
                         }
                         if (except(AttributeError) || except(MethodNotFoundError)) {
-                            if (this.pop().call_method('__getattr__', [pack_str(name)])) {
+                            if (this.pop().call('__getattr__', [pack_str(name)])) {
                                 this.set_state(2);
                                 return;
                             }
@@ -508,7 +508,7 @@ PythonFrame.prototype.run = function () {
                 switch (instruction.argument) {
                     case COMPARE_OPS.EXC:
                         exc_type = this.pop();
-                        this.push(this.pop().is_subclass_of(exc_type) ? True : False);
+                        this.push(issubclass(this.pop(), exc_type) ? True : False);
                         break;
                     case COMPARE_OPS.LT:
                     case COMPARE_OPS.LE:
@@ -521,7 +521,7 @@ PythonFrame.prototype.run = function () {
                                 slot = COMPARE_SLOTS[instruction.argument];
                                 right = this.pop();
                                 left = this.pop();
-                                if (left.call_method(slot, [right])) {
+                                if (left.call(slot, [right])) {
                                     this.set_state(1);
                                     return;
                                 }
@@ -551,14 +551,14 @@ PythonFrame.prototype.run = function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             this.set_state(1);
                             return;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
-                            if (this.pop().call_method('__len__')) {
+                            if (this.pop().call('__len__')) {
                                 this.set_state(2);
                                 return;
                             }
@@ -594,14 +594,14 @@ PythonFrame.prototype.run = function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             this.set_state(1);
                             return;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
-                            if (this.top0().call_method('__len__')) {
+                            if (this.top0().call('__len__')) {
                                 this.set_state(2);
                                 return;
                             }
@@ -637,14 +637,14 @@ PythonFrame.prototype.run = function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             this.set_state(1);
                             return;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
-                            if (this.top0().call_method('__len__')) {
+                            if (this.top0().call('__len__')) {
                                 this.set_state(2);
                                 return;
                             }
@@ -685,14 +685,14 @@ PythonFrame.prototype.run = function () {
                 }
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             this.set_state(1);
                             return;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
-                            if (this.top0().call_method('__len__')) {
+                            if (this.top0().call('__len__')) {
                                 this.set_state(2);
                                 break;
                             }
@@ -726,7 +726,7 @@ PythonFrame.prototype.run = function () {
             case OPCODES.FOR_ITER:
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call_method('__next__')) {
+                        if (this.top0().call('__next__')) {
                             this.set_state(1);
                             return;
                         }

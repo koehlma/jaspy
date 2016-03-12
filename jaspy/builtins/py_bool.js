@@ -19,15 +19,16 @@ var FALSE_STR = pack_str('False');
 py_bool.$def('__new__', function (cls, initializer, state, frame) {
     switch (state) {
         case 0:
-            if (!(cls.is_subclass_of(py_bool))) {
+            // FIXME: subclassing bool is not allowed
+            if (!(issubclass(cls, py_bool))) {
                 raise(TypeError, 'class is not an subclass of bool');
             }
-            if (initializer.call_method('__bool__')) {
+            if (initializer.call('__bool__')) {
                 return 1;
             }
         case 1:
             if (except(MethodNotFoundError)) {
-                if (initializer.call_method('__len__')) {
+                if (initializer.call('__len__')) {
                     return 2;
                 }
             } else {

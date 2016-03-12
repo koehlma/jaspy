@@ -77,16 +77,7 @@ extend(PyType, PyObject);
 
 PyType.prototype.is_subclass_of = function (cls) {
     var index;
-    if (cls === this) {
-        return true;
-    } else {
-        for (index = 0; index < this.mro.length; index++) {
-            if (this.mro[index] === cls) {
-                return true;
-            }
-        }
-    }
-    return false;
+
 };
 PyType.prototype.is_native = function () {
     return this.native === this;
@@ -150,7 +141,7 @@ PyType.prototype.call_staticmethod = function (name, args, kwargs) {
     }
 };
 PyType.prototype.create = function (args, kwargs) {
-    if (this.call_method('__call__', args, kwargs)) {
+    if (this.call('__call__', args, kwargs)) {
         raise(TypeError, 'invalid call to python code during object creation')
     }
     return vm.return_value;
@@ -165,4 +156,21 @@ function new_type(name, bases, attributes, mcs) {
     return new PyType(name, bases, attributes, mcs);
 }
 
+
+function issubclass(cls, superclass) {
+    var index;
+    if (!(cls instanceof PyType)) {
+        raise(TypeError, 'issubclass() first argument must be a class')
+    }
+    for (index = 0; index < cls.mro.length; index++) {
+        if (cls.mro[index] === superclass) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 $.PyType = PyType;
+
+$.issubclass = issubclass;

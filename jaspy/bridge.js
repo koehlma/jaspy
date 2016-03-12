@@ -169,13 +169,6 @@ function new_property(getter, setter) {
     });
 }
 
-function issubclass(object, cls) {
-    if (!(object instanceof PyType)) {
-        return false;
-    }
-    return object.is_subclass_of(cls);
-}
-
 function isiterable(object) {
     return object.cls.lookup('__next__') != undefined;
 }

@@ -45,7 +45,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
                 for (index = 0; index < possible_meta_classes.length; index++) {
                     good = true;
                     possible_meta_classes.forEach(function (meta_class) {
-                        if (!possible_meta_classes[index].is_subclass_of(meta_class)) {
+                        if (!issubclass(possible_meta_classes[index], meta_class)) {
                             good = false;
                         }
                     });
@@ -79,7 +79,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
             } else {
                 bases = bases.array;
             }
-            if (frame.metaclass.cls.call_method('__call__', [name, pack_tuple(bases), frame.dict], keywords)) {
+            if (frame.metaclass.cls.call('__call__', [name, pack_tuple(bases), frame.dict], keywords)) {
                 return 3;
             }
         case 3:
@@ -187,7 +187,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                     object = objects[0];
                     if (object.cls === py_str) {
                         vm.return_value = object;
-                    } else if (object.call_method('__str__')) {
+                    } else if (object.call('__str__')) {
                         return 1;
                     }
                     state = 1;
@@ -205,7 +205,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                     object = objects[frame.index];
                     if (object.cls == py_str) {
                         vm.return_value = object;
-                    } else if (object.call_method('__str__')) {
+                    } else if (object.call('__str__')) {
                         return 1;
                     }
                     break;
@@ -213,7 +213,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
             case 2:
                 if (sep.cls == py_str) {
                     vm.return_value = sep;
-                } else if (sep.call_method('__str__')) {
+                } else if (sep.call('__str__')) {
                     return 3;
                 }
             case 3:

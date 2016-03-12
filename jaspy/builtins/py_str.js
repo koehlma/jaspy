@@ -16,7 +16,7 @@
 py_str.$def('__new__', function (cls, initializer, state, frame) {
     switch (state) {
         case 0:
-            if (!(cls.is_subclass_of(py_str))) {
+            if (!issubclass(cls, py_str)) {
                 raise(TypeError, 'class is not an subclass of str');
             }
             if (initializer instanceof PyStr) {
@@ -26,7 +26,7 @@ py_str.$def('__new__', function (cls, initializer, state, frame) {
                     return pack_str(initializer.value, cls);
                 }
             }
-            if (initializer.call_method('__str__')) {
+            if (initializer.call('__str__')) {
                 return 1;
             }
         case 1:

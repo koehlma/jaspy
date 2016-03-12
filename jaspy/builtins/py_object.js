@@ -32,7 +32,7 @@ py_object.$def('__getattribute__', function (self, name, state, frame) {
             if (!value) {
                 value = self.cls.lookup(name);
                 if (value) {
-                    if (value.call_method('__get__', [self, self.cls])) {
+                    if (value.call('__get__', [self, self.cls])) {
                         return 1;
                     }
                 } else {
@@ -58,7 +58,7 @@ py_object.$def('__setattr__', function (self, name, item, state, frame) {
         case 0:
             descriptor = self.cls.lookup(name);
             if (descriptor && descriptor.cls.lookup('__set__')) {
-                if (descriptor.call_method('__set__', [self, item])) {
+                if (descriptor.call('__set__', [self, item])) {
                     return 1;
                 }
             } else {

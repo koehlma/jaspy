@@ -18,26 +18,26 @@ function disassemble(code) {
 
     var instructions = [];
     var table = {};
-    var start = 0;
+    var position = 0;
 
-    while (start < code.bytecode.length) {
-        instruction = {start: start};
-        table[start] = instruction;
+    while (position < code.bytecode.length) {
+        instruction = {start: position};
+        table[position] = instruction;
 
-        opcode = code.bytecode.charCodeAt(start++);
+        opcode = code.bytecode.charCodeAt(position++);
         if (opcode >= OPCODES_ARGUMENT) {
-            low = code.bytecode.charCodeAt(start++);
-            high = code.bytecode.charCodeAt(start++);
+            low = code.bytecode.charCodeAt(position++);
+            high = code.bytecode.charCodeAt(position++);
             argument = high << 8 | low;
         }
         if (opcode === OPCODES.EXTENDED_ARG) {
-            opcode = code.bytecode.charCodeAt(start++);
-            low = code.bytecode.charCodeAt(start++);
-            high = code.bytecode.charCodeAt(start++);
+            opcode = code.bytecode.charCodeAt(position++);
+            low = code.bytecode.charCodeAt(position++);
+            high = code.bytecode.charCodeAt(position++);
             argument = (argument << 16) | (high << 8) | low;
         }
         instruction.position = instructions.length;
-        instruction.end = start;
+        instruction.end = position;
         instruction.opcode = opcode;
         instruction.argument = argument;
         instructions.push(instruction);

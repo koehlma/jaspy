@@ -90,7 +90,7 @@ function raise(exc_type, exc_value, exc_tb) {
 
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
 
-    if (!(vm.frame instanceof PythonFrame)) {
+    if (vm.frame instanceof NativeFrame || vm.simple_depth > 0) {
         throw exc_value;
     }
 }
@@ -197,7 +197,7 @@ function call(object, args, kwargs, defaults, closure, globals) {
             args = [object.self].concat(args);
             object = object.func;
         } else if (object instanceof PyObject) {
-            result = object.call_method('__call__', args, kwargs);
+            result = object.call('__call__', args, kwargs);
             if (except(MethodNotFoundError)) {
                 raise(TypeError, 'object is not callable');
             }

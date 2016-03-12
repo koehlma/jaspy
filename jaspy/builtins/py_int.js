@@ -16,7 +16,7 @@
 py_int.$def('__new__', function (cls, initializer, base, state, frame) {
     switch (state) {
         case 0:
-            if (!(cls.is_subclass_of(py_int))) {
+            if (!(issubclass(cls, py_int))) {
                 raise(TypeError, 'class is not an subclass of int');
             }
             if (initializer instanceof PyFloat) {
@@ -32,7 +32,7 @@ py_int.$def('__new__', function (cls, initializer, base, state, frame) {
             if (initializer instanceof PyStr) {
                 return PyInt.parse(initializer.value, base);
             }
-            if (initializer.call_method('__int__')) {
+            if (initializer.call('__int__')) {
                 return 1;
             }
         case 1:

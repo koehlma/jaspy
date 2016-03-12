@@ -15,6 +15,9 @@
 
 function PyBytes(value, cls) {
     PyObject.call(this, cls || py_bytes);
+    if (!(value instanceof Uint8Array)) {
+        raise(TypeError, 'invalid native bytes value');
+    }
     this.value = value;
 }
 

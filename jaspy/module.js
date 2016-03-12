@@ -83,7 +83,7 @@ NativeModule.prototype.$set = function (name, value) {
 };
 
 NativeModule.prototype.$class = function (name, bases, mcs) {
-    this.dict[name] = new PyType(name, bases, null, mcs);
+    this.dict[name] = PyType.native(name, bases, null, mcs);
     return this.dict[name];
 };
 

@@ -258,6 +258,5 @@ NativeCode.prototype.get_line_number = function (position) {
 
 $.Signature = Signature;
 
-
 $.PythonCode = PythonCode;
 $.NativeCode = NativeCode;
