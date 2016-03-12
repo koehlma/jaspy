@@ -73,7 +73,7 @@ NativeModule.prototype.$def = function (name, func, signature, options) {
     options.name = name;
     options.qualname = name;
     options.simple = func.length == signature.length;
-    this.dict[name] = new_native(func, signature, options);
+    this.dict[name] = $def(func, signature, options);
     return this.dict[name];
 };
 
@@ -87,9 +87,9 @@ NativeModule.prototype.$class = function (name, bases, mcs) {
     return this.dict[name];
 };
 
-function define_module(name, initializer, depends) {
+function module(name, initializer, depends) {
     if (initializer instanceof PyCode) {
-        initializer = initializer.value
+        initializer = initializer.code;
     }
     if (typeof initializer == 'function') {
         return new NativeModule(name, initializer, depends);
@@ -104,4 +104,6 @@ function define_module(name, initializer, depends) {
 $.get_module = get_module;
 $.get_namespace = get_namespace;
 
-$.module = define_module;
+$.module = module;
+
+$.modules = modules;

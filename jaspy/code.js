@@ -110,6 +110,7 @@ Signature.prototype.parse_args = function (args, kwargs, defaults, namespace) {
 
 Signature.prototype.toString = function () {
     var argnames;
+
     if (!this.var_args && !this.var_kwargs) {
         return this.argnames.join(',');
     }
@@ -120,6 +121,7 @@ Signature.prototype.toString = function () {
     if (this.var_kwargs) {
         argnames[argnames.length - 1] = '**' + argnames[argnames.length - 1];
     }
+
     return argnames.join(',');
 };
 
@@ -223,6 +225,7 @@ PythonCode.prototype.get_line_number = function (position) {
     var address = this.instructions[position].start;
     var line_number = this.firstline;
     var offset = 0;
+
     for (index = 0; index < this.lnotab.length; index++) {
         offset_increment = this.lnotab.charCodeAt(index++);
         line_increment = this.lnotab.charCodeAt(index);
@@ -232,6 +235,7 @@ PythonCode.prototype.get_line_number = function (position) {
         }
         line_number += line_increment;
     }
+
     return line_number;
 };
 
@@ -258,5 +262,6 @@ NativeCode.prototype.get_line_number = function (position) {
 
 $.Signature = Signature;
 
+$.Code = Code;
 $.PythonCode = PythonCode;
 $.NativeCode = NativeCode;

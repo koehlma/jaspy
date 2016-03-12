@@ -1,3 +1,14 @@
+a = 5
+print(a)
+
+
+def abc():
+    print('abc')
+
+
+abc()
+
+"""
 def try_test1():
     try:
         try:
@@ -188,3 +199,4 @@ while True:
         else:
             p.css('background', '#0000FF')
             x = True
+"""

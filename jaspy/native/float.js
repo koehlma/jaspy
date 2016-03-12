@@ -14,11 +14,18 @@
  */
 
 function PyFloat(value, cls) {
+    if (!(typeof value == 'number')) {
+        raise(TypeError, 'invalid type of native float initializer');
+    }
     PyObject.call(this, cls || py_float);
     this.value = value;
 }
 
 extend(PyFloat, PyObject);
+
+PyFloat.prototype.number = function () {
+    return this.value;
+};
 
 
 $.PyFloat = PyFloat;

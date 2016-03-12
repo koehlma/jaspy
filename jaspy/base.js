@@ -22,7 +22,9 @@ function raise(exc_type, exc_value, exc_tb) {
 }
 
 function assert(condition, message) {
-    if (!condition) { error(message); }
+    if (!condition) {
+        error(message || 'assertion failed');
+    }
 }
 
 function extend(subclass, superclass) {

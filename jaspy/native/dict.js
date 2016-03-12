@@ -16,6 +16,9 @@
 function PyDict(namespace, cls) {
     PyObject.call(this, cls || py_dict);
     this.table = namespace || {};
+    if (!(this.table instanceof Object)) {
+        raise(TypeError, 'invalid type of native dict initializer');
+    }
 }
 
 extend(PyDict, PyObject);
@@ -37,6 +40,7 @@ PyDict.prototype.set = function (str_key, value) {
     }
     this.table[str_key] = value;
 };
+
 PyDict.prototype.pop = function (str_key) {
     var value;
     if (str_key instanceof PyStr) {
@@ -45,7 +49,7 @@ PyDict.prototype.pop = function (str_key) {
         raise(TypeError, 'invalid native dict key type');
     }
     value = this.table[str_key];
-    delete this.table[value];
+    delete this.table[str_key];
     return value;
 };
 

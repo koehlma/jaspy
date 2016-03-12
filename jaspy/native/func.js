@@ -13,15 +13,31 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyCode(code, cls) {
-    if (!(code instanceof Code)) {
-        raise(TypeError, 'invalid type of native code initializer');
-    }
-    PyObject.call(this, cls || py_code);
+function PyFunction(name, code, options, cls) {
+    PyObject.call(this, cls || py_function);
+
+    this.name = name;
     this.code = code;
+
+    this.qualname = options.qualname || this.name;
+    this.doc = options.doc || '';
+    this.module = options.module || 'builtins';
+    this.defaults = options.defaults || null;
+    this.closure = options.closure || null;
+    this.globals = options.globals || null;
 }
 
-extend(PyCode, PyObject);
+extend(PyFunction, PyObject);
 
 
-$.PyCode = PyCode;
+function $def(func, signature, options) {
+    options = options || {};
+    var name = options.name || '<unknown>';
+    var code = new NativeCode(func, options, signature);
+    return new PyFunction(name, code, options);
+}
+
+
+$.PyFunction = PyFunction;
+
+$.$def = $def;

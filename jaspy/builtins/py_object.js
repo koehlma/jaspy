@@ -27,7 +27,7 @@ py_object.$def('__getattribute__', function (self, name, state, frame) {
     var value;
     switch (state) {
         case 0:
-            name = unpack_str(name);
+            name = check_str(name);
             value = self.dict ? self.getattr(name) : null;
             if (!value) {
                 value = self.cls.lookup(name);
@@ -88,7 +88,7 @@ py_object.$def('__eq__', function (self, other) {
 }, ['other']);
 
 py_object.$def_property('__class__', function (self) {
-    return self.unpack('cls');
+    return self.cls;
 }, function (self, value) {
     if (!(value instanceof PyType) || value.native != py_object) {
         raise(TypeError, 'invalid type of \'value\' argument');
@@ -96,5 +96,5 @@ py_object.$def_property('__class__', function (self) {
     if (self instanceof PyType || self.cls.native != py_object) {
         raise(TypeError, 'object does not support class assignment');
     }
-    self.pack('cls', value);
+    self.cls = value;
 });

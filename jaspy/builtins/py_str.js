@@ -44,7 +44,7 @@ py_str.$def('__str__', function (self) {
 });
 
 py_str.$def('__add__', function (self, other) {
-    return pack_str(unpack_str(self) + unpack_str(other));
+    return pack_str(check_str(self) + check_str(other));
 }, ['other']);
 py_str.define_alias('__add__', '__iadd__');
 py_str.define_alias('__add__', '__radd__');
@@ -54,7 +54,7 @@ py_str.$def('__hash__', function (self) {
 });
 
 py_str.$def('startswith', function (self, prefix) {
-    return unpack_str(self).indexOf(unpack_str(prefix)) == 0 ? True : False;
+    return check_str(self).indexOf(check_str(prefix)) == 0 ? True : False;
 }, ['prefix']);
 
 function str(object) {

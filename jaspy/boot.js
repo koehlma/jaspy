@@ -35,7 +35,6 @@ var py_code = PyType.native('code');
 
 var py_list = PyType.native('list');
 
-
 var py_cell = PyType.native('cell');
 var py_frame = PyType.native('frame');
 
@@ -43,21 +42,21 @@ var py_js_object = PyType.native('JSObject');
 var py_js_array = PyType.native('JSArray');
 var py_js_function = PyType.native('JSFunction');
 
-var py_traceback = new_type('traceback');
+var py_traceback = PyType.native('traceback');
 
-var py_function = new_type('function');
-var py_method = new_type('method');
-var py_generator = new_type('generator');
+var py_function = PyType.native('function');
+var py_method = PyType.native('method');
+var py_generator = PyType.native('generator');
 
-var py_set = new_type('set');
-var py_frozenset = new_type('frozenset', [py_set]);
+var py_set = $class('set');
+var py_frozenset = $class('frozenset', [py_set]);
 
-var py_classmethod = new_type('classmethod');
-var py_staticmethod = new_type('staticmethod');
+var py_classmethod = $class('classmethod');
+var py_staticmethod = $class('staticmethod');
 
-var py_module = new_type('ModuleType');
+var py_module = $class('ModuleType');
 
-var py_property = new_type('property');
+var py_property = $class('property');
 
 var None = new PyObject(PyType.native('NoneType'));
 var NotImplemented = new PyObject(PyType.native('NotImplemented'));

@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
 import re
 import os
 
 INCLUDE_REGEX = re.compile('^(\s*)//\s*#include\s*(.+)\s*$', re.MULTILINE)
-
+MODULES_REGEX = re.compile('^(\s*)//\s*#modules\s*(.+)\s*$', re.MULTILINE)
 
 os.chdir(os.path.join(os.path.dirname(__file__), 'jaspy'))
 

@@ -70,8 +70,7 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.pop().call(OPCODES_EXTRA[instruction.opcode])) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -104,8 +103,7 @@ PythonFrame.prototype.run = function () {
                         right = this.top0();
                         left = this.top1();
                         if (left.call('__' + slot + '__', [right])) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -114,8 +112,7 @@ PythonFrame.prototype.run = function () {
                             right = this.pop();
                             left = this.pop();
                             if (right.call('__r' + slot + '__', [left])) {
-                                this.set_state(2);
-                                return;
+                                return 2;
                             }
                         } else {
                             this.popn(2);
@@ -155,8 +152,7 @@ PythonFrame.prototype.run = function () {
                         right = this.pop();
                         left = this.pop();
                         if (left.call(slot, [right])) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -178,8 +174,7 @@ PythonFrame.prototype.run = function () {
                         left = this.pop();
                         right = this.pop();
                         if (left.call('__setitem__', [name, right])) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -290,8 +285,7 @@ PythonFrame.prototype.run = function () {
                                 args = [pack_str(name)];
                             }
                             if (this.dict.call(slot, args)) {
-                                this.set_state(1);
-                                return;
+                                return 1;
                             }
                         case 1:
                             this.reset_state();
@@ -322,8 +316,7 @@ PythonFrame.prototype.run = function () {
                     switch (this.state) {
                         case 0:
                             if (this.dict.call('__getitem__', [pack_str(name)])) {
-                                this.set_state(1);
-                                return;
+                                return 1;
                             }
                         case 1:
                             this.reset_state();
@@ -392,8 +385,7 @@ PythonFrame.prototype.run = function () {
                             args = [pack_str(name)];
                         }
                         if (temp.call(slot, args)) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -413,7 +405,7 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.top0().call('__getattribute__', [pack_str(name)])) {
-                            this.set_state(1);
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -424,8 +416,7 @@ PythonFrame.prototype.run = function () {
                         }
                         if (except(AttributeError) || except(MethodNotFoundError)) {
                             if (this.pop().call('__getattr__', [pack_str(name)])) {
-                                this.set_state(2);
-                                return;
+                                return 2;
                             }
                         } else {
                             this.pop();
@@ -479,8 +470,7 @@ PythonFrame.prototype.run = function () {
                             break;
                         }
                         assert(call(modules[name]));
-                        this.set_state(1);
-                        return;
+                        return 1;
                     case 1:
                         this.reset_state();
                         name = this.code.names[instruction.argument];
@@ -522,8 +512,7 @@ PythonFrame.prototype.run = function () {
                                 right = this.pop();
                                 left = this.pop();
                                 if (left.call(slot, [right])) {
-                                    this.set_state(1);
-                                    return;
+                                    return 1;
                                 }
                             case 1:
                                 if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
@@ -552,15 +541,13 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.top0().call('__bool__')) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
                             if (this.pop().call('__len__')) {
-                                this.set_state(2);
-                                return;
+                                return 2;
                             }
                         }
                     case 2:
@@ -595,15 +582,13 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.top0().call('__bool__')) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
                             if (this.top0().call('__len__')) {
-                                this.set_state(2);
-                                return;
+                                return 2;
                             }
                         } else if (!vm.return_value) {
                             this.pop();
@@ -638,15 +623,13 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.top0().call('__bool__')) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
                             if (this.top0().call('__len__')) {
-                                this.set_state(2);
-                                return;
+                                return 2;
                             }
                         } else if (!vm.return_value) {
                             this.pop();
@@ -686,15 +669,13 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.top0().call('__bool__')) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
                         if (except(MethodNotFoundError)) {
                             if (this.top0().call('__len__')) {
-                                this.set_state(2);
-                                break;
+                                return 2;
                             }
                         } else if (!vm.return_value) {
                             this.pop();
@@ -727,8 +708,7 @@ PythonFrame.prototype.run = function () {
                 switch (this.state) {
                     case 0:
                         if (this.top0().call('__next__')) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();
@@ -799,6 +779,7 @@ PythonFrame.prototype.run = function () {
                 break;
 
             case OPCODES.CALL_FUNCTION:
+                console.log('call');
                 switch (this.state) {
                     case 0:
                         low = instruction.argument & 0xFF;
@@ -810,8 +791,7 @@ PythonFrame.prototype.run = function () {
                         }
                         args = this.popn(low);
                         if (call(this.pop(), args, kwargs)) {
-                            this.set_state(1);
-                            return;
+                            return 1;
                         }
                     case 1:
                         this.reset_state();

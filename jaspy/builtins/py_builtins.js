@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var build_class = new_native(function (func, name, bases, metaclass, keywords, state, frame) {
+var build_class = $def(function (func, name, bases, metaclass, keywords, state, frame) {
     var possible_meta_classes, index, good, bases;
     if (!(func.cls == py_function)) {
         raise(TypeError, 'invalid type of \'func\' argument');
@@ -77,7 +77,7 @@ var build_class = new_native(function (func, name, bases, metaclass, keywords, s
             if (bases.length == 0) {
                 bases = [py_object];
             } else {
-                bases = bases.array;
+                bases = bases.value;
             }
             if (frame.metaclass.cls.call('__call__', [name, pack_tuple(bases), frame.dict], keywords)) {
                 return 3;
@@ -166,11 +166,11 @@ var builtins = {
 };
 
 
-var module_builtins = define_module('builtins', function ($, module) {
+var module_builtins = module('builtins', function ($, module) {
     module.dict = builtins;
 });
 
-define_module('js', function ($, module) {
+module('js', function ($, module) {
     return {
         'JSError': JSError
     }
@@ -199,7 +199,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 if (!vm.return_value) {
                     return null;
                 }
-                frame.strings.push(unpack_str(vm.return_value));
+                frame.strings.push(check_str(vm.return_value));
                 frame.index++;
                 if (frame.index < objects.length) {
                     object = objects[frame.index];
@@ -220,7 +220,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 if (!vm.return_value) {
                     return null;
                 }
-                console.log(frame.strings.join(unpack_str(vm.return_value)));
+                console.log(frame.strings.join(check_str(vm.return_value)));
                 return null;
         }
     }

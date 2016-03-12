@@ -74,31 +74,26 @@ PyObject.prototype.getattr = function (name) {
     return this.dict[name]
 };
 
-PyObject.prototype.unpack = function (name) {
-    var item = this[name];
-    if (!item) {
-        raise(TypeError, 'unable to unpack ' + name + ' from object');
-    }
-    return item;
-};
-PyObject.prototype.pack = function (name, value) {
-    this[name] = value;
-};
-
 PyObject.prototype.is = function (other) {
     return this === other;
 };
 
-PyObject.prototype.check_type = function (cls) {
+PyObject.prototype.check_type = function (cls, message) {
     if (!isinstance(this, cls)) {
-        raise(TypeError, 'invalid type');
+        raise(TypeError, message || 'type check failed');
     }
 };
-PyObject.prototype.check_subclass = function (superclass) {
-    if (!issubclass(this, superclass)) {
-        raise(TypeError, 'invalid subclass');
+
+PyObject.prototype.check_subclass = function (superclass, message) {
+    if (!(this instanceof PyType) || !issubclass(this, superclass)) {
+        raise(TypeError, message || 'subclass check failed');
     }
 };
+
+PyObject.prototype.toString = function () {
+    return '<object at 0x' + this.get_address() + '>';
+};
+
 
 function isinstance(object, cls) {
     var index;

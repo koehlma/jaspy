@@ -75,13 +75,6 @@ function PyType(name, bases, attributes, mcs) {
 
 extend(PyType, PyObject);
 
-PyType.prototype.is_subclass_of = function (cls) {
-    var index;
-
-};
-PyType.prototype.is_native = function () {
-    return this.native === this;
-};
 PyType.prototype.lookup = function (name) {
     var index, value;
     for (index = 0; index < this.mro.length; index++) {
@@ -91,35 +84,41 @@ PyType.prototype.lookup = function (name) {
         }
     }
 };
+
 PyType.prototype.define = function (name, item) {
     this.dict[name] = item;
     return item;
 };
+
 PyType.prototype.define_alias = function (name, alias) {
     return this.define(alias, this.lookup(name));
 };
+
 PyType.prototype.$def = function (name, func, signature, options) {
     options = options || {};
     options.name = options.name || name;
     options.qualname = options.qualname || (this.name + '.' + options.name);
-    return this.define(name, new_native(func, ['self'].concat(signature || []), options));
+    return this.define(name, $def(func, ['self'].concat(signature || []), options));
 };
+
 PyType.prototype.$def_property = function (name, getter, setter) {
     var options = {name: name, qualname: this.name + '.' + name};
     if (getter) {
-        getter = new_native(getter, ['self'], options);
+        getter = $def(getter, ['self'], options);
     }
     if (setter) {
-        setter = new_native(setter, ['self', 'value'], options);
+        setter = $def(setter, ['self', 'value'], options);
     }
     return this.define(name, new new_property(getter, setter));
 };
+
 PyType.prototype.$def_classmethod = function (name, func, signature, options) {
     options = options || {};
     options.name = options.name || name;
     options.qualname = options.qualname || (this.name + '.' + options.name);
-    return this.define(name, new_native(func, ['cls'].concat(signature || []), options));
+    return this.define(name, $def(func, ['cls'].concat(signature || []), options));
 };
+
 PyType.prototype.call_classmethod = function (name, args, kwargs) {
     var method = this.lookup(name);
     if (method) {
@@ -130,6 +129,7 @@ PyType.prototype.call_classmethod = function (name, args, kwargs) {
         return false;
     }
 };
+
 PyType.prototype.call_staticmethod = function (name, args, kwargs) {
     var method = this.lookup(name);
     if (method) {
@@ -140,19 +140,21 @@ PyType.prototype.call_staticmethod = function (name, args, kwargs) {
         return false;
     }
 };
+
 PyType.prototype.create = function (args, kwargs) {
     if (this.call('__call__', args, kwargs)) {
         raise(TypeError, 'invalid call to python code during object creation')
     }
     return vm.return_value;
 };
+
 PyType.native = function (name, bases, attributes, mcs) {
     var type = new PyType(name, bases, attributes, mcs);
     type.native = type;
     return type;
 };
 
-function new_type(name, bases, attributes, mcs) {
+function $class(name, bases, attributes, mcs) {
     return new PyType(name, bases, attributes, mcs);
 }
 
@@ -160,7 +162,7 @@ function new_type(name, bases, attributes, mcs) {
 function issubclass(cls, superclass) {
     var index;
     if (!(cls instanceof PyType)) {
-        raise(TypeError, 'issubclass() first argument must be a class')
+        raise(TypeError, 'first argument must be a class')
     }
     for (index = 0; index < cls.mro.length; index++) {
         if (cls.mro[index] === superclass) {
@@ -172,5 +174,7 @@ function issubclass(cls, superclass) {
 
 
 $.PyType = PyType;
+
+$.$class = $class;
 
 $.issubclass = issubclass;

@@ -20,5 +20,29 @@ function PyStr(value, cls) {
 
 extend(PyStr, PyObject);
 
+PyStr.prototype.encode = function (encoding) {
+    var encoder, result;
+    if (!TextEncoder) {
+        // Polyfill: https://github.com/inexorabletash/text-encoding
+        raise(RuntimeError, 'browser does not support encoding, please use a polyfill');
+    }
+    try {
+        encoder = new TextEncoder(encoding || 'utf-8');
+    } catch (error) {
+        raise(LookupError, 'unknown encoding: ' + encoding);
+    }
+    try {
+        result = encoder.encode(this.value);
+    } catch (error) {
+        console.log(error);
+        raise(UnicodeEncodeError, 'unable to decode bytes object, data is not valid');
+    }
+    return result;
+};
+
+PyStr.prototype.toString = function () {
+    return this.value;
+};
+
 
 $.PyStr = PyStr;

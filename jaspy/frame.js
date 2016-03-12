@@ -225,9 +225,3 @@ NativeFrame.prototype.run = function () {
         return true;
     }
 };
-NativeFrame.prototype.store = function (name, value) {
-    this[name] = value;
-};
-NativeFrame.prototype.load = function (name) {
-    return this[name];
-};

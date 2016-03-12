@@ -13,20 +13,39 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyJSObject(object) {
-    PyObject.call(this, py_js_object);
+function PyJSObject(object, cls) {
+    if (!(object instanceof Object)) {
+        raise(TypeError, 'invalid type of native object initializer');
+    }
+    PyObject.call(this, cls || py_js_object);
     this.object = object;
 }
+
 extend(PyJSObject, PyObject);
 
-function PyJSArray(array) {
-    PyObject.call(this, py_js_array);
+
+function PyJSArray(array, cls) {
+    if (!(array instanceof Array)) {
+        raise(TypeError, 'invalid type of native array initializer');
+    }
+    PyObject.call(this, cls || py_js_array);
     this.array = array;
 }
+
 extend(PyJSArray, PyObject);
 
-function PyJSFunction(func) {
-    PyObject.call(this, py_js_function);
+
+function PyJSFunction(func, cls) {
+    if (typeof func != 'function') {
+        raise(TypeError, 'invalid type of native function initializer');
+    }
+    PyObject.call(this, cls || py_js_function);
     this.func = func;
 }
+
 extend(PyJSFunction, PyObject);
+
+
+$.PyJSObject = PyJSObject;
+$.PyJSArray = PyJSArray;
+$.PyJSFunction = PyJSFunction;

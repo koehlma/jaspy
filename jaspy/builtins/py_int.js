@@ -156,5 +156,3 @@ py_int.$def('__or__', function (self, other) {
 }, ['other']);
 py_int.define_alias('__or__', '__ior__');
 py_int.define_alias('__or__', '__ror__');
-
-py_int.setattr('__implementation__', pack_str(PyInt.implementation));

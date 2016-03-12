@@ -16,5 +16,13 @@
 jaspy.module('sys', function ($, module) {
     module.$set('byteorder', $.pack_str('big'));
 
+    module.$set('copyright', $.pack_str('Copyright (C) 2016, Maximilian Koehl'));
+
+    module.$set('platform', $.pack_str('web'));
+
     module.$set('implementation', $.pack_str('jaspy'));
+
+    module.$set('jaspy_version', $.pack_str('0.0.1dev'));
+
+    module.$set('modules', new $.PyDict($.modules));
 });

@@ -14,8 +14,14 @@
  */
 
 function PyFrame(frame) {
+    if (!(frame instanceof Frame)) {
+        raise(TypeError, 'invalid type of native frame initializer');
+    }
     PyObject.call(this, py_frame);
     this.frame = frame;
 }
 
 extend(PyFrame, PyObject);
+
+
+$.PyFrame = PyFrame;

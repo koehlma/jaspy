@@ -17,6 +17,10 @@ function pack_int(value, cls) {
     return new PyInt(value, cls);
 }
 
+function pack_bool(boolean) {
+    return boolean ? True : False;
+}
+
 function pack_float(value, cls) {
     return new PyFloat(value, cls);
 }
@@ -25,17 +29,145 @@ function pack_str(value, cls) {
     return new PyStr(value, cls);
 }
 
-function pack_bytes(value, cls) {
-    return new PyBytes(value, cls);
+function pack_bytes(array, cls) {
+    return new PyBytes(array, cls);
 }
 
-function pack_tuple(value, cls) {
-    return new PyTuple(value, cls);
+function pack_tuple(array, cls) {
+    return new PyTuple(array, cls);
 }
 
-function pack_list(array, cls) {
-    return new PyList(array, cls);
+function pack_object(object, cls) {
+    return new PyJSObject(object, cls);
 }
+
+function pack_array(array, cls) {
+    return new PyJSArray(array, cls);
+}
+
+function pack_function(func, cls) {
+    return new PyJSFunction(func, cls);
+}
+
+function check_int(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyInt)) {
+        raise(TypeError, 'unable to unpack integer from object');
+    }
+    return object.number();
+}
+
+function check_number(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyInt) && !(object instanceof PyFloat)) {
+        raise(TypeError, 'unable to unpack number from object');
+    }
+    return object.number();
+}
+
+function check_str(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyStr)) {
+        raise(TypeError, 'unable to unpack string from object');
+    }
+    return object.value;
+}
+
+function check_bytes(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyBytes)) {
+        raise(TypeError, 'unable to unpack bytes from object');
+    }
+    return object.array;
+}
+
+function check_tuple(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyTuple)) {
+        raise(TypeError, 'unable to unpack tuple from object');
+    }
+    return object.array;
+}
+
+function check_object(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyJSObject)) {
+        raise(TypeError, 'unable to unpack js object');
+    }
+    return object.object;
+}
+
+function check_array(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyJSArray)) {
+        raise(TypeError, 'unable to unpack js array');
+    }
+    return object.array;
+}
+
+function check_function(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyJSFunction)) {
+        raise(TypeError, 'unable to unpack js function');
+    }
+    return object.func;
+}
+
+
+$.pack_int = pack_int;
+$.pack_bool = pack_bool;
+$.pack_float = pack_float;
+$.pack_str = pack_str;
+$.pack_bytes = pack_bytes;
+$.pack_tuple = pack_tuple;
+$.pack_object = pack_object;
+$.pack_array = pack_array;
+$.pack_function = pack_function;
+
+$.check_int = check_int;
+$.check_number = check_number;
+$.check_str = check_str;
+$.check_bytes = check_bytes;
+$.check_tuple = check_tuple;
+$.check_object = check_object;
+$.check_array = check_array;
+$.check_function = check_function;
+
+
+
+
+
+
+
+
+
+
+/* ------------------------------------------------------------------------------------ */
+
+$.unpack_code = unpack_code;
+
+
+
+
+
+
+
 
 function pack_code(value) {
     return new PyCode(value);
@@ -44,25 +176,6 @@ function pack_code(value) {
 function new_cell(item) {
     return new PyCell(item);
 }
-
-function new_frame(frame) {
-    return new PyFrame(frame);
-}
-
-function new_js_object(object) {
-    return new PyJSObject(object);
-}
-
-function new_js_array(array) {
-    return new PyJSArray(array)
-}
-
-function new_js_function(func) {
-    return new PyJSFunction(func);
-}
-
-
-
 
 function unpack_int_old(object, fallback) {
     if (object === None && fallback) {
@@ -75,51 +188,7 @@ function unpack_int_old(object, fallback) {
     }
 }
 
-function unpack_float(object, fallback) {
-    if (object === None && fallback) {
-        return fallback;
-    }
-    if (object instanceof PyFloat || object instanceof PyInt) {
-        return object.value;
-    } else {
-        raise(UnpackError, 'unable to unpack float from object');
-    }
-}
 
-function unpack_str(object, fallback) {
-    if (object === None && fallback) {
-        return fallback;
-    }
-    if (object instanceof PyStr) {
-        return object.value;
-    } else if (object instanceof PyInt || object instanceof PyFloat) {
-        return object.value.toString();
-    } else {
-        raise(UnpackError, 'unable to unpack string from object');
-    }
-}
-
-function unpack_bytes(object, fallback) {
-    if (object === None && fallback) {
-        return fallback;
-    }
-    if (object instanceof PyBytes) {
-        return object.value;
-    } else {
-        raise(UnpackError, 'unable to unpack bytes from object');
-    }
-}
-
-function unpack_tuple(object, fallback) {
-    if (object === None && fallback) {
-        return fallback;
-    }
-    if (object instanceof PyTuple) {
-        return object.value;
-    } else {
-        raise(UnpackError, 'unable to unpack tuple from object');
-    }
-}
 
 function unpack_code(object, fallback) {
     if (object === None && fallback) {
@@ -133,21 +202,6 @@ function unpack_code(object, fallback) {
 }
 
 var BUILTINS_STR = pack_str('builtins');
-
-function new_native(func, signature, options) {
-    options = options || {};
-    var code = new NativeCode(func, options, signature);
-    func = new PyObject(py_function, {});
-    func.setattr('__name__', pack_str(options.name || '<unkown>'));
-    func.setattr('__qualname__', pack_str(options.qualname || '<unkown>'));
-    func.setattr('__doc__', pack_str(options.doc || ''));
-    func.setattr('__module__', options.module ? pack_str(options.module) : BUILTINS_STR);
-    func.setattr('__code__', pack_code(code));
-    func.setattr('__defaults__', new PyDict(options.defaults));
-    func.defaults = options.defaults;
-    return func;
-}
-
 
 function pack_error(error) {
     return new PyObject(JSError, {
@@ -174,27 +228,8 @@ function isiterable(object) {
 }
 
 
-function pack_bool(object) {
-    return object ? True : False;
-}
 
 
-function unpack_int(object) {
-    return object.number();
-}
 
-$.unpack_int = unpack_int;
-$.unpack_float = unpack_float;
-$.unpack_str = unpack_str;
-$.unpack_bytes = unpack_bytes;
-$.unpack_tuple = unpack_tuple;
-$.unpack_code = unpack_code;
-
-
-$.pack_int = pack_int;
-$.pack_float = pack_float;
-$.pack_str = pack_str;
-$.pack_bytes = pack_bytes;
-$.pack_tuple = pack_tuple;
 $.pack_code = pack_code;
 

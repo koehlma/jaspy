@@ -15,7 +15,11 @@
 
 function PyInt(value, cls) {
     PyObject.call(this, cls || py_int);
-    this.value = bigInt(value);
+    try {
+        this.value = bigInt(value);
+    } catch (error) {
+        raise(TypeError, 'invalid type of native int initializer');
+    }
 }
 
 extend(PyInt, PyObject);
@@ -147,8 +151,6 @@ PyInt.prototype.gt = function (other) {
 PyInt.prototype.ge = function (other) {
     return pack_bool(this.value.geq(other.value));
 };
-
-PyInt.implementation = 'big';
 
 PyInt.parse = function (string, base) {
     if (base instanceof PyInt) {

@@ -57,6 +57,10 @@ function except(exc_type) {
 function raise(exc_type, exc_value, exc_tb) {
     var frame;
 
+    if (!vm.frame) {
+        error(exc_value);
+    }
+
     if (typeof exc_value == 'string') {
         exc_value = new_exception(exc_type, exc_value);
     }
@@ -77,8 +81,8 @@ function raise(exc_type, exc_value, exc_tb) {
             }
             message.push('Traceback (most recent call last):');
             message = message.reverse();
-            if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').value[0] instanceof PyStr) {
-                message.push(exc_type.name + ': ' + exc_value.getattr('args').value[0].value);
+            if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').array[0] instanceof PyStr) {
+                message.push(exc_type.name + ': ' + exc_value.getattr('args').array[0]);
             } else {
                 message.push(exc_type.name);
             }
@@ -131,7 +135,7 @@ function call(object, args, kwargs, defaults, closure, globals) {
                 args: args, kwargs: kwargs, closure: closure,
                 globals: globals
             });
-            return true;
+            return vm.frame.run();
         } else if (object instanceof NativeCode) {
             if (object.simple) {
                 args = object.parse_args(args, kwargs, defaults);
@@ -174,24 +178,23 @@ function call(object, args, kwargs, defaults, closure, globals) {
                     } else {
                         vm.frame = vm.frame.back;
                         raise(RuntimeError, '[' + error.name + '] ' + error.message);
+                        return false;
                     }
                 }
             }
-        } else if (object.cls === py_function) {
-            code = object.dict['__code__'];
-            closure = object.dict['__closure__'];
-            if (object.dict['__globals__']) {
-                globals = object.dict['__globals__'].table;
-            }
-
-            if (code.cls === py_code) {
+        } else if (object instanceof PyFunction) {
+            code = object.code;
+            closure = object.closure;
+            globals = object.globals;
+            if (code instanceof Code) {
                 defaults = object.defaults;
-                object = code.value;
+                object = code;
                 if (closure instanceof PyTuple) {
                     closure = closure.value;
                 }
             } else {
                 raise(TypeError, 'invalid type of function code')
+                return false;
             }
         } else if (object instanceof PyMethod) {
             args = [object.self].concat(args);
@@ -199,7 +202,8 @@ function call(object, args, kwargs, defaults, closure, globals) {
         } else if (object instanceof PyObject) {
             result = object.call('__call__', args, kwargs);
             if (except(MethodNotFoundError)) {
-                raise(TypeError, 'object is not callable');
+                raise(TypeError, object.cls.name + ' object is not callable');
+                return false;
             }
             return result;
         } else if (object instanceof PythonModule) {
@@ -209,7 +213,7 @@ function call(object, args, kwargs, defaults, closure, globals) {
             });
             return true;
         } else {
-            error('invalid callable');
+            error('invalid callable ' + object);
         }
     }
 }
