@@ -33,12 +33,11 @@ jaspy.module('greenlet', function ($, module, builtins) {
 
     Greenlet.$def('switch', function (self, state, frame) {
         Greenlet.check(self);
-        console.log(self.repr(), 'switch', self.started, state, frame.previous);
         if (self.started) {
             switch (state) {
                 case 0:
-                    current.frame = frame;
-                    $.vm.frame = self.frame;
+                    current.top = frame;
+                    $.vm.frame = self.top;
                     current = self;
                     current.bottom.back = frame;
                     return 1;
@@ -46,7 +45,7 @@ jaspy.module('greenlet', function ($, module, builtins) {
                     return;
             }
         } else {
-            current.frame = frame;
+            current.top = frame;
             current = self;
             self.started = true;
             if (self.bottom = $.call(self.run)) {
