@@ -3,6 +3,7 @@ import sys
 print(sys.jaspy_version_info)
 print(sys.copyright)
 print(sys.version_info)
+print(sys.version_info.major)
 
 a = 5
 print(a)

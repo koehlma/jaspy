@@ -31,6 +31,11 @@ jaspy.module('sys', function ($, module, builtins) {
             'serial=' + self.array[4] + ')');
     });
 
+    VersionInfo.$def_property('major', function (self) {
+        self.check_type(VersionInfo);
+        return self.array[0];
+    });
+
     module.$set('byteorder', $.pack_str('big'));
 
     module.$set('copyright', $.pack_str('Copyright (C) 2016, Maximilian Koehl'));
