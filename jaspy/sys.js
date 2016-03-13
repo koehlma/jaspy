@@ -57,6 +57,4 @@ jaspy.module('sys', function ($, module, builtins) {
     );
 
     module.$set('modules', new $.PyDict($.modules));
-
-    console.log('... Jaspy Python Interpreter\n... Copyright (C) 2016, Maximilian Koehl');
 }, ['builtins']);
