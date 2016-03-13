@@ -231,6 +231,10 @@ print('main 3')
 green_switch()
 print('main 4')
 
+a = '\N{MAHJONG TILE GREEN DRAGON}'
+print(a)
+print(len(a))
+
 x = True
 height = 0
 while True:

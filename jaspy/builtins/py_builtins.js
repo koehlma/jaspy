@@ -228,6 +228,18 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
     defaults: {sep: pack_str(' '), end: pack_str('\n'), file: None, flush: False}
 });
 
+module_builtins.$def('len', function (object, state, frame) {
+    switch (state) {
+        case 0:
+            if (object.call('__len__')) {
+                return 1;
+            }
+        case 1:
+            return vm.return_value;
+    }
+
+}, ['object']);
+
 
 $.builtins = builtins;
 

@@ -47,6 +47,11 @@ py_str.$def('__repr__', function (self) {
     return self.repr();
 });
 
+py_str.$def('__len__', function (self)  {
+    py_str.check(self);
+    return pack_int(self.value.length);
+});
+
 py_str.$def('__add__', function (self, other) {
     return pack_str(unpack_str(self) + unpack_str(other));
 }, ['other']);
