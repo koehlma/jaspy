@@ -50,9 +50,6 @@ function compute_mro(cls) {
 }
 
 
-
-
-
 function PyType(name, bases, attributes, mcs) {
     var index, native;
     PyObject.call(this, mcs || py_type, attributes || {});
@@ -161,7 +158,7 @@ PyType.native = function (name, bases, attributes, mcs) {
 };
 
 function $class(name, bases, attributes, mcs) {
-    return new PyType(name, bases, attributes, mcs);
+    return new PyType.native(name, bases, attributes, mcs);
 }
 
 
