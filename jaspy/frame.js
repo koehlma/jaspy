@@ -192,7 +192,16 @@ PythonFrame.prototype.get_line_number = function () {
 };
 
 PythonFrame.prototype.run = function () {
-    return this.eval();
+    if (this.state) {
+        this.reset_state();
+    }
+    var state = this.eval();
+    if (state == undefined) {
+        return false;
+    } else {
+        this.set_state(state);
+        return true;
+    }
 };
 
 
