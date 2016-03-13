@@ -39,6 +39,7 @@ function PythonFrame(code, options) {
     Frame.call(this, code, options);
 
     this.locals = options.locals || {};
+
     this.code.parse_args(options.args, options.kwargs, options.defaults, this.locals);
 
     this.namespace = options.namespace || null;
@@ -47,7 +48,7 @@ function PythonFrame(code, options) {
     this.level = 0;
 
     this.blocks = options.blocks || [];
-    if (!options.blocks) {
+    if (!this.blocks.length) {
         this.push_block(BLOCK_TYPES.BASE, 0);
     }
 
@@ -64,8 +65,6 @@ function PythonFrame(code, options) {
     }
 
     this.unwind_cause = null;
-
-    this.previous = 0;
 }
 
 extend(PythonFrame, Frame);
@@ -73,6 +72,7 @@ extend(PythonFrame, Frame);
 PythonFrame.prototype.top_block = function () {
     return this.blocks[this.blocks.length - 1];
 };
+
 PythonFrame.prototype.push_block = function (type, target) {
     this.blocks.push({
         type: type,
@@ -82,25 +82,32 @@ PythonFrame.prototype.push_block = function (type, target) {
         level: this.level
     });
 };
+
 PythonFrame.prototype.pop_block = function () {
     return this.blocks.pop();
 };
+
 PythonFrame.prototype.pop = function () {
     return this.stack[--this.level];
 };
+
 PythonFrame.prototype.popn = function (number) {
     this.level -= number;
     return this.stack.slice(this.level, this.level + number);
 };
+
 PythonFrame.prototype.top0 = function () {
     return this.stack[this.level - 1];
 };
+
 PythonFrame.prototype.top1 = function () {
     return this.stack[this.level - 2];
 };
+
 PythonFrame.prototype.topn = function (number) {
     return this.stack.slice(this.level - number, this.level);
 };
+
 PythonFrame.prototype.push = function (item) {
     assert(item instanceof PyObject, 'tried to push non python object on stack');
     this.stack[this.level++] = item;
@@ -178,12 +185,14 @@ PythonFrame.prototype.unwind = function (cause) {
         }
     }
 };
+
 PythonFrame.prototype.raise = function () {
     this.push(vm.last_exception.exc_tb);
     this.push(vm.last_exception.exc_value);
     this.push(vm.last_exception.exc_type);
     this.unwind(UNWIND_CAUSES.EXCEPTION);
 };
+
 PythonFrame.prototype.get_line_number = function () {
     return this.code.get_line_number(this.position - 1);
 };
@@ -197,7 +206,6 @@ PythonFrame.prototype.run = function () {
         return true;
     }
 };
-
 
 
 function NativeFrame(code, options) {
