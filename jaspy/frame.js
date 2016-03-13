@@ -41,7 +41,7 @@ function PythonFrame(code, options) {
     this.locals = options.locals || {};
     this.code.parse_args(options.args, options.kwargs, options.defaults, this.locals);
 
-    this.dict = options.dict || null;
+    this.namespace = options.namespace || null;
 
     this.stack = new Array(this.code.stacksize);
     this.level = 0;
@@ -102,7 +102,7 @@ PythonFrame.prototype.topn = function (number) {
     return this.stack.slice(this.level - number, this.level);
 };
 PythonFrame.prototype.push = function (item) {
-    assert(item instanceof PyObject);
+    assert(item instanceof PyObject, 'tried to push non python object on stack');
     this.stack[this.level++] = item;
     if (this.level > this.code.stacksize) {
         error('stack overflow');
@@ -112,9 +112,6 @@ PythonFrame.prototype.push = function (item) {
 PythonFrame.prototype.set_state = function (state) {
     this.position--;
     this.state = state;
-};
-PythonFrame.prototype.reset_state = function () {
-    this.state = 0;
 };
 
 PythonFrame.prototype.print_block_stack = function () {
@@ -192,10 +189,7 @@ PythonFrame.prototype.get_line_number = function () {
 };
 
 PythonFrame.prototype.run = function () {
-    if (this.state) {
-        this.reset_state();
-    }
-    var state = this.eval();
+    var state = this.eval(this.state);
     if (state == undefined) {
         return false;
     } else {
@@ -215,7 +209,7 @@ function NativeFrame(code, options) {
 extend(NativeFrame, Frame);
 
 NativeFrame.prototype.run = function () {
-    assert(!this.code.simple);
+    assert(!this.code.simple, 'native frames\'s code is simple');
     var result;
     try {
         result = this.code.func.apply(null, this.args.concat([this.position, this]));

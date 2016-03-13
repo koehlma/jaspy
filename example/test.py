@@ -20,7 +20,6 @@ def abc():
 
 abc()
 
-"""
 def try_test1():
     try:
         try:
@@ -70,6 +69,8 @@ p1.text = 'Hallo Welt!'
 p1.register_listener('click', on_click)
 print(p1)
 print(p1.text)
+
+print('cls')
 
 class Test:
     pass
@@ -186,7 +187,6 @@ except Exception:
     pass
 
 
-print(int.__implementation__)
 
 print(sys.__name__)
 
@@ -211,4 +211,3 @@ while True:
         else:
             p.css('background', '#0000FF')
             x = True
-"""

@@ -127,14 +127,14 @@ function main(module, argv) {
     return run();
 }
 
-function call(object, args, kwargs, defaults, closure, globals) {
+function call(object, args, kwargs, defaults, closure, globals, namespace) {
     var code, result, frame;
     while (true) {
         if (object instanceof PythonCode) {
             vm.frame = new PythonFrame(object, {
                 vm: vm, back: vm.frame, defaults: defaults,
                 args: args, kwargs: kwargs, closure: closure,
-                globals: globals
+                globals: globals, namespace: namespace
             });
             return vm.frame.run();
         } else if (object instanceof NativeCode) {

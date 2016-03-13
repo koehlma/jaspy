@@ -13,6 +13,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+BaseException.$def('__new__', function (cls, args) {
+    cls.check_subclass(BaseException);
+    return new PyObject(cls, {'args': args})
+}, ['*args']);
+
 Exception.$def('__init__', function (self, args) {
     self.setattr('args', pack_tuple(args));
 }, ['*args']);

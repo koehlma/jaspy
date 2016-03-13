@@ -67,9 +67,9 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
                 return null;
             }
             frame.dict = vm.return_value;
-            assert(call(func));
-            vm.frame.dict = frame.dict;
-            return 2;
+            if (call(func, undefined, undefined, undefined, undefined, undefined, frame.dict)) {
+                return 2;
+            }
         case 2:
             if (!vm.return_value) {
                 return null;
@@ -86,7 +86,7 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
             if (!vm.return_value) {
                 return null;
             }
-            return frame.cls;
+            return vm.return_value;
     }
 }, ['func', 'name', '*bases', 'metaclass', '**keywords'], {
     name: '__build_class__',

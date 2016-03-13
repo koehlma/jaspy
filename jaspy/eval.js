@@ -223,7 +223,7 @@ PythonFrame.prototype.eval = function () {
 
             case OPCODES.POP_EXCEPT:
                 block = this.blocks.pop();
-                assert(block.type === BLOCK_TYPES.EXCEPT);
+                assert(block.type === BLOCK_TYPES.EXCEPT, 'invalid type of top block');
                 while (this.level > block.level + 3) {
                     this.pop();
                 }
@@ -269,7 +269,7 @@ PythonFrame.prototype.eval = function () {
                 } else {
                     name = this.code.names[instruction.argument];
                 }
-                if (this.dict) {
+                if (this.namespace) {
                     switch (this.state) {
                         case 0:
                             if (instruction.opcode === OPCODES.STORE_NAME) {
@@ -279,7 +279,7 @@ PythonFrame.prototype.eval = function () {
                                 slot = '__delitem__';
                                 args = [pack_str(name)];
                             }
-                            if (this.dict.call(slot, args)) {
+                            if (this.namespace.call(slot, args)) {
                                 return 1;
                             }
                         case 1:
@@ -306,10 +306,10 @@ PythonFrame.prototype.eval = function () {
                 } else {
                     name = this.code.names[instruction.argument];
                 }
-                if (this.dict) {
+                if (this.namespace) {
                     switch (this.state) {
                         case 0:
-                            if (this.dict.call('__getitem__', [pack_str(name)])) {
+                            if (this.namespace.call('__getitem__', [pack_str(name)])) {
                                 return 1;
                             }
                         case 1:
@@ -459,8 +459,9 @@ PythonFrame.prototype.eval = function () {
                             this.push(new PyModule(modules[name].dict));
                             break;
                         }
-                        assert(call(modules[name]));
-                        return 1;
+                        if (call(modules[name])) {
+                            return 1;
+                        }
                     case 1:
                         name = this.code.names[instruction.argument];
                         this.push(new PyModule(modules[name].dict));
@@ -808,7 +809,7 @@ PythonFrame.prototype.eval = function () {
                     defaults[this.pop().value] = value;
                 }
                 for (index = 0; index < low; index++) {
-                    defaults[code.value.signature.argnames[index]] = this.pop();
+                    defaults[code.code.signature.argnames[index]] = this.pop();
                 }
                 globals = this.globals;
                 var options = {defaults: defaults, globals: globals};
@@ -833,5 +834,6 @@ PythonFrame.prototype.eval = function () {
                 error('unknown opcode ' + instruction.opcode);
                 break;
         }
+        this.state = 0;
     }
 };
