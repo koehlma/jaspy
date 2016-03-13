@@ -58,6 +58,8 @@ var py_module = PyType.native('ModuleType');
 
 var py_property = PyType.native('property');
 
+var py_slice = PyType.native('slice');
+
 var None = new PyObject(PyType.native('NoneType'));
 var NotImplemented = new PyObject(PyType.native('NotImplemented'));
 var Ellipsis = new PyObject(PyType.native('Ellipsis'));
