@@ -19,3 +19,7 @@ Features
 .. _BigInteger.js: https://github.com/peterolson/BigInteger.js
 .. _time: https://github.com/koehlma/jaspy/blob/master/modules/time.js
 .. _dom: https://github.com/koehlma/jaspy/blob/master/modules/dom.js
+
+Build
+-----
+See `build.py`.

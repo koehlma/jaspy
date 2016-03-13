@@ -36,5 +36,8 @@ if __name__ == '__main__':
         with open('libs/biginteger/BigInteger.js') as biginteger:
             source = biginteger.read() + source
 
+    if not os.path.exists('build'):
+        os.mkdir('build')
+
     with open('build/jaspy.js', 'w') as output:
         output.write(source)
