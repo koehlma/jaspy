@@ -17,12 +17,12 @@ jaspy.module('sys', function ($, module, builtins) {
     var VersionInfo = module.$class('_VersionInfo', [builtins.tuple]);
 
     VersionInfo.$def('__new__', function (cls, major, minor, micro, releaselevel, serial) {
-        cls.check_subclass(VersionInfo);
+        VersionInfo.check_subclass(cls);
         return new $.PyTuple([major, minor, micro, releaselevel, serial], cls);
     }, ['major', 'minor', 'patch', 'releaselevel', 'serial']);
 
     VersionInfo.$def('__str__', function (self) {
-        self.check_type(VersionInfo);
+        VersionInfo.check(self);
         return $.pack_str('version_info(' +
             'major=' + self.array[0] + ', ' +
             'minor=' + self.array[1] + ', ' +
@@ -32,7 +32,7 @@ jaspy.module('sys', function ($, module, builtins) {
     });
 
     VersionInfo.$def_property('major', function (self) {
-        self.check_type(VersionInfo);
+        VersionInfo.check(self);
         return self.array[0];
     });
 

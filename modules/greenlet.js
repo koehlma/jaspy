@@ -18,10 +18,43 @@ jaspy.module('greenlet', function ($, module, builtins) {
     var GreenletExit = module.$class('GreenletExit', [builtins.Exception]);
 
 
-    var current = builtins.None;
+    var current = new $.PyObject(Greenlet);
+    current.started = true;
 
-    Greenlet.$def('__init__', function (self, run) {
+    Greenlet.$def('__new__', function (cls, run) {
+        Greenlet.check_subclass(cls);
+        var self = new $.PyObject(cls);
+        self.run = run;
+        self.started = false;
+        self.setattr('parent', current);
+        return self;
+    }, ['run']);
 
-    }, ['resume', 'parent'], {defaults: {run: builtins.None, parent: builtins.None}});
+    Greenlet.$def('switch', function (self, state, frame) {
+        Greenlet.check(self);
+        console.log(self.repr(), 'switch', self.started, state, frame.previous);
+        if (self.started) {
+            switch (state) {
+                case 0:
+                    current.frame = frame;
+                    $.vm.frame = self.frame;
+                    current = self;
+                    return 1;
+                case 1:
+                    return;
+            }
+        } else {
+            current.frame = frame;
+            current = self;
+            self.started = true;
+            if ($.call(self.run)) {
+                return 1;
+            }
+        }
+    });
+
+    module.$def('getcurrent', function () {
+        return current;
+    });
 
 }, ['builtins']);

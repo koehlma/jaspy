@@ -151,6 +151,12 @@ PyType.prototype.check = function (object) {
     }
 };
 
+PyType.prototype.check_subclass = function (cls) {
+    if (!issubclass(cls, this)) {
+        raise(TypeError, 'native subclass check failed');
+    }
+};
+
 PyType.native = function (name, bases, attributes, mcs) {
     var type = new PyType(name, bases, attributes, mcs);
     type.native = type;

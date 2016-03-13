@@ -17,7 +17,7 @@ py_list.$def('__str__', function (self, state, frame) {
     while (true) {
         switch (state) {
             case 0:
-                self.check_type(py_list);
+                py_list.check(self);
                 frame.parts = new Array(self.size);
                 frame.index = 0;
             case 1:
@@ -44,6 +44,6 @@ py_list.$def('__str__', function (self, state, frame) {
 });
 
 py_list.$def('append', function (self, item) {
-    self.check_type(py_list);
+    py_list.check(self);
     self.append(item);
 }, ['item']);

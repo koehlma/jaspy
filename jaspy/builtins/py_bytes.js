@@ -14,6 +14,6 @@
  */
 
 py_bytes.$def('decode', function (self, encoding) {
-    self.check_type(py_bytes);
+    py_bytes.check(self);
     return pack_str(self.decode(unpack_str(encoding)));
 }, ['encoding'], {defaults: {'encoding': None}});

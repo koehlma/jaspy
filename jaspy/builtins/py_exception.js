@@ -14,8 +14,8 @@
  */
 
 BaseException.$def('__new__', function (cls, args) {
-    cls.check_subclass(BaseException);
-    return new PyObject(cls, {'args': args})
+    BaseException.check_subclass(cls);
+    return new PyObject(cls, {'args': pack_tuple(args)})
 }, ['*args']);
 
 Exception.$def('__init__', function (self, args) {

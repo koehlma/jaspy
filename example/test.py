@@ -199,6 +199,27 @@ def on_interval(handle):
 dom.set_interval(5000, on_interval)
 
 
+import greenlet
+
+
+def green_simple():
+    print('simple 1')
+    greenlet.getcurrent().parent.switch()
+    print('simple 2')
+    greenlet.getcurrent().parent.switch()
+    print('simple 3')
+
+print('main', greenlet.getcurrent())
+green = greenlet.greenlet(green_simple)
+print('simple', green)
+print('main 1')
+green.switch()
+print('main 2')
+green.switch()
+print('main 3')
+green.switch()
+print('main 4')
+
 x = True
 height = 0
 while True:

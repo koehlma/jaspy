@@ -19,7 +19,7 @@ jaspy.module('dom', function ($, module, builtins) {
 
 
     Element.$def('__new__', function (cls, tag) {
-        cls.check_subclass(Element);
+        Element.check_subclass(cls);
         var self = new $.PyObject(cls);
         self.element = document.createElement($.unpack_str(tag, 'div'));
         self.element.__element__ = self;
@@ -96,7 +96,7 @@ jaspy.module('dom', function ($, module, builtins) {
 
 
     Element.$def('register_listener', function (self, name, callback) {
-        self.check_type(Element);
+        Element.check(self);
         var element = self.element;
         element.addEventListener($.unpack_str(name), function (event) {
             $.resume(callback, [self], {});

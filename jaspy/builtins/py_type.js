@@ -63,14 +63,14 @@ py_type.$def('__str__', function (cls) {
 });
 
 py_type.$def_property('__name__', function (cls) {
-    cls.check_type(py_type);
+    py_type.check(cls);
     return pack_str(cls.name);
 }, function (cls, value) {
-    cls.check_type(py_type);
+    py_type.check(cls);
     cls.name = unpack_str(value);
 });
 
 py_type.$def_property('__mro__', function (cls) {
-    cls.check_type(py_type);
+    py_type.check(cls);
     return pack_tuple(cls.mro);
 });

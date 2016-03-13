@@ -225,3 +225,4 @@ $.vm = vm;
 $.suspend = suspend;
 $.resume = resume;
 $.main = main;
+$.call = call;
