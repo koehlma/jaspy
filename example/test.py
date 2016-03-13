@@ -159,6 +159,8 @@ class ABC:
         raise TypeError()
 
 
+print(ABC is ABC)
+
 try:
     ABC()
 except TypeError:

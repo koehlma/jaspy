@@ -13,27 +13,27 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'native/dict.js'
+// #include 'dict.js'
 
-// #include 'native/int.js'
+// #include 'int.js'
 
-// #include 'native/float.js'
+// #include 'float.js'
 
-// #include 'native/str.js'
-// #include 'native/bytes.js'
+// #include 'str.js'
+// #include 'bytes.js'
 
-// #include 'native/tuple.js'
-// #include 'native/list.js'
+// #include 'tuple.js'
+// #include 'list.js'
 
-// #include 'native/code.js'
+// #include 'code.js'
 
-// #include 'native/cell.js'
-// #include 'native/frame.js'
+// #include 'cell.js'
+// #include 'frame.js'
 
-// #include 'native/wrapper.js'
+// #include 'wrapper.js'
 
-// #include 'native/func.js'
+// #include 'func.js'
 
-// #include 'native/property.js'
+// #include 'property.js'
 
-// #include 'native/exception.js'
+// #include 'exception.js'

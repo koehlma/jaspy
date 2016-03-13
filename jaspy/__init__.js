@@ -19,34 +19,33 @@ window['jaspy'] = (function () {
     var $ = {};
     var jaspy = $;
 
-    // #include "constants.js"
-    // #include "base.js"
+    // #include 'constants.js'
+    // #include 'base.js'
 
-    // #include "code.js"
+    // #include 'code.js'
 
-    // #include "module.js"
+    // #include 'module.js'
 
-    // #include "object.js"
-    // #include "type.js"
+    // #include 'object.js'
+    // #include 'type.js'
 
-    // #include "native/__init__.js"
+    // #include 'native/__init__.js'
 
-    // #include "boot.js"
+    // #include 'boot.js'
 
-    // #include "bridge.js"
+    // #include 'bridge.js'
 
-    // #include "builtins/__init__.js"
+    // #include 'builtins/__init__.js'
 
-    // #include "dis.js"
+    // #include 'dis.js'
 
-    // #include "frame.js"
-    // #include "eval.js"
-    // #include "vm.js"
-
+    // #include 'frame.js'
+    // #include 'eval.js'
+    // #include 'vm.js'
 
     return jaspy;
 })();
 
-// #include "sys.js"
+// #include 'sys.js'
 
-// #modules
+/* {{modules()}} */

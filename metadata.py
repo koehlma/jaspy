@@ -13,28 +13,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+__version_info__ = (0, 1, 0, 'dev0', 0)
 
-import metadata
-
-from preprocessor import Preprocessor
-
-
-__path__ = os.path.dirname(__file__)
-os.chdir(__path__)
-
-INCLUDE_BIGINT = True
-
-
-if __name__ == '__main__':
-    preprocessor = Preprocessor()
-    preprocessor.locals['modules'] = lambda: ''
-    preprocessor.locals['metadata'] = metadata
-    source = preprocessor.process('jaspy/__init__.js')
-
-    if INCLUDE_BIGINT:
-        with open('libs/biginteger/BigInteger.js') as biginteger:
-            source = biginteger.read() + source
-
-    with open('build/jaspy.js', 'w') as output:
-        output.write(source)
+__version__ = '0.1.0.dev0'
+__project__ = 'Jaspy Python Interpreter'
+__author__ = 'Maximilian Köhl'
+__email__ = 'mail@koehlma.de'
