@@ -39,11 +39,17 @@ jaspy.module('sys', function ($, module, builtins) {
 
     module.$set('implementation', $.pack_str('jaspy'));
 
-    module.$set('version', $.pack_str('3.5.1 [Jaspy]'));
+    module.$set('version', $.pack_str('3.5.1'));
     module.$set('version_info', VersionInfo.create([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)]));
 
-    module.$set('jaspy_version', $.pack_str('0.0.1dev'));
-    module.$set('jaspy_version_info', VersionInfo.create([$.pack_int(0), $.pack_int(0), $.pack_int(1), $.pack_str('dev'), $.pack_int(0)]));
+    module.$set('jaspy_version', $.pack_str('/* {{__VERSION__}} */'));
+    module.$set('jaspy_version_info', VersionInfo.create([
+        $.pack_int(/* {{__VERSION_MAJOR__}} */),
+        $.pack_int(/* {{__VERSION_MINOR__}} */),
+        $.pack_int(/* {{__VERSION_MICRO__}} */),
+        $.pack_str('dev'),
+        $.pack_int(0)])
+    );
 
     module.$set('modules', new $.PyDict($.modules));
 }, ['builtins']);

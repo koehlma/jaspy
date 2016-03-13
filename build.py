@@ -19,6 +19,7 @@ import os
 
 INCLUDE_REGEX = re.compile('^(\s*)//\s*#include\s*(.+)\s*$', re.MULTILINE)
 MODULES_REGEX = re.compile('^(\s*)//\s*#modules\s*(.+)\s*$', re.MULTILINE)
+EVAL_REGEX = re.compile(r'/\*\s*\{\{(.+)\}\}\s*\*/', re.MULTILINE)
 
 os.chdir(os.path.join(os.path.dirname(__file__), 'jaspy'))
 
@@ -43,6 +44,19 @@ while match:
         inject = ''.join((indentation + line for line in include))
         source = source[:match.start()] + inject + source[match.end():]
     match = INCLUDE_REGEX.search(source)
+
+__VERSION__ = '0.0.1dev'
+__VERSION_MAJOR__ = 0
+__VERSION_MINOR__ = 0
+__VERSION_MICRO__ = 1
+
+match = EVAL_REGEX.search(source)
+namespace = dict(CONSTANTS)
+namespace.update(locals())
+while match:
+    data = str(eval(match.group(1), namespace))
+    source = source[:match.start()] + data + source[match.end():]
+    match = EVAL_REGEX.search(source)
 
 with open('../build/jaspy.js', 'w') as output:
     output.write(source)
