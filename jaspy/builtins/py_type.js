@@ -24,7 +24,7 @@ py_type.$def('__new__', function (mcs, name, bases, attributes) {
     if (!(attributes instanceof PyDict)) {
         raise(TypeError, 'invalid type of \'attributes\' argument');
     }
-    return new PyType(check_str(name), check_tuple(bases), attributes, mcs);
+    return new PyType(unpack_str(name), unpack_tuple(bases), attributes, mcs);
 }, ['name', 'bases', 'attributes']);
 
 py_type.$def('__call__', function (cls, args, kwargs, state, frame) {
@@ -56,7 +56,7 @@ py_type.$def('__str__', function (cls) {
         raise(TypeError, 'invalid type of \'cls\' argument');
     }
     if (module instanceof PyStr) {
-        return pack_str('<class \'' + check_str(module) + '.' + cls.name + '\'>');
+        return pack_str('<class \'' + unpack_str(module) + '.' + cls.name + '\'>');
     } else {
         return pack_str('<class \'' + cls.name + '\'>');
     }
@@ -67,7 +67,7 @@ py_type.$def_property('__name__', function (cls) {
     return pack_str(cls.name);
 }, function (cls, value) {
     cls.check_type(py_type);
-    cls.name = check_str(value);
+    cls.name = unpack_str(value);
 });
 
 py_type.$def_property('__mro__', function (cls) {

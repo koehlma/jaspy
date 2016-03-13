@@ -48,15 +48,15 @@ var py_function = PyType.native('function');
 var py_method = PyType.native('method');
 var py_generator = PyType.native('generator');
 
-var py_set = $class('set');
-var py_frozenset = $class('frozenset', [py_set]);
+var py_set = PyType.native('set');
+var py_frozenset = PyType.native('frozenset');
 
-var py_classmethod = $class('classmethod');
-var py_staticmethod = $class('staticmethod');
+var py_classmethod = PyType.native('classmethod');
+var py_staticmethod = PyType.native('staticmethod');
 
-var py_module = $class('ModuleType');
+var py_module = PyType.native('ModuleType');
 
-var py_property = $class('property');
+var py_property = PyType.native('property');
 
 var None = new PyObject(PyType.native('NoneType'));
 var NotImplemented = new PyObject(PyType.native('NotImplemented'));
@@ -65,7 +65,7 @@ var Ellipsis = new PyObject(PyType.native('Ellipsis'));
 var False = new PyInt(0, py_bool);
 var True = new PyInt(1, py_bool);
 
-var BaseException = new PyType('BaseException');
+var BaseException = PyType.native('BaseException');
 var Exception = new PyType('Exception', [BaseException]);
 var ValueError = new PyType('ValueError', [Exception]);
 var ArithmeticError = new PyType('ArithmeticError', [Exception]);

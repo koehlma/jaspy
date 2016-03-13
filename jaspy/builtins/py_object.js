@@ -27,7 +27,7 @@ py_object.$def('__getattribute__', function (self, name, state, frame) {
     var value;
     switch (state) {
         case 0:
-            name = check_str(name);
+            name = unpack_str(name);
             value = self.dict ? self.getattr(name) : null;
             if (!value) {
                 value = self.cls.lookup(name);

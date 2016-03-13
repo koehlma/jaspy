@@ -24,4 +24,11 @@ function PyCode(code, cls) {
 extend(PyCode, PyObject);
 
 
+function new_code(value) {
+    return new PyCode(value);
+}
+
+
 $.PyCode = PyCode;
+
+$.new_code = new_code;

@@ -199,7 +199,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 if (!vm.return_value) {
                     return null;
                 }
-                frame.strings.push(check_str(vm.return_value));
+                frame.strings.push(unpack_str(vm.return_value));
                 frame.index++;
                 if (frame.index < objects.length) {
                     object = objects[frame.index];
@@ -220,7 +220,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 if (!vm.return_value) {
                     return null;
                 }
-                console.log(frame.strings.join(check_str(vm.return_value)));
+                console.log(frame.strings.join(unpack_str(vm.return_value)));
                 return null;
         }
     }

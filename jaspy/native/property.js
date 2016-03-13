@@ -13,27 +13,9 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'native/dict.js'
-
-// #include 'native/int.js'
-
-// #include 'native/float.js'
-
-// #include 'native/str.js'
-// #include 'native/bytes.js'
-
-// #include 'native/tuple.js'
-// #include 'native/list.js'
-
-// #include 'native/code.js'
-
-// #include 'native/cell.js'
-// #include 'native/frame.js'
-
-// #include 'native/wrapper.js'
-
-// #include 'native/func.js'
-
-// #include 'native/property.js'
-
-// #include 'native/exception.js'
+function new_property(getter, setter) {
+    return new PyObject(py_property, {
+        'fget': getter || None,
+        'fset': setter || None
+    });
+}

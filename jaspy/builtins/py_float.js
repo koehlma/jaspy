@@ -43,11 +43,11 @@ py_float.$def('__new__', function (cls, initializer, state, frame) {
 }, ['initializer'], {defaults: {initializer: pack_float(0)}});
 
 py_float.$def('__str__', function (self) {
-    return pack_str(check_number(self).toString());
+    return pack_str(unpack_number(self).toString());
 });
 
 py_float.$def('__neg__', function (self) {
-    return pack_float(-check_number(self));
+    return pack_float(-unpack_number(self));
 });
 
 py_float.$def('__pos__', function (self) {
@@ -55,67 +55,67 @@ py_float.$def('__pos__', function (self) {
 });
 
 py_float.$def('__lt__', function (self, other) {
-    return check_number(self) < check_number(other) ? True : False;
+    return unpack_number(self) < unpack_number(other) ? True : False;
 }, ['other']);
 
 py_float.$def('__le__', function (self, other) {
-    return check_number(self) <= check_number(other) ? True : False;
+    return unpack_number(self) <= unpack_number(other) ? True : False;
 }, ['other']);
 
 py_float.$def('__eq__', function (self, other) {
-    return check_number(self) == check_number(other) ? True : False;
+    return unpack_number(self) == unpack_number(other) ? True : False;
 }, ['other']);
 
 py_float.$def('__ne__', function (self, other) {
-    return check_number(self) != check_number(other) ? True : False;
+    return unpack_number(self) != unpack_number(other) ? True : False;
 }, ['other']);
 
 py_float.$def('__gt__', function (self, other) {
-    return check_number(self) > check_number(other) ? True : False;
+    return unpack_number(self) > unpack_number(other) ? True : False;
 }, ['other']);
 
 py_float.$def('__ge__', function (self, other) {
-    return check_number(self) <= check_number(other) ? True : False;
+    return unpack_number(self) <= unpack_number(other) ? True : False;
 }, ['other']);
 
 py_float.$def('__pow__', function (self, other) {
-    return pack_float(Math.pow(check_number(self), check_number(other)));
+    return pack_float(Math.pow(unpack_number(self), unpack_number(other)));
 }, ['other']);
 py_float.define_alias('__pow__', '__ipow__');
 py_float.define_alias('__pow__', '__rpow__');
 
 py_float.$def('__mul__', function (self, other) {
-    return pack_float(check_number(self) * check_number(other));
+    return pack_float(unpack_number(self) * unpack_number(other));
 }, ['other']);
 py_float.define_alias('__mul__', '__imul__');
 py_float.define_alias('__mul__', '__rmul__');
 
 py_float.$def('__floordiv__', function (self, other) {
-    return pack_int(Math.floor(check_number(self) / check_number(other)));
+    return pack_int(Math.floor(unpack_number(self) / unpack_number(other)));
 }, ['other']);
 py_float.define_alias('__floordiv__', '__ifloordiv__');
 py_float.define_alias('__floordiv__', '__rfloordiv__');
 
 py_float.$def('__truediv__', function (self, other) {
-    return pack_float(check_number(self) / check_number(other));
+    return pack_float(unpack_number(self) / unpack_number(other));
 }, ['other']);
 py_float.define_alias('__truediv__', '__itruediv__');
 py_float.define_alias('__truediv__', '__rtruediv__');
 
 py_float.$def('__mod__', function (self, other) {
-    return pack_float(check_number(self) % check_number(other));
+    return pack_float(unpack_number(self) % unpack_number(other));
 }, ['other']);
 py_float.define_alias('__mod__', '__imod__');
 py_float.define_alias('__mod__', '__rmod__');
 
 py_float.$def('__add__', function (self, other) {
-    return pack_float(check_number(self) + check_number(other));
+    return pack_float(unpack_number(self) + unpack_number(other));
 }, ['other']);
 py_float.define_alias('__add__', '__iadd__');
 py_float.define_alias('__add__', '__radd__');
 
 py_float.$def('__sub__', function (self, other) {
-    return pack_float(check_number(self) - check_number(other));
+    return pack_float(unpack_number(self) - unpack_number(other));
 }, ['other']);
 py_float.define_alias('__sub__', '__isub__');
 py_float.define_alias('__sub__', '__rsub__');

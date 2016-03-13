@@ -20,6 +20,10 @@ function PyStr(value, cls) {
 
 extend(PyStr, PyObject);
 
+PyStr.prototype.repr = function () {
+    return '\'' + this.value + '\''
+};
+
 PyStr.prototype.encode = function (encoding) {
     var encoder, result;
     if (!TextEncoder) {

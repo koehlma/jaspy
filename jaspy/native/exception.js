@@ -13,27 +13,18 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'native/dict.js'
+function PyException(args, cls) {
+    PyObject.call(this, cls);
+    this.args = args;
+}
 
-// #include 'native/int.js'
+extend(PyException, PyObject);
 
-// #include 'native/float.js'
 
-// #include 'native/str.js'
-// #include 'native/bytes.js'
+function new_exception(cls, message) {
+    var exc_value = new PyObject(cls, {});
+    exc_value.dict['args'] = pack_tuple([pack_str(message)]);
+    return exc_value;
+}
 
-// #include 'native/tuple.js'
-// #include 'native/list.js'
 
-// #include 'native/code.js'
-
-// #include 'native/cell.js'
-// #include 'native/frame.js'
-
-// #include 'native/wrapper.js'
-
-// #include 'native/func.js'
-
-// #include 'native/property.js'
-
-// #include 'native/exception.js'

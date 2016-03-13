@@ -779,7 +779,6 @@ PythonFrame.prototype.run = function () {
                 break;
 
             case OPCODES.CALL_FUNCTION:
-                console.log('call');
                 switch (this.state) {
                     case 0:
                         low = instruction.argument & 0xFF;
@@ -833,14 +832,17 @@ PythonFrame.prototype.run = function () {
                     defaults[code.value.signature.argnames[index]] = this.pop();
                 }
                 globals = this.globals;
-                func = new PyObject(py_function, {});
-                func.dict['__name__'] = pack_str(name);
-                func.dict['__code__'] = code;
-                func.defaults = defaults;
+                var options = {defaults: defaults, globals: globals};
                 if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
-                    func.dict['__closure__'] = this.pop();
+                    options.closure = this.pop();
                 }
-                func.setattr('__globals__', new PyDict(this.globals));
+                func = new PyFunction(name, code.code, options);
+                //func = new PyObject(py_function, {});
+                //func.dict['__name__'] = pack_str(name);
+                //func.dict['__code__'] = code;
+                //func.defaults = defaults;
+                //
+                ///func.setattr('__globals__', new PyDict(this.globals));
                 this.push(func);
                 break;
 

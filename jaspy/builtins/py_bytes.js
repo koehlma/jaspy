@@ -13,27 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'native/dict.js'
-
-// #include 'native/int.js'
-
-// #include 'native/float.js'
-
-// #include 'native/str.js'
-// #include 'native/bytes.js'
-
-// #include 'native/tuple.js'
-// #include 'native/list.js'
-
-// #include 'native/code.js'
-
-// #include 'native/cell.js'
-// #include 'native/frame.js'
-
-// #include 'native/wrapper.js'
-
-// #include 'native/func.js'
-
-// #include 'native/property.js'
-
-// #include 'native/exception.js'
+py_bytes.$def('decode', function (self, encoding) {
+    self.check_type(py_bytes);
+    return pack_str(self.decode(unpack_str(encoding)));
+}, ['encoding'], {defaults: {'encoding': None}});

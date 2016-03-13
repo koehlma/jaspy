@@ -13,7 +13,24 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-jaspy.module('sys', function ($, module) {
+jaspy.module('sys', function ($, module, builtins) {
+    var VersionInfo = module.$class('_VersionInfo', [builtins.tuple]);
+
+    VersionInfo.$def('__new__', function (cls, major, minor, micro, releaselevel, serial) {
+        cls.check_subclass(VersionInfo);
+        return new $.PyTuple([major, minor, micro, releaselevel, serial], cls);
+    }, ['major', 'minor', 'patch', 'releaselevel', 'serial']);
+
+    VersionInfo.$def('__str__', function (self) {
+        self.check_type(VersionInfo);
+        return $.pack_str('version_info(' +
+            'major=' + self.array[0] + ', ' +
+            'minor=' + self.array[1] + ', ' +
+            'micro=' + self.array[2] + ', ' +
+            'releaselevel=' + self.array[3].repr() + ', ' +
+            'serial=' + self.array[4] + ')');
+    });
+
     module.$set('byteorder', $.pack_str('big'));
 
     module.$set('copyright', $.pack_str('Copyright (C) 2016, Maximilian Koehl'));
@@ -22,7 +39,11 @@ jaspy.module('sys', function ($, module) {
 
     module.$set('implementation', $.pack_str('jaspy'));
 
+    module.$set('version', $.pack_str('3.5.1 [Jaspy]'));
+    module.$set('version_info', VersionInfo.create([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)]));
+
     module.$set('jaspy_version', $.pack_str('0.0.1dev'));
+    module.$set('jaspy_version_info', VersionInfo.create([$.pack_int(0), $.pack_int(0), $.pack_int(1), $.pack_str('dev'), $.pack_int(0)]));
 
     module.$set('modules', new $.PyDict($.modules));
-});
+}, ['builtins']);

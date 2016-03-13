@@ -49,7 +49,11 @@ function pack_function(func, cls) {
     return new PyJSFunction(func, cls);
 }
 
-function check_int(object, fallback) {
+function pack_error(error) {
+    return new PyException(pack_tuple([pack_str(error.name), pack_str(error.message)]), JSError);
+}
+
+function unpack_int(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -59,7 +63,7 @@ function check_int(object, fallback) {
     return object.number();
 }
 
-function check_number(object, fallback) {
+function unpack_number(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -69,7 +73,7 @@ function check_number(object, fallback) {
     return object.number();
 }
 
-function check_str(object, fallback) {
+function unpack_str(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -79,7 +83,7 @@ function check_str(object, fallback) {
     return object.value;
 }
 
-function check_bytes(object, fallback) {
+function unpack_bytes(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -89,7 +93,7 @@ function check_bytes(object, fallback) {
     return object.array;
 }
 
-function check_tuple(object, fallback) {
+function unpack_tuple(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -99,7 +103,7 @@ function check_tuple(object, fallback) {
     return object.array;
 }
 
-function check_object(object, fallback) {
+function unpack_object(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -109,7 +113,7 @@ function check_object(object, fallback) {
     return object.object;
 }
 
-function check_array(object, fallback) {
+function unpack_array(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -119,7 +123,7 @@ function check_array(object, fallback) {
     return object.array;
 }
 
-function check_function(object, fallback) {
+function unpack_function(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
@@ -139,97 +143,13 @@ $.pack_tuple = pack_tuple;
 $.pack_object = pack_object;
 $.pack_array = pack_array;
 $.pack_function = pack_function;
+$.pack_error = pack_error;
 
-$.check_int = check_int;
-$.check_number = check_number;
-$.check_str = check_str;
-$.check_bytes = check_bytes;
-$.check_tuple = check_tuple;
-$.check_object = check_object;
-$.check_array = check_array;
-$.check_function = check_function;
-
-
-
-
-
-
-
-
-
-
-/* ------------------------------------------------------------------------------------ */
-
-$.unpack_code = unpack_code;
-
-
-
-
-
-
-
-
-function pack_code(value) {
-    return new PyCode(value);
-}
-
-function new_cell(item) {
-    return new PyCell(item);
-}
-
-function unpack_int_old(object, fallback) {
-    if (object === None && fallback) {
-        return fallback;
-    }
-    if (object instanceof PyInt) {
-        return object.value;
-    } else {
-        raise(UnpackError, 'unable to unpack int from object');
-    }
-}
-
-
-
-function unpack_code(object, fallback) {
-    if (object === None && fallback) {
-        return fallback;
-    }
-    if (object instanceof PyCode) {
-        return object.value;
-    } else {
-        raise(UnpackError, 'unable to unpack code from object');
-    }
-}
-
-var BUILTINS_STR = pack_str('builtins');
-
-function pack_error(error) {
-    return new PyObject(JSError, {
-        'args': pack_tuple([pack_str(error.name), pack_str(error.message)])
-    });
-}
-
-function new_exception(cls, message) {
-    var exc_value = new PyObject(cls, {});
-    exc_value.dict['args'] = pack_tuple([pack_str(message)]);
-    return exc_value;
-}
-
-
-function new_property(getter, setter) {
-    return new PyObject(py_property, {
-        'fget': getter || None,
-        'fset': setter || None
-    });
-}
-
-function isiterable(object) {
-    return object.cls.lookup('__next__') != undefined;
-}
-
-
-
-
-
-$.pack_code = pack_code;
-
+$.unpack_int = unpack_int;
+$.unpack_number = unpack_number;
+$.unpack_str = unpack_str;
+$.unpack_bytes = unpack_bytes;
+$.unpack_tuple = unpack_tuple;
+$.unpack_object = unpack_object;
+$.unpack_array = unpack_array;
+$.unpack_function = unpack_function;

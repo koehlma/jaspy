@@ -21,7 +21,7 @@ jaspy.module('dom', function ($, module, builtins) {
     Element.$def('__new__', function (cls, tag) {
         cls.check_subclass(Element);
         var self = new $.PyObject(cls);
-        self.element = document.createElement($.check_str(tag, 'div'));
+        self.element = document.createElement($.unpack_str(tag, 'div'));
         self.element.__element__ = self;
         return self;
     }, ['tag'], {defaults: {'tag': builtins.None}});
@@ -33,12 +33,12 @@ jaspy.module('dom', function ($, module, builtins) {
 
     Element.$def('__getitem__', function (self, name) {
         self.check_type(Element);
-        return $.pack_str(self.element.getAttribute($.check_str(name)));
+        return $.pack_str(self.element.getAttribute($.unpack_str(name)));
     }, ['name']);
 
     Element.$def('__setitem__', function (self, name, value) {
         self.check_type(Element);
-        self.element.setAttribute($.check_str(name), $.check_str(value));
+        self.element.setAttribute($.unpack_str(name), $.unpack_str(value));
     }, ['name', 'value']);
 
     Element.$def('__getattr__', function (self, name) {
@@ -53,7 +53,7 @@ jaspy.module('dom', function ($, module, builtins) {
         return $.pack_str(self.element.textContent);
     }, function (self, value) {
         self.check_type(Element);
-        self.element.textContent = $.check_str(value);
+        self.element.textContent = $.unpack_str(value);
     });
 
     Element.$def_property('html', function (self) {
@@ -61,15 +61,15 @@ jaspy.module('dom', function ($, module, builtins) {
         return $.pack_str(self.element.innerHTML);
     }, function (self, value) {
         self.check_type(Element);
-        self.element.innerHTML = $.check_str(value);
+        self.element.innerHTML = $.unpack_str(value);
     });
 
     Element.$def('css', function (self, name, value) {
         self.check_type(Element);
         if (value === builtins.NotImplemented) {
-            return $.pack_str(self.element.style[$.check_str(name)]);
+            return $.pack_str(self.element.style[$.unpack_str(name)]);
         } else {
-            self.element.style[$.check_str(name)] = $.check_str(value, '');
+            self.element.style[$.unpack_str(name)] = $.unpack_str(value, '');
         }
     }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
@@ -98,7 +98,7 @@ jaspy.module('dom', function ($, module, builtins) {
     Element.$def('register_listener', function (self, name, callback) {
         self.check_type(Element);
         var element = self.element;
-        element.addEventListener($.check_str(name), function (event) {
+        element.addEventListener($.unpack_str(name), function (event) {
             $.resume(callback, [self], {});
         });
     }, ['name', 'resume']);
@@ -109,9 +109,9 @@ jaspy.module('dom', function ($, module, builtins) {
     module.$def('set_interval', function (interval, callback) {
         var handle = $.pack_int(setInterval(function () {
             $.resume(callback, [handle], {});
-        }, $.check_int(interval)));
+        }, $.unpack_int(interval)));
         return handle;
-        console.log($.check_int(interval));
+        console.log($.unpack_int(interval));
     }, ['interval', 'resume']);
 
 }, ['builtins']);

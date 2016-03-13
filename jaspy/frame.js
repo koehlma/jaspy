@@ -194,9 +194,7 @@ PythonFrame.prototype.get_line_number = function () {
 
 function NativeFrame(code, options) {
     options = options || {};
-
     Frame.call(this, code, options);
-
     this.args = this.code.parse_args(options.args, options.kwargs, options.defaults);
 }
 
@@ -225,3 +223,8 @@ NativeFrame.prototype.run = function () {
         return true;
     }
 };
+
+
+$.Frame = Frame;
+$.PythonFrame = PythonFrame;
+$.NativeFrame = NativeFrame;

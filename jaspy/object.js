@@ -80,19 +80,21 @@ PyObject.prototype.is = function (other) {
 
 PyObject.prototype.check_type = function (cls, message) {
     if (!isinstance(this, cls)) {
-        raise(TypeError, message || 'type check failed');
+        raise(TypeError, message || 'native type check failed');
     }
 };
 
 PyObject.prototype.check_subclass = function (superclass, message) {
     if (!(this instanceof PyType) || !issubclass(this, superclass)) {
-        raise(TypeError, message || 'subclass check failed');
+        raise(TypeError, message || 'native subclass check failed');
     }
 };
 
-PyObject.prototype.toString = function () {
+PyObject.prototype.repr = function () {
     return '<object at 0x' + this.get_address() + '>';
 };
+
+PyObject.prototype.toString = PyObject.prototype.repr;
 
 
 function isinstance(object, cls) {
