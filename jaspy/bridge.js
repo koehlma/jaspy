@@ -53,6 +53,33 @@ function pack_error(error) {
     return new PyException(pack_tuple([pack_str(error.name), pack_str(error.message)]), JSError);
 }
 
+function pack(object) {
+    if (object == undefined) {
+        return None;
+    }
+    if (object instanceof PyObject) {
+        return object;
+    } else if (typeof object == 'string') {
+        return pack_str(object);
+    } else if (typeof object == 'number') {
+        if (Number.isInteger(object)) {
+            return pack_int(object);
+        } else {
+            return pack_float(object);
+        }
+    } else if (typeof object == 'boolean') {
+        return pack_bool(object);
+    } else if (typeof object == 'function') {
+        return pack_function(object);
+    } else if (object instanceof Array) {
+        return pack_array(object);
+    } else if (object instanceof Object) {
+        return pack_object(object);
+    } else {
+        raise(TypeError, 'unable to pack native object');
+    }
+}
+
 function unpack_int(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
@@ -61,6 +88,16 @@ function unpack_int(object, fallback) {
         raise(TypeError, 'unable to unpack integer from object');
     }
     return object.number();
+}
+
+function unpack_bool(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object.cls === py_bool)) {
+        raise(TypeError, 'unable to unpack bool from object');
+    }
+    return object === True;
 }
 
 function unpack_number(object, fallback) {
@@ -133,6 +170,39 @@ function unpack_function(object, fallback) {
     return object.func;
 }
 
+function unpack(object, fallback) {
+    if ((object === None || !object) && fallback) {
+        return fallback;
+    }
+    if (!(object instanceof PyObject)) {
+        raise(TypeError, 'object to unpack is not a python object');
+    }
+    if (object.cls === py_bool) {
+        return unpack_bool(object);
+    } else if (object === None) {
+        return null;
+    } else if (object instanceof PyInt) {
+        return unpack_int(object);
+    } else if (object instanceof PyFloat) {
+        return unpack_float(object);
+    } else if (object instanceof PyStr) {
+        return unpack_str(object);
+    } else if (object instanceof PyBytes) {
+        return unpack_bytes(object);
+    } else if (object instanceof PyTuple) {
+        return unpack_tuple(object);
+    } else if (object instanceof PyJSObject) {
+        return unpack_object(object);
+    } else if (object instanceof PyJSArray) {
+        return unpack_array(object);
+    } else if (object instanceof PyJSFunction) {
+        return unpack_function(object);
+    } else {
+        raise(TypeError, 'unable to unpack native value from object');
+    }
+}
+
+
 
 $.pack_int = pack_int;
 $.pack_bool = pack_bool;
@@ -146,6 +216,7 @@ $.pack_function = pack_function;
 $.pack_error = pack_error;
 
 $.unpack_int = unpack_int;
+$.unpack_bool = unpack_bool;
 $.unpack_number = unpack_number;
 $.unpack_str = unpack_str;
 $.unpack_bytes = unpack_bytes;
@@ -153,3 +224,6 @@ $.unpack_tuple = unpack_tuple;
 $.unpack_object = unpack_object;
 $.unpack_array = unpack_array;
 $.unpack_function = unpack_function;
+
+$.pack = pack;
+$.unpack = unpack;
