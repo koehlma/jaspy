@@ -49,6 +49,8 @@ py_int.$def('__str__', function (self) {
     return pack_str(self.toString());
 });
 
+py_int.define_alias('__str__', '__repr__');
+
 py_int.$def('__bool__', function (self) {
     return self.ne(False);
 });

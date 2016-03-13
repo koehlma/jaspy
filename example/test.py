@@ -5,6 +5,11 @@ print(sys.copyright)
 print(sys.version_info)
 print(sys.version_info.major)
 
+print(sys.argv)
+
+sys.argv.append(123)
+print(sys.argv)
+
 a = 5
 print(a)
 

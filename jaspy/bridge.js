@@ -13,40 +13,40 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function pack_int(value, cls) {
-    return new PyInt(value, cls);
+function pack_int(value) {
+    return new PyInt(value);
 }
 
 function pack_bool(boolean) {
     return boolean ? True : False;
 }
 
-function pack_float(value, cls) {
-    return new PyFloat(value, cls);
+function pack_float(value) {
+    return new PyFloat(value);
 }
 
-function pack_str(value, cls) {
-    return new PyStr(value, cls);
+function pack_str(value) {
+    return new PyStr(value);
 }
 
-function pack_bytes(array, cls) {
-    return new PyBytes(array, cls);
+function pack_bytes(array) {
+    return new PyBytes(array);
 }
 
-function pack_tuple(array, cls) {
-    return new PyTuple(array, cls);
+function pack_tuple(array) {
+    return new PyTuple(array);
 }
 
-function pack_object(object, cls) {
-    return new PyJSObject(object, cls);
+function pack_object(object) {
+    return new PyJSObject(object);
 }
 
-function pack_array(array, cls) {
-    return new PyJSArray(array, cls);
+function pack_array(array) {
+    return new PyJSArray(array);
 }
 
-function pack_function(func, cls) {
-    return new PyJSFunction(func, cls);
+function pack_function(func) {
+    return new PyJSFunction(func);
 }
 
 function pack_error(error) {

@@ -110,13 +110,14 @@ function run() {
     }
 }
 
-function main(module) {
+function main(module, argv) {
     if (vm.frame) {
         raise(RuntimeError, 'interpreter is already running');
     }
     if (!(module instanceof PythonModule)) {
         raise(TypeError, 'invalid type of module');
     }
+    get_namespace('sys')['argv'] = new PyList((argv || ['']).map(pack_str));
     register_module('__main__', module);
     module.dict['__name__'] = pack_str('__main__');
     vm.frame = new PythonFrame(module.code, {

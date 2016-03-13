@@ -21,6 +21,7 @@
 // #include 'builtins/py_float.js'
 // #include 'builtins/py_str.js'
 // #include 'builtins/py_bytes.js'
+// #include 'builtins/py_list.js'
 // #include 'builtins/py_function.js'
 // #include 'builtins/py_method.js'
 // #include 'builtins/py_property.js'
