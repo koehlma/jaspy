@@ -516,6 +516,15 @@ PythonFrame.prototype.eval = function () {
 
                     case COMPARE_OPS.IS:
                     case COMPARE_OPS.NIS:
+                        right = this.pop();
+                        left = this.pop();
+                        if (right.is(left)) {
+                            this.push(instruction.argument == COMPARE_OPS.IS ? True : False)
+                        } else {
+                            this.push(instruction.argument == COMPARE_OPS.NIS ? False : True)
+                        }
+                        break;
+
                     default:
                         error('unsupported comparison operator');
                 }
