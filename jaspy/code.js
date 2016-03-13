@@ -255,10 +255,6 @@ function NativeCode(func, options, spec) {
 
 extend(NativeCode, Code);
 
-NativeCode.prototype.get_line_number = function (position) {
-    return position;
-};
-
 
 $.Signature = Signature;
 

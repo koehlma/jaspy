@@ -23,12 +23,8 @@ function Frame(code, options) {
     this.globals = options.globals || (this.back ? this.back.globals : {});
     this.builtins = options.builtins || (this.back ? this.back.builtins : builtins);
 
-    this.position = options.position || 0;
+    this.state = options.state || 0;
 }
-
-Frame.prototype.get_line_number = function () {
-    return this.code.get_line_number(this.position);
-};
 
 
 function PythonFrame(code, options) {
@@ -52,7 +48,7 @@ function PythonFrame(code, options) {
         this.push_block(BLOCK_TYPES.BASE, 0);
     }
 
-    this.state = options.state || 0;
+    this.position = options.position || 0;
 
     this.closure = options.closure || [];
 
@@ -220,7 +216,7 @@ NativeFrame.prototype.run = function () {
     assert(!this.code.simple, 'native frames\'s code is simple');
     var result;
     try {
-        result = this.code.func.apply(null, this.args.concat([this.position, this]));
+        result = this.code.func.apply(null, this.args.concat([this.state, this]));
     } catch (error) {
         if (error instanceof PyObject) {
             raise(error.cls, error);
@@ -235,9 +231,13 @@ NativeFrame.prototype.run = function () {
         }
         vm.frame = this.back;
     } else {
-        this.position = result;
+        this.state = result;
         return true;
     }
+};
+
+NativeFrame.prototype.get_line_number = function () {
+    return this.state;
 };
 
 

@@ -161,7 +161,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                     args: args, kwargs: kwargs
                 });
                 try {
-                    result = object.func.apply(null, vm.frame.args.concat([frame.position, frame]));
+                    result = object.func.apply(null, vm.frame.args.concat([frame.state, frame]));
                     if (result == undefined || result instanceof PyObject) {
                         if (vm.return_value) {
                             vm.return_value = result || None;
@@ -169,7 +169,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                         vm.frame = frame.back;
                         return false;
                     } else {
-                        frame.position = result;
+                        frame.state = result;
                         return true;
                     }
                 } catch (error) {
