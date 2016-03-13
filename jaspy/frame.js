@@ -191,6 +191,11 @@ PythonFrame.prototype.get_line_number = function () {
     return this.code.get_line_number(this.position - 1);
 };
 
+PythonFrame.prototype.run = function () {
+    return this.eval();
+};
+
+
 
 function NativeFrame(code, options) {
     options = options || {};
