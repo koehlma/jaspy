@@ -44,6 +44,8 @@ jaspy.module('sys', function ($, module, builtins) {
 
     module.$set('implementation', $.pack_str('jaspy'));
 
+    module.$set('maxunicode', $.pack_int(0xFFFF));
+
     module.$set('version', $.pack_str('3.5.1'));
     module.$set('version_info', VersionInfo.create([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)]));
 
