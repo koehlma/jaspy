@@ -20,6 +20,7 @@ jaspy.module('greenlet', function ($, module, builtins) {
 
     var current = new $.PyObject(Greenlet);
     current.started = true;
+    current.bottom = {back: null};
 
     Greenlet.$def('__new__', function (cls, run) {
         Greenlet.check_subclass(cls);
@@ -39,6 +40,7 @@ jaspy.module('greenlet', function ($, module, builtins) {
                     current.frame = frame;
                     $.vm.frame = self.frame;
                     current = self;
+                    current.bottom.back = frame;
                     return 1;
                 case 1:
                     return;
@@ -47,7 +49,8 @@ jaspy.module('greenlet', function ($, module, builtins) {
             current.frame = frame;
             current = self;
             self.started = true;
-            if ($.call(self.run)) {
+            if (self.bottom = $.call(self.run)) {
+                self.bottom.back = null;
                 return 1;
             }
         }

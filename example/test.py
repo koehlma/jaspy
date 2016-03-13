@@ -202,12 +202,23 @@ dom.set_interval(5000, on_interval)
 import greenlet
 
 
+def sub_switch():
+    greenlet.getcurrent().parent.switch()
+
+
 def green_simple():
     print('simple 1')
-    greenlet.getcurrent().parent.switch()
+    sub_switch()
     print('simple 2')
-    greenlet.getcurrent().parent.switch()
+    sub_switch()
     print('simple 3')
+
+
+def green_switch():
+    print('green enter')
+    green.switch()
+    print('green leave')
+
 
 print('main', greenlet.getcurrent())
 green = greenlet.greenlet(green_simple)
@@ -217,7 +228,7 @@ green.switch()
 print('main 2')
 green.switch()
 print('main 3')
-green.switch()
+green_switch()
 print('main 4')
 
 x = True
