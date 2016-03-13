@@ -148,6 +148,12 @@ PyType.prototype.create = function (args, kwargs) {
     return vm.return_value;
 };
 
+PyType.prototype.check = function (object) {
+    if (!isinstance(object, this)) {
+        raise(TypeError, 'native type check failed');
+    }
+};
+
 PyType.native = function (name, bases, attributes, mcs) {
     var type = new PyType(name, bases, attributes, mcs);
     type.native = type;

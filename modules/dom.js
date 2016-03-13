@@ -27,45 +27,45 @@ jaspy.module('dom', function ($, module, builtins) {
     }, ['tag'], {defaults: {'tag': builtins.None}});
 
     Element.$def('__str__', function (self) {
-        self.check_type(Element);
+        Element.check(self);
         return $.pack_str('<' + self.element.nodeName.toLowerCase() + ' element at 0x' + self.get_address() + '>');
     });
 
     Element.$def('__getitem__', function (self, name) {
-        self.check_type(Element);
+        Element.check(self);
         return $.pack_str(self.element.getAttribute($.unpack_str(name)));
     }, ['name']);
 
     Element.$def('__setitem__', function (self, name, value) {
-        self.check_type(Element);
+        Element.check(self);
         self.element.setAttribute($.unpack_str(name), $.unpack_str(value));
     }, ['name', 'value']);
 
     Element.$def('__getattr__', function (self, name) {
-        self.check_type(Element);
+        Element.check(self);
         var child = Element.create(name);
         self.element.appendChild(child.element);
         return child;
     }, ['name']);
 
     Element.$def_property('text', function (self) {
-        self.check_type(Element);
+        Element.check(self);
         return $.pack_str(self.element.textContent);
     }, function (self, value) {
-        self.check_type(Element);
+        Element.check(self);
         self.element.textContent = $.unpack_str(value);
     });
 
     Element.$def_property('html', function (self) {
-        self.check_type(Element);
+        Element.check(self);
         return $.pack_str(self.element.innerHTML);
     }, function (self, value) {
-        self.check_type(Element);
+        Element.check(self);
         self.element.innerHTML = $.unpack_str(value);
     });
 
     Element.$def('css', function (self, name, value) {
-        self.check_type(Element);
+        Element.check(self);
         if (value === builtins.NotImplemented) {
             return $.pack_str(self.element.style[$.unpack_str(name)]);
         } else {
@@ -74,8 +74,8 @@ jaspy.module('dom', function ($, module, builtins) {
     }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
     Element.$def('append', function (self, other) {
-        self.check_type(Element);
-        other.check_type(Element);
+        Element.check(self);
+        Element.check(other);
         self.element.appendChild(other.element);
     }, ['other']);
 
