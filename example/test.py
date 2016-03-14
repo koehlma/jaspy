@@ -270,6 +270,19 @@ for i in countdown():
 
 print([i for i in countdown()])
 
+from example import example as ex
+
+print(ex)
+print(ex())
+
+print(example)
+
+from example import *
+
+print(example)
+example()
+
+
 a = '\N{MAHJONG TILE GREEN DRAGON}'
 print(a)
 print(len(a))

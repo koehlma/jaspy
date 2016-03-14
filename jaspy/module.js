@@ -45,12 +45,14 @@ function Module(name, depends) {
     if (this.name) {
         register_module(this.name, this);
     }
+    this.wrapper = null;
 }
 
 
 function PythonModule(name, code, depends) {
     Module.call(this, name, depends);
     this.code = code;
+    this.frame = null;
 }
 
 extend(PythonModule, Module);

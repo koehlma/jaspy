@@ -490,21 +490,36 @@ PythonFrame.prototype.eval = function () {
                             this.push(new PyModule(modules[name].dict));
                             break;
                         }
+                        if (modules[name].wrapper) {
+                            this.push(modules[name].wrapper);
+                            break;
+                        }
                         if (call(modules[name])) {
                             return 1;
                         }
                     case 1:
                         name = this.code.names[instruction.argument];
                         this.push(new PyModule(modules[name].dict));
+                        modules[name].wrapper = this.top0();
                 }
                 break;
 
             case OPCODES.IMPORT_STAR:
-                error('opcode not implemented');
+                temp = this.pop();
+                for (name in temp.dict) {
+                    if (name.indexOf('_') != 0 && temp.dict.hasOwnProperty(name)) {
+                        this.locals[name] = temp.dict[name];
+                    }
+                }
                 break;
 
             case OPCODES.IMPORT_FROM:
-                error('opcode not implemented');
+                name = this.code.names[instruction.argument];
+                if (name in this.top0().dict) {
+                    this.push(this.top0().dict[name])
+                } else {
+                    raise(ImportError, 'cannot import name \'' + name + '\'');
+                }
                 break;
 
             case OPCODES.JUMP_FORWARD:
