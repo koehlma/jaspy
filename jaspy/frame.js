@@ -104,6 +104,10 @@ PythonFrame.prototype.topn = function (number) {
     return this.stack.slice(this.level - number, this.level);
 };
 
+PythonFrame.prototype.peek = function (number) {
+    return this.stack[this.level - number];
+}
+
 PythonFrame.prototype.push = function (item) {
     assert(item instanceof PyObject, 'tried to push non python object on stack');
     this.stack[this.level++] = item;

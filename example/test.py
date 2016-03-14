@@ -231,6 +231,25 @@ print('main 3')
 green_switch()
 print('main 4')
 
+
+class Test:
+    def __init__(self):
+        self.counter = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter < 10:
+            self.counter += 1
+            return self.counter
+        raise StopIteration()
+
+for i in Test():
+    print(i)
+
+print([i for i in Test()])
+
 a = '\N{MAHJONG TILE GREEN DRAGON}'
 print(a)
 print(len(a))

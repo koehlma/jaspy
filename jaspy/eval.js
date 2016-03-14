@@ -14,7 +14,7 @@
  */
 
 PythonFrame.prototype.eval = function () {
-    var slot, right, left, name, value, block, exc_type, exc_value, exc_tb, temp;
+    var slot, right, left, name, key, value, block, exc_type, exc_value, exc_tb, temp;
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
     while (vm.frame === this) {
@@ -145,19 +145,16 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.DELETE_SUBSCR:
                 switch (this.state) {
                     case 0:
-                        slot = OPCODES_EXTRA[instruction.opcode];
                         right = this.pop();
                         left = this.pop();
-                        if (left.call(slot, [right])) {
+                        if (left.call(OPCODES_EXTRA[instruction.opcode], [right])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
-                        } else if (vm.return_value) {
-                            if (instruction.opcode != OPCODES.DELETE_SUBSCR) {
-                                this.push(vm.return_value);
-                            }
+                        } else if (vm.return_value && instruction.opcode != OPCODES.DELETE_SUBSCR) {
+                            this.push(vm.return_value);
                         }
                         break;
                 }
@@ -193,15 +190,40 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.SET_ADD:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        value = this.pop();
+                        if (this.peek(instruction.argument).call('add', [value])) {
+                            return 1;
+                        }
+                    case 1:
+                        break;
+                }
                 break;
 
             case OPCODES.LIST_APPEND:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        value = this.pop();
+                        if (this.peek(instruction.argument).call('append', [value])) {
+                            return 1;
+                        }
+                    case 1:
+                        break;
+                }
                 break;
 
             case OPCODES.MAP_ADD:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        key = this.pop();
+                        value = this.pop();
+                        if (this.peek(instruction.argument).call('__setitem__', [key, value])) {
+                            return 1;
+                        }
+                    case 1:
+                        break;
+                }
                 break;
 
             case OPCODES.RETURN_VALUE:
@@ -436,7 +458,7 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.BUILD_LIST:
-                this.push(pack_list(this.popn(instruction.argument)));
+                this.push(new PyList(this.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_SET:
@@ -707,8 +729,8 @@ PythonFrame.prototype.eval = function () {
                             if (except(MethodNotFoundError)) {
                                 raise(TypeError, 'object does not support iteration');
                             } else if (except(StopIteration)) {
-                                this.position += instruction.target;
-                                return;
+                                this.position = instruction.target;
+                                break;
                             }
                         } else {
                             this.push(vm.return_value);

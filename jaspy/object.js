@@ -79,7 +79,7 @@ PyObject.prototype.is = function (other) {
 };
 
 PyObject.prototype.repr = function () {
-    return '<object at 0x' + this.get_address() + '>';
+    return '<' + this.cls.name +' object at 0x' + this.get_address() + '>';
 };
 
 PyObject.prototype.toString = PyObject.prototype.repr;
