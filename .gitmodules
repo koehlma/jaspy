@@ -1,3 +1,6 @@
 [submodule "libs/BigInteger.js"]
 	path = libs/biginteger
 	url = https://github.com/peterolson/BigInteger.js.git
+[submodule "libs/text-encoding"]
+	path = libs/text-encoding
+	url = https://github.com/inexorabletash/text-encoding
