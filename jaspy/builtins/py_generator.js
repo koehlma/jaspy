@@ -29,9 +29,9 @@ py_generator.$def('__next__', function (self, state, frame) {
                 return 1;
             }
         case 1:
-            if (self.frame.unwind_cause == UNWIND_CAUSES.YIELD) {
+            if (self.frame.why == CAUSES.YIELD) {
                 return vm.return_value;
-            } else if (self.frame.unwind_cause == UNWIND_CAUSES.RETURN) {
+            } else if (self.frame.why == CAUSES.RETURN) {
                 raise(StopIteration, new PyObject(StopIteration, {'args': pack_tuple([vm.return_value])}));
             }
     }

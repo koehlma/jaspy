@@ -60,7 +60,7 @@ function PythonFrame(code, options) {
         this.cells[this.code.freevars[index]] = this.closure[index];
     }
 
-    this.unwind_cause = null;
+    this.why = null;
 }
 
 extend(PythonFrame, Frame);
@@ -129,7 +129,7 @@ PythonFrame.prototype.print_block_stack = function () {
 
 PythonFrame.prototype.unwind = function (cause) {
     if (cause != undefined) {
-        this.unwind_cause = cause;
+        this.why = cause;
     }
     while (this.blocks.length > 0) {
         var block = this.blocks[this.blocks.length - 1];
@@ -142,8 +142,8 @@ PythonFrame.prototype.unwind = function (cause) {
             block.active = true;
             return;
         }
-        switch (this.unwind_cause) {
-            case UNWIND_CAUSES.BREAK:
+        switch (this.why) {
+            case CAUSES.BREAK:
                 if (block.type == BLOCK_TYPES.LOOP) {
                     this.position = block.target;
                     this.blocks.pop();
@@ -152,7 +152,7 @@ PythonFrame.prototype.unwind = function (cause) {
                     this.blocks.pop();
                 }
                 break;
-            case UNWIND_CAUSES.CONTINUE:
+            case CAUSES.CONTINUE:
                 if (block.type == BLOCK_TYPES.LOOP) {
                     this.position = block.position;
                     return;
@@ -160,7 +160,7 @@ PythonFrame.prototype.unwind = function (cause) {
                     this.blocks.pop();
                 }
                 break;
-            case UNWIND_CAUSES.EXCEPTION:
+            case CAUSES.EXCEPTION:
                 if (block.type == BLOCK_TYPES.EXCEPT) {
                     this.position = block.target;
                     block.active = true;
@@ -172,7 +172,7 @@ PythonFrame.prototype.unwind = function (cause) {
                     this.blocks.pop()
                 }
                 break;
-            case UNWIND_CAUSES.RETURN:
+            case CAUSES.RETURN:
                 if (block.type == BLOCK_TYPES.BASE) {
                     vm.frame = this.back;
                     return;
@@ -181,7 +181,7 @@ PythonFrame.prototype.unwind = function (cause) {
                 }
                 break;
             default:
-                error('unknown unwind cause ' + this.unwind_cause);
+                error('unknown unwind cause ' + this.why);
         }
     }
 };
@@ -190,7 +190,7 @@ PythonFrame.prototype.raise = function () {
     this.push(vm.last_exception.exc_tb);
     this.push(vm.last_exception.exc_value);
     this.push(vm.last_exception.exc_type);
-    this.unwind(UNWIND_CAUSES.EXCEPTION);
+    this.unwind(CAUSES.EXCEPTION);
 };
 
 PythonFrame.prototype.get_line_number = function () {

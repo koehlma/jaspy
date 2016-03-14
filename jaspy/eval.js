@@ -18,7 +18,7 @@ PythonFrame.prototype.eval = function () {
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
     while (vm.frame === this) {
-        if (!vm.return_value && this.unwind_cause != UNWIND_CAUSES.EXCEPTION && this.state == 0) {
+        if (!vm.return_value && this.why != CAUSES.EXCEPTION && this.state == 0) {
             this.raise();
         }
 
@@ -182,11 +182,11 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.BREAK_LOOP:
-                this.unwind(UNWIND_CAUSES.BREAK);
+                this.unwind(CAUSES.BREAK);
                 break;
 
             case OPCODES.CONTINUE_LOOP:
-                this.unwind(UNWIND_CAUSES.CONTINUE);
+                this.unwind(CAUSES.CONTINUE);
                 break;
 
             case OPCODES.SET_ADD:
@@ -228,7 +228,7 @@ PythonFrame.prototype.eval = function () {
 
             case OPCODES.RETURN_VALUE:
                 vm.return_value = this.pop();
-                this.unwind(UNWIND_CAUSES.RETURN);
+                this.unwind(CAUSES.RETURN);
                 break;
 
             case OPCODES.YIELD_VALUE:
@@ -236,7 +236,7 @@ PythonFrame.prototype.eval = function () {
                     case 0:
                         vm.return_value = this.pop();
                         vm.frame = this.back;
-                        this.unwind_cause = UNWIND_CAUSES.YIELD;
+                        this.why = CAUSES.YIELD;
                         return 1;
                     case 1:
                         this.push(vm.return_value);
@@ -265,7 +265,7 @@ PythonFrame.prototype.eval = function () {
                     raise(exc_type, exc_value, exc_tb);
                 } else {
                     vm.return_value = None;
-                    this.unwind_cause = null;
+                    this.why = null;
                 }
                 break;
 

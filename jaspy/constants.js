@@ -38,7 +38,7 @@ var BLOCK_TYPES = {
     FINALLY: 3
 };
 
-var UNWIND_CAUSES = {
+var CAUSES = {
     RETURN: 0,
     EXCEPTION: 1,
     BREAK: 2,

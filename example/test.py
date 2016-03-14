@@ -1,4 +1,20 @@
+"""
 
+class ContextManager:
+    def __enter__(self):
+        print('enter')
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        print(exc_type, exc_val, exc_tb)
+        return False
+
+with ContextManager() as context_manager:
+    print(context_manager)
+    raise RuntimeError('test context manager')
+
+
+"""
 def test():
     yield 1
     yield 2
@@ -9,7 +25,6 @@ def test():
 
 print(*test())
 
-"""
 import sys
 
 print(sys.jaspy_version_info)
@@ -332,4 +347,3 @@ while True:
         else:
             p.css('background', '#0000FF')
             x = True
-"""
