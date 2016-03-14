@@ -3,9 +3,12 @@ def test():
     yield 1
     yield 2
     yield 3
+    yield 4
+    yield 5
+    yield 6
 
-a, b = test()
-print(a, b)
+a, b, *c, d, e = test()
+print(a, b, c, d, e, sep=', ')
 
 """
 import sys

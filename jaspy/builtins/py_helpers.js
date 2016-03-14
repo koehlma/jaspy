@@ -56,8 +56,7 @@ var unpack_sequence = $def(function (sequence, limit, state, frame) {
                 state = 2;
                 break;
             case 4:
-                console.log('unpack state 4');
                 return pack_tuple(frame.result);
         }
     }
-}, ['sequence', 'limit'], {name: 'unpack_sequence', 'limit': None});
+}, ['sequence', 'limit'], {name: 'unpack_sequence', defaults: {'limit': None}});

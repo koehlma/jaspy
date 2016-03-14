@@ -465,7 +465,7 @@ PythonFrame.prototype.eval = function () {
                             if (vm.return_value.len() != instruction.argument) {
                                 raise(TypeError, 'not enough values to unpack (expected ' + instruction.argument + ', got ' + vm.return_value.len() + ')');
                             } else {
-                                for (index = instruction.argument - 1; index >= 0; index--) {
+                                for (index = vm.return_value.len() - 1; index >= 0; index--) {
                                     this.push(vm.return_value.get(index));
                                 }
                             }
@@ -474,7 +474,28 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.UNPACK_EX:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        if (call(unpack_sequence, [this.pop()])) {
+                            return 1;
+                        }
+                    case 1:
+                        if (vm.return_value) {
+                            low = instruction.argument & 0xFF;
+                            high = instruction.argument >> 8;
+                            if (vm.return_value.len() < low + high) {
+                                raise(TypeError, 'not enough values to unpack (expected at least' + (low + high) + ', got ' + vm.return_value.len() + ')');
+                            }
+                            temp = vm.return_value.len() - high;
+                            for (index = vm.return_value.len() - 1; index >= temp; index--) {
+                                this.push(vm.return_value.get(index));
+                            }
+                            this.push(new PyList(vm.return_value.array.slice(low, temp)));
+                            for (index = low - 1; index >= 0; index--) {
+                                this.push(vm.return_value.get(index));
+                            }
+                        }
+                }
                 break;
 
             case OPCODES.BUILD_TUPLE:
