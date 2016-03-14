@@ -177,10 +177,12 @@ module('js', function ($, module) {
 });
 
 module_builtins.$def('__import__', function (name, globals, locals, fromlist, level, state, frame) {
-    console.log(name, globals, locals, fromlist, level);
     name = unpack_str(name);
     switch (state) {
         case 0:
+            if (name.indexOf('.') == 0) {
+                raise(ImportError, 'relative imports are not supported')
+            }
             if (!(name in modules)) {
                 raise(ImportError, 'unable to import module ' + name);
             }

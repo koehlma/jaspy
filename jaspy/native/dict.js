@@ -23,13 +23,13 @@ function PyDict(namespace, cls) {
 
 extend(PyDict, PyObject);
 
-PyDict.prototype.get = function (str_key) {
+PyDict.prototype.get = function (str_key, fallback) {
     if (str_key instanceof PyStr) {
         str_key = str_key.value;
     } else if (typeof str_key != 'string') {
         raise(TypeError, 'invalid native dict key type');
     }
-    return this.table[str_key];
+    return this.table[str_key] || fallback || null;
 };
 
 PyDict.prototype.set = function (str_key, value) {
