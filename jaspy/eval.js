@@ -240,6 +240,7 @@ PythonFrame.prototype.eval = function () {
                         return 1;
                     case 1:
                         this.push(vm.return_value);
+                        this.why = CAUSES.RUN;
                         break;
                 }
                 break;
@@ -265,7 +266,7 @@ PythonFrame.prototype.eval = function () {
                     raise(exc_type, exc_value, exc_tb);
                 } else {
                     vm.return_value = None;
-                    this.why = null;
+                    this.why = CAUSES.RUN;
                 }
                 break;
 
@@ -278,15 +279,74 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.SETUP_WITH:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        if (call(getattr, [this.top0(), pack_str('__exit__')])) {
+                            return 1;
+                        }
+                    case 1:
+                        temp = this.pop();
+                        if (!vm.return_value) {
+                            break;
+                        }
+                        this.push(vm.return_value);
+                        if (temp.call('__enter__')) {
+                            return 2;
+                        }
+                    case 2:
+                        if (!vm.return_value) {
+                            this.pop();
+                            break;
+                        }
+                        this.push(vm.return_value);
+                        this.push_block(BLOCK_TYPES.FINALLY, instruction.target);
+                }
                 break;
 
             case OPCODES.WITH_CLEANUP_START:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        switch (this.why) {
+                            case CAUSES.EXCEPTION:
+                                args = [this.pop(), this.pop(), this.pop()];
+                                break;
+                            case CAUSES.RETURN:
+                            case CAUSES.CONTINUE:
+                            case CAUSES.BREAK:
+                                args = [None, None, None];
+                                break;
+                            default:
+                                args = [None, None, None];
+                                this.pop();
+                        }
+                        this.return_value = vm.return_value;
+                        vm.return_value = None;
+                        if (call(this.pop(), args)) {
+                            return 1;
+                        }
+                    case 1:
+                        if (!vm.return_value) {
+                            break;
+                        }
+                        this.push(vm.return_value);
+                }
                 break;
 
             case OPCODES.WITH_CLEANUP_FINISH:
-                error('opcode not implemented');
+                if (this.pop().bool()) {
+                    if (this.why == CAUSES.EXCEPTION) {
+                        this.why = CAUSES.RUN;
+                    }
+                } else {
+                    if (this.why == CAUSES.EXCEPTION) {
+                        this.push(vm.last_exception.exc_tb);
+                        this.push(vm.last_exception.exc_value);
+                        this.push(vm.last_exception.exc_type);
+                    }
+                }
+                if (this.why == CAUSES.RETURN) {
+                    vm.return_value = this.return_value;
+                }
                 break;
 
             case OPCODES.STORE_FAST:

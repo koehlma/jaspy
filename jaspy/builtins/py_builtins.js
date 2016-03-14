@@ -269,6 +269,32 @@ module_builtins.$def('len', function (object, state, frame) {
 
 }, ['object']);
 
+var getattr = module_builtins.$def('getattr', function (object, name, state, frame) {
+    switch (state) {
+        case 0:
+            if (object.call('__getattribute__', [name])) {
+                return 1;
+            }
+        case 1:
+            if (vm.return_value) {
+                return vm.return_value;
+            }
+            if (except(AttributeError) || except(MethodNotFoundError)) {
+                if (object.call('__getattr__', [name])) {
+                    return 2;
+                }
+            } else {
+                return;
+            }
+        case 2:
+            if (except(MethodNotFoundError)) {
+                raise(TypeError, 'object does not support attribute access');
+            }
+            return vm.return_value;
+    }
+}, ['object', 'name']);
+
+
 
 $.builtins = builtins;
 

@@ -1,5 +1,3 @@
-"""
-
 class ContextManager:
     def __enter__(self):
         print('enter')
@@ -9,12 +7,22 @@ class ContextManager:
         print(exc_type, exc_val, exc_tb)
         return False
 
-with ContextManager() as context_manager:
-    print(context_manager)
-    raise RuntimeError('test context manager')
+try:
+    with ContextManager() as context_manager:
+        print(context_manager)
+        raise RuntimeError('test context manager')
+except RuntimeError:
+    print('exception has not been caught')
 
 
-"""
+def test1():
+    with ContextManager() as context_manager:
+        print(context_manager)
+        return 123
+
+print(test1())
+
+
 def test():
     yield 1
     yield 2

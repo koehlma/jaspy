@@ -82,6 +82,10 @@ PyObject.prototype.repr = function () {
     return '<' + this.cls.name +' object at 0x' + this.get_address() + '>';
 };
 
+PyObject.prototype.bool = function () {
+    return true;
+};
+
 PyObject.prototype.toString = PyObject.prototype.repr;
 
 

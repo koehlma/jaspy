@@ -43,7 +43,8 @@ var CAUSES = {
     EXCEPTION: 1,
     BREAK: 2,
     CONTINUE: 3,
-    YIELD: 4
+    YIELD: 4,
+    RUN: 5
 };
 
 var COMPARE_OPS = {
