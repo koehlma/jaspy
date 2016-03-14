@@ -19,7 +19,7 @@ None.cls.$def('__new__', function (cls) {
     return None;
 });
 
-None.cls.$def('__str__', function (self) {
+None.cls.$def('__repr__', function (self) {
     return NONE_STR;
 });
 

@@ -70,12 +70,23 @@ py_object.$def('__setattr__', function (self, name, item, state, frame) {
     }
 }, ['name', 'item']);
 
-py_object.$def('__str__', function (self) {
+py_object.$def('__repr__', function (self) {
     var module = self.cls.getattr('__module__');
     if (module instanceof PyStr) {
         return pack_str('<' + module.value + '.' + self.cls.name + ' object at 0x' + self.get_address() + '>');
     } else {
         return pack_str('<' + self.cls.name + ' object at 0x' + self.get_address() + '>');
+    }
+});
+
+py_object.$def('__str__', function (self, state, frame) {
+    switch (state) {
+        case 0:
+            if (self.call('__repr__')) {
+                return 1;
+            }
+        case 1:
+            return vm.return_value;
     }
 });
 

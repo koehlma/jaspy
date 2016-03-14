@@ -13,30 +13,16 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'dict.js'
+function PySlice(start, stop, step) {
+    PyObject.call(this, py_slice);
+    this.start = start;
+    this.stop = stop;
+    this.step = step || None;
+}
 
-// #include 'int.js'
+extend(PySlice, PyObject);
 
-// #include 'float.js'
 
-// #include 'str.js'
-// #include 'bytes.js'
-
-// #include 'tuple.js'
-// #include 'list.js'
-
-// #include 'code.js'
-
-// #include 'cell.js'
-// #include 'frame.js'
-
-// #include 'wrapper.js'
-
-// #include 'func.js'
-// #include 'generator.js'
-
-// #include 'property.js'
-
-// #include 'slice.js'
-
-// #include 'exception.js'
+function new_slice(start, stop, step) {
+    return new PySlice(start, stop, step);
+}

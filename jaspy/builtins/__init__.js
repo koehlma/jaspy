@@ -26,6 +26,7 @@
 // #include 'py_generator.js'
 // #include 'py_method.js'
 // #include 'py_property.js'
+// #include 'py_slice.js'
 // #include 'py_module.js'
 // #include 'py_none.js'
 // #include 'py_exception.js'

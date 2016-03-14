@@ -282,6 +282,12 @@ from example import *
 print(example)
 example()
 
+class Test:
+    def __getitem__(self, name):
+        print(name)
+
+Test()[1:3]
+
 try:
     from ..test import test
 except ImportError:

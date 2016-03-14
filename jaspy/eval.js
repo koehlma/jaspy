@@ -873,11 +873,11 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.BUILD_SLICE:
-                error('opcode is not supported');
+                this.push(new_slice.apply(null, this.popn(instruction.argument)));
                 break;
 
             default:
-                error('unknown opcode ' + instruction.opcode);
+                error('unknown opcode occoured ' + instruction.opcode);
                 break;
         }
         this.state = 0;
