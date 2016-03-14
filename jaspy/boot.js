@@ -133,3 +133,8 @@ var UnpackError = new PyType('UnpackError', [TypeError]);
 var PackError = new PyType('PackError', [TypeError]);
 
 var JSError = new PyType('JSError', [Exception]);
+
+var ZERO = new PyInt(0);
+var ONE = new PyInt(1);
+
+var EMPTY_TUPLE = new PyTuple([]);

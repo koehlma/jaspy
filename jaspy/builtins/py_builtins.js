@@ -176,6 +176,32 @@ module('js', function ($, module) {
     }
 });
 
+module_builtins.$def('__import__', function (name, globals, locals, fromlist, level, state, frame) {
+    console.log(name, globals, locals, fromlist, level);
+    name = unpack_str(name);
+    switch (state) {
+        case 0:
+            if (!(name in modules)) {
+                raise(ImportError, 'unable to import module ' + name);
+            }
+            if (modules[name] instanceof NativeModule) {
+                return new PyModule(modules[name].dict);
+            }
+            if (modules[name].wrapper) {
+                return modules[name].wrapper;
+            }
+            if (call(modules[name])) {
+                return 1;
+            }
+        case 1:
+            var module = new PyModule(modules[name].dict);
+            modules[name].wrapper = module;
+            return module;
+    }
+}, ['name', 'globals', 'locals', 'fromlist', 'level'], {defaults: {
+    'globals': None, 'locals': None, 'fromlist': EMPTY_TUPLE, 'level': ZERO
+}});
+
 module_builtins.$def('print', function (objects, sep, end, file, flush, state, frame) {
     var object;
     while (true) {

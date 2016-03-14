@@ -482,25 +482,16 @@ PythonFrame.prototype.eval = function () {
                 switch (this.state) {
                     case 0:
                         name = this.code.names[instruction.argument];
-                        this.popn(2);
-                        if (!(name in modules)) {
-                            raise(ImportError, 'unable to import module ' + name);
-                        }
-                        if (modules[name] instanceof NativeModule) {
-                            this.push(new PyModule(modules[name].dict));
+                        if (!('__import__' in this.builtins)) {
+                            raise(ImportError, '__import__ not found');
                             break;
-                        }
-                        if (modules[name].wrapper) {
-                            this.push(modules[name].wrapper);
-                            break;
-                        }
-                        if (call(modules[name])) {
+                        } else if (call(this.builtins['__import__'], [pack_str(name), new PyDict(this.globals), new PyDict(this.locals)].concat(this.popn(2).reverse()))) {
                             return 1;
                         }
                     case 1:
-                        name = this.code.names[instruction.argument];
-                        this.push(new PyModule(modules[name].dict));
-                        modules[name].wrapper = this.top0();
+                        if (vm.return_value) {
+                            this.push(vm.return_value);
+                        }
                 }
                 break;
 
