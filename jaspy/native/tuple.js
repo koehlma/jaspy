@@ -27,7 +27,9 @@ PyTuple.prototype.get = function (index) {
     return this.array[index];
 };
 
-
+PyTuple.prototype.len = function () {
+    return this.array.length;
+};
 
 
 $.PyTuple = PyTuple;

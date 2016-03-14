@@ -32,3 +32,5 @@
 // #include 'py_exception.js'
 
 // #include 'py_builtins.js'
+
+// #include 'py_helpers.js'

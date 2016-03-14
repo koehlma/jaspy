@@ -1,3 +1,13 @@
+
+def test():
+    yield 1
+    yield 2
+    yield 3
+
+a, b = test()
+print(a, b)
+
+"""
 import sys
 
 print(sys.jaspy_version_info)
@@ -188,6 +198,13 @@ try:
 except Exception:
     pass
 
+def outer():
+    x = 0;
+    def inner(b: int, c: '123'=None) -> True:
+        print(x)
+    return inner
+
+print(outer())
 
 
 print(sys.__name__)
@@ -288,6 +305,7 @@ class Test:
 
 Test()[1:3]
 
+
 try:
     from ..test import test
 except ImportError:
@@ -312,3 +330,4 @@ while True:
         else:
             p.css('background', '#0000FF')
             x = True
+"""

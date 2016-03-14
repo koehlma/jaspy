@@ -455,7 +455,22 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.UNPACK_SEQUENCE:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        if (call(unpack_sequence, [this.pop(), pack_int(instruction.argument)])) {
+                            return 1;
+                        }
+                    case 1:
+                        if (vm.return_value) {
+                            if (vm.return_value.len() != instruction.argument) {
+                                raise(TypeError, 'not enough values to unpack (expected ' + instruction.argument + ', got ' + vm.return_value.len() + ')');
+                            } else {
+                                for (index = instruction.argument - 1; index >= 0; index--) {
+                                    this.push(vm.return_value.get(index));
+                                }
+                            }
+                        }
+                }
                 break;
 
             case OPCODES.UNPACK_EX:
@@ -846,30 +861,24 @@ PythonFrame.prototype.eval = function () {
                 high = (instruction.argument >> 16) & 0x7FFF;
                 name = this.pop();
                 code = this.pop();
-                if (high) {
-                    error('annotations not supported');
-                }
-                defaults = {};
-                for (index = 0; index < mid; index++) {
-                    value = this.pop();
-                    defaults[this.pop().value] = value;
-                }
-                for (index = 0; index < low; index++) {
-                    defaults[code.code.signature.argnames[index]] = this.pop();
-                }
-                globals = this.globals;
-                var options = {defaults: defaults, globals: globals};
+                var options = {defaults: {}, annotations: {}, globals: this.globals};
                 if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
                     options.closure = this.pop();
                 }
-                func = new PyFunction(name, code.code, options);
-                //func = new PyObject(py_function, {});
-                //func.dict['__name__'] = pack_str(name);
-                //func.dict['__code__'] = code;
-                //func.defaults = defaults;
-                //
-                ///func.setattr('__globals__', new PyDict(this.globals));
-                this.push(func);
+                if (high) {
+                    temp = this.pop();
+                    for (index = 0; index < high - 1; index++) {
+                        options.annotations[unpack_str(temp.get(index))] = this.pop();
+                    }
+                }
+                for (index = 0; index < mid; index++) {
+                    value = this.pop();
+                    options.defaults[this.pop().value] = value;
+                }
+                for (index = 0; index < low; index++) {
+                    options.defaults[code.code.signature.argnames[index]] = this.pop();
+                }
+                this.push(new PyFunction(unpack_str(name), code.code, options));
                 break;
 
             case OPCODES.BUILD_SLICE:
