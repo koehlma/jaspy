@@ -7,8 +7,7 @@ def test():
     yield 5
     yield 6
 
-a, b, *c, d, e = test()
-print(a, b, c, d, e, sep=', ')
+print(*test())
 
 """
 import sys

@@ -864,7 +864,32 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.CALL_FUNCTION_VAR:
-                error('opcode is not supported');
+                switch (this.state) {
+                    case 0:
+                        if (call(unpack_sequence, [this.pop()])) {
+                            return 1;
+                        }
+                    case 1:
+                        if (!vm.return_value) {
+                            break;
+                        }
+                        low = instruction.argument & 0xFF;
+                        high = instruction.argument >> 8;
+                        kwargs = {};
+                        for (index = 0; index < high; index++) {
+                            value = this.pop();
+                            kwargs[this.pop().value] = value;
+                        }
+                        args = this.popn(low).concat(vm.return_value.array);
+                        if (call(this.pop(), args, kwargs)) {
+                            return 2;
+                        }
+                    case 3:
+                        if (vm.return_value) {
+                            this.push(vm.return_value);
+                        }
+                        break;
+                }
                 break;
 
             case OPCODES.CALL_FUNCTION_KW:
