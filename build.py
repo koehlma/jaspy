@@ -24,6 +24,7 @@ __path__ = os.path.dirname(__file__)
 os.chdir(__path__)
 
 INCLUDE_BIGINT = True
+INCLUDE_TEXT_ENCODING = False
 
 
 if __name__ == '__main__':
@@ -35,6 +36,10 @@ if __name__ == '__main__':
     if INCLUDE_BIGINT:
         with open('libs/biginteger/BigInteger.js') as biginteger:
             source = biginteger.read() + source
+
+    if INCLUDE_TEXT_ENCODING:
+        with open('libs/text-encoding/lib/encoding.js') as text_encoding:
+            source = text_encoding.read() + source
 
     if not os.path.exists('build'):
         os.mkdir('build')
