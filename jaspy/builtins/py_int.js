@@ -52,7 +52,7 @@ py_int.$def('__str__', function (self) {
 py_int.define_alias('__str__', '__repr__');
 
 py_int.$def('__bool__', function (self) {
-    return self.ne(False);
+    return pack_bool(self.ne(False));
 });
 
 py_int.$def('__neg__', function (self) {
@@ -64,27 +64,27 @@ py_int.$def('__pos__', function (self) {
 });
 
 py_int.$def('__lt__', function (self, other) {
-    return self.lt(other);
+    return pack_bool(self.lt(other));
 }, ['other']);
 
 py_int.$def('__le__', function (self, other) {
-    return self.le(other);
+    return pack_bool(self.le(other));
 }, ['other']);
 
 py_int.$def('__eq__', function (self, other) {
-    return self.eq(other);
+    return pack_bool(self.eq(other));
 }, ['other']);
 
 py_int.$def('__ne__', function (self, other) {
-    return self.ne(other);
+    return pack_bool(self.ne(other));
 }, ['other']);
 
 py_int.$def('__gt__', function (self, other) {
-    return self.gt(other);
+    return pack_bool(self.gt(other));
 }, ['other']);
 
 py_int.$def('__ge__', function (self, other) {
-    return self.ge(other);
+    return pack_bool(self.ge(other));
 }, ['other']);
 
 py_int.$def('__pow__', function (self, other) {

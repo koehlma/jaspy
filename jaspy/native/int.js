@@ -129,27 +129,27 @@ PyInt.prototype.or = function (other) {
 };
 
 PyInt.prototype.lt = function (other) {
-    return pack_bool(this.value.lt(other.value));
+    return this.value.lt(other.value);
 };
 
 PyInt.prototype.le = function (other) {
-    return pack_bool(this.value.leq(other.value));
+    return this.value.leq(other.value);
 };
 
 PyInt.prototype.eq = function (other) {
-    return pack_bool(this.value.eq(other.value));
+    return this.value.eq(other.value);
 };
 
 PyInt.prototype.ne = function (other) {
-    return pack_bool(this.value.neq(other.value));
+    return this.value.neq(other.value);
 };
 
 PyInt.prototype.gt = function (other) {
-    return pack_bool(this.value.gt(other.value));
+    return this.value.gt(other.value);
 };
 
 PyInt.prototype.ge = function (other) {
-    return pack_bool(this.value.geq(other.value));
+    return this.value.geq(other.value);
 };
 
 PyInt.parse = function (string, base) {

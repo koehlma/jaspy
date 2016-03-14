@@ -282,6 +282,11 @@ from example import *
 print(example)
 example()
 
+try:
+    from ..test import test
+except ImportError:
+    print('no relative imports')
+
 
 a = '\N{MAHJONG TILE GREEN DRAGON}'
 print(a)
