@@ -250,6 +250,26 @@ for i in Test():
 
 print([i for i in Test()])
 
+
+def countdown():
+    print('countdown started')
+    counter = 10
+    while counter >= 0:
+        yield counter
+        print('continue countdown')
+        counter -= 1
+    return 'abc'
+
+g = countdown()
+print(g.__next__())
+print(g.__next__())
+print(g.__next__())
+
+for i in countdown():
+    print(i)
+
+print([i for i in countdown()])
+
 a = '\N{MAHJONG TILE GREEN DRAGON}'
 print(a)
 print(len(a))

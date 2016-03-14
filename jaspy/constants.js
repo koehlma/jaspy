@@ -42,7 +42,8 @@ var UNWIND_CAUSES = {
     RETURN: 0,
     EXCEPTION: 1,
     BREAK: 2,
-    CONTINUE: 3
+    CONTINUE: 3,
+    YIELD: 4
 };
 
 var COMPARE_OPS = {

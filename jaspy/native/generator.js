@@ -13,21 +13,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'py_object.js'
-// #include 'py_type.js'
-// #include 'py_dict.js'
-// #include 'py_int.js'
-// #include 'py_bool.js'
-// #include 'py_float.js'
-// #include 'py_str.js'
-// #include 'py_bytes.js'
-// #include 'py_list.js'
-// #include 'py_function.js'
-// #include 'py_generator.js'
-// #include 'py_method.js'
-// #include 'py_property.js'
-// #include 'py_module.js'
-// #include 'py_none.js'
-// #include 'py_exception.js'
+function PyGenerator(code, frame) {
+    PyObject.call(this, py_generator);
+    this.code = code;
+    this.frame = frame;
+}
 
-// #include 'py_builtins.js'
+extend(PyGenerator, PyObject);

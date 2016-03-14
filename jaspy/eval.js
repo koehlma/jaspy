@@ -232,7 +232,16 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.YIELD_VALUE:
-                error('opcode not implemented');
+                switch (this.state) {
+                    case 0:
+                        vm.return_value = this.pop();
+                        vm.frame = this.back;
+                        this.unwind_cause = UNWIND_CAUSES.YIELD;
+                        return 1;
+                    case 1:
+                        this.push(vm.return_value);
+                        break;
+                }
                 break;
 
             case OPCODES.YIELD_FROM:

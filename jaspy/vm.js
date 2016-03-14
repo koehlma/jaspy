@@ -131,6 +131,13 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
     var code, result, frame;
     while (true) {
         if (object instanceof PythonCode) {
+            if ((object.flags & CODE_FLAGS.GENERATOR) != 0) {
+                vm.return_value = new PyGenerator(object, new PythonFrame(object, {
+                    back: null, defaults: defaults, args: args, kwargs: kwargs,
+                    closure: closure, namespace: namespace
+                }));
+                return null;
+            }
             frame = new PythonFrame(object, {
                 vm: vm, back: vm.frame, defaults: defaults,
                 args: args, kwargs: kwargs, closure: closure,

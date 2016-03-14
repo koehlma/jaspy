@@ -33,6 +33,7 @@
 // #include 'wrapper.js'
 
 // #include 'func.js'
+// #include 'generator.js'
 
 // #include 'property.js'
 
