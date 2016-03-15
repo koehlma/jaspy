@@ -23,26 +23,21 @@ from preprocessor import process
 __path__ = os.path.dirname(__file__)
 os.chdir(__path__)
 
-INCLUDE_BIGINT = True
-INCLUDE_TEXT_ENCODING = False
-
 
 if __name__ == '__main__':
-    namespace = {'DEBUG': False}
-    namespace['modules'] = lambda: ''
-    namespace['metadata'] = metadata
-    source = process('jaspy/__init__.js', namespace)
+    namespace = {
+        'DEBUG': True,
 
-    if INCLUDE_BIGINT:
-        with open('libs/biginteger/BigInteger.js') as biginteger:
-            source = biginteger.read() + source
+        'INCLUDE_BIGINT': True,
+        'INCLUDE_ENCODING': False,
 
-    if INCLUDE_TEXT_ENCODING:
-        with open('libs/text-encoding/lib/encoding.js') as text_encoding:
-            source = text_encoding.read() + source
+        'modules': [],
+
+        'metadata': metadata
+    }
 
     if not os.path.exists('build'):
         os.mkdir('build')
 
     with open('build/jaspy.js', 'w') as output:
-        output.write(source)
+        output.write(process('jaspy/__init__.js', namespace))

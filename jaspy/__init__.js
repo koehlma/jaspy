@@ -13,11 +13,23 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// << if INCLUDE_BIGINT
+//  #include '../libs/biginteger/BigInteger.js'
+// >>
+
+// << if INCLUDE_ENCODING
+//  #include '../libs/text-encoding/lib/encoding.js'
+// >>
+
 window['jaspy'] = (function () {
     'use strict';
 
     var $ = {};
     var jaspy = $;
+
+    // << if DEBUG
+        console.info('Jaspy Python Interpreter\nDebugging Mode!');
+    // >>
 
     // #include 'constants.js'
     // #include 'base.js'
@@ -48,4 +60,6 @@ window['jaspy'] = (function () {
 
 // #include 'sys.js'
 
-/* {{modules()}} */
+// << for module in modules
+//  #include '../modules/' + module + '.js'
+// >>
