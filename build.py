@@ -17,7 +17,7 @@ import os
 
 import metadata
 
-from preprocessor import Preprocessor
+from preprocessor import process
 
 
 __path__ = os.path.dirname(__file__)
@@ -28,10 +28,10 @@ INCLUDE_TEXT_ENCODING = False
 
 
 if __name__ == '__main__':
-    preprocessor = Preprocessor()
-    preprocessor.locals['modules'] = lambda: ''
-    preprocessor.locals['metadata'] = metadata
-    source = preprocessor.process('jaspy/__init__.js')
+    namespace = {'DEBUG': False}
+    namespace['modules'] = lambda: ''
+    namespace['metadata'] = metadata
+    source = process('jaspy/__init__.js', namespace)
 
     if INCLUDE_BIGINT:
         with open('libs/biginteger/BigInteger.js') as biginteger:
