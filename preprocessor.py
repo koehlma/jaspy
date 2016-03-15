@@ -29,6 +29,9 @@ This script provides a preprocessor for JavaScript.
 // #include {PYTHON_EXPRESSION}
 
 /* {{ {PYTHON_EXPRESSION} }} */
+/* >>
+
+<< */
 """
 
 import collections
@@ -36,16 +39,19 @@ import os
 import re
 
 
-regex = re.compile(
+node_regex = re.compile(
     r'(?P<block_start>//\s*<<\s*(?P<block_kind>if|for|while)\s*(?P<block_expr>.+))|'
     r'(?P<block_end>//\s*>>)|'
 
-    r'(?P<define>//\s*#define\s*(?P<define_name>.+?)(?P<define_args>\(.*\))?\s+'
-    r'(?P<define_expr>.+))|'
+    r'(?P<define>//\s*#define\s*(?P<define_name>.+?)'
+    r'(?P<define_args>\(.*\))?\s+(?P<define_expr>.+))|'
 
     r'(?P<include>//\s*#include\s*(?P<include_expr>.+))|'
 
-    r'(?P<eval>/\*\s*\{\{(?P<eval_expr>.+?)\}\}\s*\*/)')
+    r'(?P<eval>/\*\s*\{\{(?P<eval_expr>.+?)\}\}\s*\*/)|'
+    r'(?P<inline>\(\[\((?P<inline_expr>.+)\)\]\))|'
+
+    r'(?P<exec>/\*\s*<<(?P<exec_code>(.|\n)*)>>\s*\*/)')
 
 
 class Context:
@@ -166,6 +172,21 @@ class Eval(Node):
         context.emit(str(context.eval(self.expr)))
 
 
+class Exec(Node):
+    def __init__(self, code):
+        indentation = 0
+        lines = code.splitlines()
+        for line in lines:
+            if not line.strip():
+                continue
+            indentation = len(line) - len(line.lstrip())
+            break
+        self.code = '\n'.join(map(lambda l: l[indentation:], lines))
+
+    def evaluate(self, context):
+        context.exec(self.code)
+
+
 def parse_block_start(blocks, match):
     groups = match.groupdict()
     blocks.append(block_table[groups['block_kind']](groups['block_expr'].strip()))
@@ -189,19 +210,30 @@ def parse_include(blocks, match):
     blocks[-1].append(Include(groups['include_expr'].strip()))
 
 
+def parse_inline(blocks, match):
+    groups = match.groupdict()
+    blocks[-1].append(Eval(groups['inline_expr'].strip()))
+
+
 def parse_eval(blocks, match):
     groups = match.groupdict()
     blocks[-1].append(Eval(groups['eval_expr'].strip()))
 
 
+def parse_exec(blocks, match):
+    groups = match.groupdict()
+    blocks[-1].append(Exec(groups['exec_code']))
+
+
 parse_table = {'block_start': parse_block_start, 'block_end': parse_block_end,
-               'define': parse_define, 'include': parse_include, 'eval': parse_eval}
+               'define': parse_define, 'include': parse_include, 'inline': parse_inline,
+               'eval': parse_eval, 'exec': parse_exec}
 
 
 def parse(source):
     blocks = collections.deque([Root()])
     offset = 0
-    for match in regex.finditer(source):
+    for match in node_regex.finditer(source):
         blocks[-1].append(Code(source[offset:match.start()]))
         offset = match.end()
         parse_table[match.lastgroup](blocks, match)
