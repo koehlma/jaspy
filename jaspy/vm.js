@@ -54,7 +54,7 @@ function except(exc_type) {
     return false;
 }
 
-function raise(exc_type, exc_value, exc_tb) {
+function raise(exc_type, exc_value, exc_tb, suppress) {
     var frame;
 
     if (!vm.frame) {
@@ -94,7 +94,7 @@ function raise(exc_type, exc_value, exc_tb) {
 
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
 
-    if (vm.frame instanceof NativeFrame || vm.simple_depth > 0) {
+    if ((vm.frame instanceof NativeFrame || vm.simple_depth > 0) && !suppress) {
         throw exc_value;
     }
 }
@@ -144,11 +144,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                 globals: globals, namespace: namespace
             });
             vm.frame = frame;
-            if (vm.frame.run()) {
-                return frame;
-            } else {
-                return null;
-            }
+            return frame;
         } else if (object instanceof NativeCode) {
             if (object.simple) {
                 args = object.parse_args(args, kwargs, defaults);
@@ -172,28 +168,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                     back: vm.frame, defaults: defaults,
                     args: args, kwargs: kwargs
                 });
-                try {
-                    result = object.func.apply(null, vm.frame.args.concat([frame.state, frame]));
-                    if (result == undefined || result instanceof PyObject) {
-                        if (vm.return_value) {
-                            vm.return_value = result || None;
-                        }
-                        vm.frame = frame.back;
-                        return null;
-                    } else {
-                        frame.state = result;
-                        return frame;
-                    }
-                } catch (error) {
-                    if (error instanceof PyObject) {
-                        vm.frame = vm.frame.back;
-                        return null;
-                    } else {
-                        vm.frame = vm.frame.back;
-                        raise(RuntimeError, '[' + error.name + '] ' + error.message);
-                        return null;
-                    }
-                }
+                return frame;
             }
         } else if (object instanceof PyFunction) {
             code = object.code;

@@ -198,7 +198,7 @@ PythonFrame.prototype.get_line_number = function () {
 };
 
 PythonFrame.prototype.run = function () {
-    var state = this.eval(this.state);
+    var state = execute(this);
     if (state == undefined) {
         return false;
     } else {
@@ -223,7 +223,7 @@ NativeFrame.prototype.run = function () {
         result = this.code.func.apply(null, this.args.concat([this.state, this]));
     } catch (error) {
         if (error instanceof PyObject) {
-            raise(error.cls, error);
+            raise(error.cls, error, undefined, true);
             vm.frame = this.back;
             return;
         }

@@ -43,7 +43,9 @@ jaspy.module('dom', function ($, module, builtins) {
 
     Element.$def('__getattr__', function (self, name) {
         Element.check(self);
-        var child = Element.create(name);
+        var child = new $.PyObject(Element);
+        child.element = document.createElement($.unpack_str(name, 'div'));
+        child.element.__element__ = self;
         self.element.appendChild(child.element);
         return child;
     }, ['name']);

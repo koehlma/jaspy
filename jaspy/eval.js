@@ -13,16 +13,16 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-PythonFrame.prototype.eval = function () {
+function execute(frame) {
     var slot, right, left, name, key, value, block, exc_type, exc_value, exc_tb, temp;
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
-    while (vm.frame === this) {
-        if (!vm.return_value && this.why != CAUSES.EXCEPTION && this.state == 0) {
-            this.raise();
+    while (vm.frame === frame) {
+        if (!vm.return_value && frame.why != CAUSES.EXCEPTION && frame.state == 0) {
+            frame.raise();
         }
 
-        instruction = this.code.instructions[this.position++];
+        instruction = frame.code.instructions[frame.position++];
 
         if (DEBUG) {
             console.log('executing instruction', instruction);
@@ -33,33 +33,33 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.POP_TOP:
-                this.pop();
+                frame.pop();
                 break;
 
             case OPCODES.ROT_TWO:
-                temp = this.popn(2);
-                this.push(temp[1]);
-                this.push(temp[0]);
+                temp = frame.popn(2);
+                frame.push(temp[1]);
+                frame.push(temp[0]);
                 break;
 
             case OPCODES.ROT_THREE:
-                temp = this.popn(3);
-                this.push(temp[2]);
-                this.push(temp[1]);
-                this.push(temp[0]);
+                temp = frame.popn(3);
+                frame.push(temp[2]);
+                frame.push(temp[1]);
+                frame.push(temp[0]);
                 break;
 
             case OPCODES.DUP_TOP:
-                this.push(this.top0());
+                frame.push(frame.top0());
                 break;
 
             case OPCODES.DUP_TOP_TWO:
-                this.push(this.top1());
-                this.push(this.top1());
+                frame.push(frame.top1());
+                frame.push(frame.top1());
                 break;
 
             case OPCODES.GET_YIELD_FROM_ITER:
-                if (this.state === 0 && isiterable(this.top0())) {
+                if (frame.state === 0 && isiterable(frame.top0())) {
                     break;
                 }
             case OPCODES.UNARY_POSITIVE:
@@ -67,16 +67,16 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.UNARY_NOT:
             case OPCODES.UNARY_INVERT:
             case OPCODES.GET_ITER:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (this.pop().call(OPCODES_EXTRA[instruction.opcode])) {
+                        if (frame.pop().call(OPCODES_EXTRA[instruction.opcode])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
                         } else if (vm.return_value) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
@@ -96,26 +96,26 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.BINARY_AND:
             case OPCODES.BINARY_XOR:
             case OPCODES.BINARY_OR:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
                         slot = OPCODES_EXTRA[instruction.opcode];
-                        right = this.top0();
-                        left = this.top1();
+                        right = frame.top0();
+                        left = frame.top1();
                         if (left.call('__' + slot + '__', [right])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             slot = OPCODES_EXTRA[instruction.opcode];
-                            right = this.pop();
-                            left = this.pop();
+                            right = frame.pop();
+                            left = frame.pop();
                             if (right.call('__r' + slot + '__', [left])) {
                                 return 2;
                             }
                         } else {
-                            this.popn(2);
+                            frame.popn(2);
                             if (vm.return_value) {
-                                this.push(vm.return_value);
+                                frame.push(vm.return_value);
                             }
                             break;
                         }
@@ -123,7 +123,7 @@ PythonFrame.prototype.eval = function () {
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
                         } else if (vm.return_value) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
@@ -143,10 +143,10 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.INPLACE_XOR:
             case OPCODES.INPLACE_OR:
             case OPCODES.DELETE_SUBSCR:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        right = this.pop();
-                        left = this.pop();
+                        right = frame.pop();
+                        left = frame.pop();
                         if (left.call(OPCODES_EXTRA[instruction.opcode], [right])) {
                             return 1;
                         }
@@ -154,18 +154,18 @@ PythonFrame.prototype.eval = function () {
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
                         } else if (vm.return_value && instruction.opcode != OPCODES.DELETE_SUBSCR) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
                 break;
 
             case OPCODES.STORE_SUBSCR:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        name = this.pop();
-                        left = this.pop();
-                        right = this.pop();
+                        name = frame.pop();
+                        left = frame.pop();
+                        right = frame.pop();
                         if (left.call('__setitem__', [name, right])) {
                             return 1;
                         }
@@ -178,22 +178,22 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.PRINT_EXPR:
-                console.log(this.pop());
+                console.log(frame.pop());
                 break;
 
             case OPCODES.BREAK_LOOP:
-                this.unwind(CAUSES.BREAK);
+                frame.unwind(CAUSES.BREAK);
                 break;
 
             case OPCODES.CONTINUE_LOOP:
-                this.unwind(CAUSES.CONTINUE);
+                frame.unwind(CAUSES.CONTINUE);
                 break;
 
             case OPCODES.SET_ADD:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        value = this.pop();
-                        if (this.peek(instruction.argument).call('add', [value])) {
+                        value = frame.pop();
+                        if (frame.peek(instruction.argument).call('add', [value])) {
                             return 1;
                         }
                     case 1:
@@ -202,10 +202,10 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.LIST_APPEND:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        value = this.pop();
-                        if (this.peek(instruction.argument).call('append', [value])) {
+                        value = frame.pop();
+                        if (frame.peek(instruction.argument).call('append', [value])) {
                             return 1;
                         }
                     case 1:
@@ -214,11 +214,11 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.MAP_ADD:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        key = this.pop();
-                        value = this.pop();
-                        if (this.peek(instruction.argument).call('__setitem__', [key, value])) {
+                        key = frame.pop();
+                        value = frame.pop();
+                        if (frame.peek(instruction.argument).call('__setitem__', [key, value])) {
                             return 1;
                         }
                     case 1:
@@ -227,20 +227,20 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.RETURN_VALUE:
-                vm.return_value = this.pop();
-                this.unwind(CAUSES.RETURN);
+                vm.return_value = frame.pop();
+                frame.unwind(CAUSES.RETURN);
                 break;
 
             case OPCODES.YIELD_VALUE:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        vm.return_value = this.pop();
-                        vm.frame = this.back;
-                        this.why = CAUSES.YIELD;
+                        vm.return_value = frame.pop();
+                        vm.frame = frame.back;
+                        frame.why = CAUSES.YIELD;
                         return 1;
                     case 1:
-                        this.push(vm.return_value);
-                        this.why = CAUSES.RUN;
+                        frame.push(vm.return_value);
+                        frame.why = CAUSES.RUN;
                         break;
                 }
                 break;
@@ -250,65 +250,65 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.POP_BLOCK:
-                this.blocks.pop();
+                frame.blocks.pop();
                 break;
 
             case OPCODES.POP_EXCEPT:
-                block = this.blocks.pop();
+                block = frame.blocks.pop();
                 assert(block.type === BLOCK_TYPES.EXCEPT, 'invalid type of top block');
-                while (this.level > block.level + 3) {
-                    this.pop();
+                while (frame.level > block.level + 3) {
+                    frame.pop();
                 }
-                if (this.level == block.level + 3) {
-                    exc_type = this.pop();
-                    exc_value = this.pop();
-                    exc_tb = this.pop();
+                if (frame.level == block.level + 3) {
+                    exc_type = frame.pop();
+                    exc_value = frame.pop();
+                    exc_tb = frame.pop();
                     raise(exc_type, exc_value, exc_tb);
                 } else {
                     vm.return_value = None;
-                    this.why = CAUSES.RUN;
+                    frame.why = CAUSES.RUN;
                 }
                 break;
 
             case OPCODES.END_FINALLY:
-                this.unwind();
+                frame.unwind();
                 break;
 
             case OPCODES.LOAD_BUILD_CLASS:
-                this.push(build_class);
+                frame.push(build_class);
                 break;
 
             case OPCODES.SETUP_WITH:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (call(getattr, [this.top0(), pack_str('__exit__')])) {
+                        if (call(getattr, [frame.top0(), pack_str('__exit__')])) {
                             return 1;
                         }
                     case 1:
-                        temp = this.pop();
+                        temp = frame.pop();
                         if (!vm.return_value) {
                             break;
                         }
-                        this.push(vm.return_value);
+                        frame.push(vm.return_value);
                         if (temp.call('__enter__')) {
                             return 2;
                         }
                     case 2:
                         if (!vm.return_value) {
-                            this.pop();
+                            frame.pop();
                             break;
                         }
-                        this.push(vm.return_value);
-                        this.push_block(BLOCK_TYPES.FINALLY, instruction.target);
+                        frame.push(vm.return_value);
+                        frame.push_block(BLOCK_TYPES.FINALLY, instruction.target);
                 }
                 break;
 
             case OPCODES.WITH_CLEANUP_START:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        switch (this.why) {
+                        switch (frame.why) {
                             case CAUSES.EXCEPTION:
-                                args = [this.pop(), this.pop(), this.pop()];
+                                args = [frame.pop(), frame.pop(), frame.pop()];
                                 break;
                             case CAUSES.RETURN:
                             case CAUSES.CONTINUE:
@@ -317,35 +317,35 @@ PythonFrame.prototype.eval = function () {
                                 break;
                             default:
                                 args = [None, None, None];
-                                this.pop();
+                                frame.pop();
                         }
-                        this.return_value = vm.return_value;
+                        frame.return_value = vm.return_value;
                         vm.return_value = None;
-                        if (call(this.pop(), args)) {
+                        if (call(frame.pop(), args)) {
                             return 1;
                         }
                     case 1:
                         if (!vm.return_value) {
                             break;
                         }
-                        this.push(vm.return_value);
+                        frame.push(vm.return_value);
                 }
                 break;
 
             case OPCODES.WITH_CLEANUP_FINISH:
-                if (this.pop().bool()) {
-                    if (this.why == CAUSES.EXCEPTION) {
-                        this.why = CAUSES.RUN;
+                if (frame.pop().bool()) {
+                    if (frame.why == CAUSES.EXCEPTION) {
+                        frame.why = CAUSES.RUN;
                     }
                 } else {
-                    if (this.why == CAUSES.EXCEPTION) {
-                        this.push(vm.last_exception.exc_tb);
-                        this.push(vm.last_exception.exc_value);
-                        this.push(vm.last_exception.exc_type);
+                    if (frame.why == CAUSES.EXCEPTION) {
+                        frame.push(vm.last_exception.exc_tb);
+                        frame.push(vm.last_exception.exc_value);
+                        frame.push(vm.last_exception.exc_type);
                     }
                 }
-                if (this.why == CAUSES.RETURN) {
-                    vm.return_value = this.return_value;
+                if (frame.why == CAUSES.RETURN) {
+                    vm.return_value = frame.return_value;
                 }
                 break;
 
@@ -354,23 +354,23 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.STORE_NAME:
             case OPCODES.DELETE_NAME:
                 if (instruction.opcode === OPCODES.STORE_FAST) {
-                    name = this.code.varnames[instruction.argument];
+                    name = frame.code.varnames[instruction.argument];
                 } else if (instruction.opcode === OPCODES.DELETE_FAST) {
-                    name = this.code.varnames[instruction.argument];
+                    name = frame.code.varnames[instruction.argument];
                 } else {
-                    name = this.code.names[instruction.argument];
+                    name = frame.code.names[instruction.argument];
                 }
-                if (this.namespace) {
-                    switch (this.state) {
+                if (frame.namespace) {
+                    switch (frame.state) {
                         case 0:
                             if (instruction.opcode === OPCODES.STORE_NAME) {
                                 slot = '__setitem__';
-                                args = [pack_str(name), this.pop()];
+                                args = [pack_str(name), frame.pop()];
                             } else {
                                 slot = '__delitem__';
                                 args = [pack_str(name)];
                             }
-                            if (this.namespace.call(slot, args)) {
+                            if (frame.namespace.call(slot, args)) {
                                 return 1;
                             }
                         case 1:
@@ -381,9 +381,9 @@ PythonFrame.prototype.eval = function () {
                     }
                 } else {
                     if (instruction.opcode === OPCODES.STORE_NAME || instruction.opcode === OPCODES.STORE_FAST) {
-                        this.locals[name] = this.pop();
-                    } else if (name in this.locals) {
-                        delete this.locals[name];
+                        frame.locals[name] = frame.pop();
+                    } else if (name in frame.locals) {
+                        delete frame.locals[name];
                     } else {
                         raise(NameError, 'name \'' + name + '\' is not defined');
                     }
@@ -393,24 +393,24 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.LOAD_FAST:
             case OPCODES.LOAD_NAME:
                 if (instruction.opcode === OPCODES.LOAD_FAST) {
-                    name = this.code.varnames[instruction.argument];
+                    name = frame.code.varnames[instruction.argument];
                 } else {
-                    name = this.code.names[instruction.argument];
+                    name = frame.code.names[instruction.argument];
                 }
-                if (this.namespace) {
-                    switch (this.state) {
+                if (frame.namespace) {
+                    switch (frame.state) {
                         case 0:
-                            if (this.namespace.call('__getitem__', [pack_str(name)])) {
+                            if (frame.namespace.call('__getitem__', [pack_str(name)])) {
                                 return 1;
                             }
                         case 1:
                             if (vm.return_value) {
-                                this.push(vm.return_value);
+                                frame.push(vm.return_value);
                             } else if (except(MethodNotFoundError) || except(KeyError)) {
-                                if (name in this.globals) {
-                                    this.push(this.globals[name]);
-                                } else if (name in this.builtins) {
-                                    this.push(this.builtins[name]);
+                                if (name in frame.globals) {
+                                    frame.push(frame.globals[name]);
+                                } else if (name in frame.builtins) {
+                                    frame.push(frame.builtins[name]);
                                 } else {
                                     raise(NameError, 'name \'' + name + '\' is not defined');
                                 }
@@ -418,12 +418,12 @@ PythonFrame.prototype.eval = function () {
                             break;
                     }
                 } else {
-                    if (name in this.locals) {
-                        this.push(this.locals[name]);
-                    } else if (name in this.globals) {
-                        this.push(this.globals[name]);
-                    } else if (name in this.builtins) {
-                        this.push(this.builtins[name]);
+                    if (name in frame.locals) {
+                        frame.push(frame.locals[name]);
+                    } else if (name in frame.globals) {
+                        frame.push(frame.globals[name]);
+                    } else if (name in frame.builtins) {
+                        frame.push(frame.builtins[name]);
                     } else {
                         raise(NameError, 'name \'' + name + '\' is not defined');
                     }
@@ -431,25 +431,25 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.STORE_GLOBAL:
-                name = this.code.names[instruction.argument];
-                this.globals[name] = this.pop();
+                name = frame.code.names[instruction.argument];
+                frame.globals[name] = frame.pop();
                 break;
 
             case OPCODES.DELETE_GLOBAL:
-                name = this.code.names[instruction.argument];
-                if (name in this.globals) {
-                    delete this.globals[name];
+                name = frame.code.names[instruction.argument];
+                if (name in frame.globals) {
+                    delete frame.globals[name];
                 } else {
                     raise(NameError, 'name \'' + name + '\' is not defined');
                 }
                 break;
 
             case OPCODES.LOAD_GLOBAL:
-                name = this.code.names[instruction.argument];
-                if (name in this.globals) {
-                    this.push(this.globals[name]);
-                } else if (name in this.builtins) {
-                    this.push(this.builtins[name]);
+                name = frame.code.names[instruction.argument];
+                if (name in frame.globals) {
+                    frame.push(frame.globals[name]);
+                } else if (name in frame.builtins) {
+                    frame.push(frame.builtins[name]);
                 } else {
                     raise(NameError, 'name \'' + name + '\' is not defined');
                 }
@@ -457,13 +457,13 @@ PythonFrame.prototype.eval = function () {
 
             case OPCODES.STORE_ATTR:
             case OPCODES.DELETE_ATTR:
-                name = this.code.names[instruction.argument];
-                switch (this.state) {
+                name = frame.code.names[instruction.argument];
+                switch (frame.state) {
                     case 0:
-                        temp = this.pop();
+                        temp = frame.pop();
                         if (instruction.opcode === OPCODES.STORE_ATTR) {
                             slot = '__setattr__';
-                            args = [pack_str(name), this.pop()];
+                            args = [pack_str(name), frame.pop()];
                         } else {
                             slot = '__delattr__';
                             args = [pack_str(name)];
@@ -484,40 +484,40 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.LOAD_ATTR:
-                name = this.code.names[instruction.argument];
-                switch (this.state) {
+                name = frame.code.names[instruction.argument];
+                switch (frame.state) {
                     case 0:
-                        if (this.top0().call('__getattribute__', [pack_str(name)])) {
+                        if (frame.top0().call('__getattribute__', [pack_str(name)])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value) {
-                            this.pop();
-                            this.push(vm.return_value);
+                            frame.pop();
+                            frame.push(vm.return_value);
                             break;
                         }
                         if (except(AttributeError) || except(MethodNotFoundError)) {
-                            if (this.pop().call('__getattr__', [pack_str(name)])) {
+                            if (frame.pop().call('__getattr__', [pack_str(name)])) {
                                 return 2;
                             }
                         } else {
-                            this.pop();
+                            frame.pop();
                             break;
                         }
                     case 2:
                         if (except(MethodNotFoundError)) {
                             raise(TypeError, 'object does not support attribute access');
                         } else if (vm.return_value) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
                 break;
 
             case OPCODES.UNPACK_SEQUENCE:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (call(unpack_sequence, [this.pop(), pack_int(instruction.argument)])) {
+                        if (call(unpack_sequence, [frame.pop(), pack_int(instruction.argument)])) {
                             return 1;
                         }
                     case 1:
@@ -526,7 +526,7 @@ PythonFrame.prototype.eval = function () {
                                 raise(TypeError, 'not enough values to unpack (expected ' + instruction.argument + ', got ' + vm.return_value.len() + ')');
                             } else {
                                 for (index = vm.return_value.len() - 1; index >= 0; index--) {
-                                    this.push(vm.return_value.get(index));
+                                    frame.push(vm.return_value.get(index));
                                 }
                             }
                         }
@@ -534,9 +534,9 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.UNPACK_EX:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (call(unpack_sequence, [this.pop()])) {
+                        if (call(unpack_sequence, [frame.pop()])) {
                             return 1;
                         }
                     case 1:
@@ -548,22 +548,22 @@ PythonFrame.prototype.eval = function () {
                             }
                             temp = vm.return_value.len() - high;
                             for (index = vm.return_value.len() - 1; index >= temp; index--) {
-                                this.push(vm.return_value.get(index));
+                                frame.push(vm.return_value.get(index));
                             }
-                            this.push(new PyList(vm.return_value.array.slice(low, temp)));
+                            frame.push(new PyList(vm.return_value.array.slice(low, temp)));
                             for (index = low - 1; index >= 0; index--) {
-                                this.push(vm.return_value.get(index));
+                                frame.push(vm.return_value.get(index));
                             }
                         }
                 }
                 break;
 
             case OPCODES.BUILD_TUPLE:
-                this.push(pack_tuple(this.popn(instruction.argument)));
+                frame.push(pack_tuple(frame.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_LIST:
-                this.push(new PyList(this.popn(instruction.argument)));
+                frame.push(new PyList(frame.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_SET:
@@ -571,57 +571,57 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.BUILD_MAP:
-                this.push(new PyDict());
+                frame.push(new PyDict());
                 break;
 
             case OPCODES.IMPORT_NAME:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        name = this.code.names[instruction.argument];
-                        if (!('__import__' in this.builtins)) {
+                        name = frame.code.names[instruction.argument];
+                        if (!('__import__' in frame.builtins)) {
                             raise(ImportError, '__import__ not found');
                             break;
-                        } else if (call(this.builtins['__import__'], [pack_str(name), new PyDict(this.globals), new PyDict(this.locals)].concat(this.popn(2).reverse()))) {
+                        } else if (call(frame.builtins['__import__'], [pack_str(name), new PyDict(frame.globals), new PyDict(frame.locals)].concat(frame.popn(2).reverse()))) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                 }
                 break;
 
             case OPCODES.IMPORT_STAR:
-                temp = this.pop();
+                temp = frame.pop();
                 for (name in temp.dict) {
                     if (name.indexOf('_') != 0 && temp.dict.hasOwnProperty(name)) {
-                        this.locals[name] = temp.dict[name];
+                        frame.locals[name] = temp.dict[name];
                     }
                 }
                 break;
 
             case OPCODES.IMPORT_FROM:
-                name = this.code.names[instruction.argument];
-                if (name in this.top0().dict) {
-                    this.push(this.top0().dict[name])
+                name = frame.code.names[instruction.argument];
+                if (name in frame.top0().dict) {
+                    frame.push(frame.top0().dict[name])
                 } else {
                     raise(ImportError, 'cannot import name \'' + name + '\'');
                 }
                 break;
 
             case OPCODES.JUMP_FORWARD:
-                this.position = instruction.target;
+                frame.position = instruction.target;
                 break;
 
             case OPCODES.JUMP_ABSOLUTE:
-                this.position = instruction.target;
+                frame.position = instruction.target;
                 break;
 
             case OPCODES.COMPARE_OP:
                 switch (instruction.argument) {
                     case COMPARE_OPS.EXC:
-                        exc_type = this.pop();
-                        this.push(issubclass(this.pop(), exc_type) ? True : False);
+                        exc_type = frame.pop();
+                        frame.push(issubclass(frame.pop(), exc_type) ? True : False);
                         break;
                     case COMPARE_OPS.LT:
                     case COMPARE_OPS.LE:
@@ -629,11 +629,11 @@ PythonFrame.prototype.eval = function () {
                     case COMPARE_OPS.GE:
                     case COMPARE_OPS.EQ:
                     case COMPARE_OPS.NE:
-                        switch (this.state) {
+                        switch (frame.state) {
                             case 0:
                                 slot = COMPARE_SLOTS[instruction.argument];
-                                right = this.pop();
-                                left = this.pop();
+                                right = frame.pop();
+                                left = frame.pop();
                                 if (left.call(slot, [right])) {
                                     return 1;
                                 }
@@ -641,7 +641,7 @@ PythonFrame.prototype.eval = function () {
                                 if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                                     raise(TypeError, 'unsupported boolean operator');
                                 } else if (vm.return_value) {
-                                    this.push(vm.return_value);
+                                    frame.push(vm.return_value);
                                 }
                                 break;
                         }
@@ -649,12 +649,12 @@ PythonFrame.prototype.eval = function () {
 
                     case COMPARE_OPS.IS:
                     case COMPARE_OPS.NIS:
-                        right = this.pop();
-                        left = this.pop();
+                        right = frame.pop();
+                        left = frame.pop();
                         if (right.is(left)) {
-                            this.push(instruction.argument == COMPARE_OPS.IS ? True : False)
+                            frame.push(instruction.argument == COMPARE_OPS.IS ? True : False)
                         } else {
-                            this.push(instruction.argument == COMPARE_OPS.NIS ? False : True)
+                            frame.push(instruction.argument == COMPARE_OPS.NIS ? False : True)
                         }
                         break;
 
@@ -664,20 +664,20 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.POP_JUMP_IF_TRUE:
-                if (this.top0().cls === py_int) {
-                    if (this.pop().bool()) {
-                        this.position = instruction.target;
+                if (frame.top0().cls === py_int) {
+                    if (frame.pop().bool()) {
+                        frame.position = instruction.target;
                     }
                     break;
                 }
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (this.top0().call('__bool__')) {
+                        if (frame.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (this.pop().call('__len__')) {
+                            if (frame.pop().call('__len__')) {
                                 return 2;
                             }
                         }
@@ -686,12 +686,12 @@ PythonFrame.prototype.eval = function () {
                             break;
                         }
                         if (except(MethodNotFoundError)) {
-                            this.position = instruction.target;
+                            frame.position = instruction.target;
                             break;
                         } else if (vm.return_value) {
                             if (vm.return_value instanceof PyInt) {
                                 if (vm.return_value.bool()) {
-                                    this.position = instruction.target;
+                                    frame.position = instruction.target;
                                     break;
                                 }
                             } else {
@@ -703,32 +703,32 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.POP_JUMP_IF_FALSE:
-                if (this.top0().cls === py_bool || this.top0().cls === py_int) {
-                    if (!this.pop().bool()) {
-                        this.position = instruction.target;
+                if (frame.top0().cls === py_bool || frame.top0().cls === py_int) {
+                    if (!frame.pop().bool()) {
+                        frame.position = instruction.target;
                     }
                     break;
                 }
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (this.top0().call('__bool__')) {
+                        if (frame.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (this.top0().call('__len__')) {
+                            if (frame.top0().call('__len__')) {
                                 return 2;
                             }
                         } else if (!vm.return_value) {
-                            this.pop();
+                            frame.pop();
                             break;
                         }
                     case 2:
-                        this.pop();
+                        frame.pop();
                         if (!except(MethodNotFoundError)) {
                             if (vm.return_value instanceof PyInt) {
                                 if (!vm.return_value.bool()) {
-                                    this.position = instruction.target;
+                                    frame.position = instruction.target;
                                     break;
                                 }
                             } else if (vm.return_value) {
@@ -740,88 +740,88 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.JUMP_IF_TRUE_OR_POP:
-                if (this.top0().cls === py_int) {
-                    if (this.top0().bool()) {
-                        this.position = instruction.target;
+                if (frame.top0().cls === py_int) {
+                    if (frame.top0().bool()) {
+                        frame.position = instruction.target;
                     } else {
-                        this.pop();
+                        frame.pop();
                     }
                     break;
                 }
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (this.top0().call('__bool__')) {
+                        if (frame.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (this.top0().call('__len__')) {
+                            if (frame.top0().call('__len__')) {
                                 return 2;
                             }
                         } else if (!vm.return_value) {
-                            this.pop();
+                            frame.pop();
                             break;
                         }
                     case 2:
                         if (except(MethodNotFoundError)) {
-                            this.position = instruction.target;
+                            frame.position = instruction.target;
                         } else if (vm.return_value) {
                             if (vm.return_value instanceof PyInt) {
                                 if (vm.return_value.bool()) {
-                                    this.position = instruction.target;
+                                    frame.position = instruction.target;
                                 } else {
-                                    this.pop();
+                                    frame.pop();
                                 }
                             } else {
-                                this.pop();
+                                frame.pop();
                                 raise(TypeError, 'invalid result type of boolean conversion');
                             }
                         } else {
-                            this.pop();
+                            frame.pop();
                         }
                         break;
                 }
                 break;
 
             case OPCODES.JUMP_IF_FALSE_OR_POP:
-                if (this.top0().cls === py_int) {
-                    if (!this.top0().bool()) {
-                        this.position = instruction.target;
+                if (frame.top0().cls === py_int) {
+                    if (!frame.top0().bool()) {
+                        frame.position = instruction.target;
                     } else {
-                        this.pop();
+                        frame.pop();
                     }
                     break;
                 }
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (this.top0().call('__bool__')) {
+                        if (frame.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (this.top0().call('__len__')) {
+                            if (frame.top0().call('__len__')) {
                                 return 2;
                             }
                         } else if (!vm.return_value) {
-                            this.pop();
-                            this.raise();
+                            frame.pop();
+                            frame.raise();
                             break;
                         }
                     case 2:
                         if (!except(MethodNotFoundError)) {
                             if (vm.return_value instanceof PyInt) {
                                 if (!vm.return_value.bool()) {
-                                    this.position = instruction.target;
+                                    frame.position = instruction.target;
                                 } else {
-                                    this.pop();
+                                    frame.pop();
                                 }
                             } else if (vm.return_value) {
-                                this.pop();
+                                frame.pop();
                                 raise(TypeError, 'invalid result type of boolean conversion');
-                                this.raise();
+                                frame.raise();
                             } else {
-                                this.pop();
-                                this.raise();
+                                frame.pop();
+                                frame.raise();
                             }
                         }
                         break;
@@ -829,22 +829,22 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.FOR_ITER:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (this.top0().call('__next__')) {
+                        if (frame.top0().call('__next__')) {
                             return 1;
                         }
                     case 1:
                         if (!vm.return_value) {
-                            this.pop();
+                            frame.pop();
                             if (except(MethodNotFoundError)) {
                                 raise(TypeError, 'object does not support iteration');
                             } else if (except(StopIteration)) {
-                                this.position = instruction.target;
+                                frame.position = instruction.target;
                                 break;
                             }
                         } else {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
@@ -854,22 +854,22 @@ PythonFrame.prototype.eval = function () {
             case OPCODES.SETUP_LOOP:
             case OPCODES.SETUP_EXCEPT:
             case OPCODES.SETUP_FINALLY:
-                this.push_block(OPCODES_EXTRA[instruction.opcode], instruction.target);
+                frame.push_block(OPCODES_EXTRA[instruction.opcode], instruction.target);
                 break;
 
             case OPCODES.LOAD_CLOSURE:
-                if (instruction.argument < this.code.cellvars.length) {
-                    this.push(this.cells[this.code.cellvars[instruction.argument]]);
+                if (instruction.argument < frame.code.cellvars.length) {
+                    frame.push(frame.cells[frame.code.cellvars[instruction.argument]]);
                 } else {
-                    this.push(this.cells[this.code.freevars[instruction.argument]]);
+                    frame.push(frame.cells[frame.code.freevars[instruction.argument]]);
                 }
                 break;
 
             case OPCODES.LOAD_DEREF:
-                if (instruction.argument < this.code.cellvars.length) {
-                    this.push(this.cells[this.code.cellvars[instruction.argument]].get());
+                if (instruction.argument < frame.code.cellvars.length) {
+                    frame.push(frame.cells[frame.code.cellvars[instruction.argument]].get());
                 } else {
-                    this.push(this.cells[this.code.freevars[instruction.argument]].get());
+                    frame.push(frame.cells[frame.code.freevars[instruction.argument]].get());
                 }
                 break;
 
@@ -878,8 +878,8 @@ PythonFrame.prototype.eval = function () {
                 break;
 
             case OPCODES.STORE_DEREF:
-                if (instruction.argument < this.code.cellvars.length) {
-                    this.cells[this.code.cellvars[instruction.argument]].set(this.pop());
+                if (instruction.argument < frame.code.cellvars.length) {
+                    frame.cells[frame.code.cellvars[instruction.argument]].set(frame.pop());
                 } else {
                     error('load free variable closure not implemented');
                 }
@@ -893,40 +893,40 @@ PythonFrame.prototype.eval = function () {
                 if (instruction.argument != 1) {
                     error('unsupported raise format');
                 }
-                exc_value = this.pop();
+                exc_value = frame.pop();
                 raise(exc_value.cls, exc_value);
                 break;
 
             case OPCODES.LOAD_CONST:
-                this.push(this.code.constants[instruction.argument]);
+                frame.push(frame.code.constants[instruction.argument]);
                 break;
 
             case OPCODES.CALL_FUNCTION:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
                         low = instruction.argument & 0xFF;
                         high = instruction.argument >> 8;
                         kwargs = {};
                         for (index = 0; index < high; index++) {
-                            value = this.pop();
-                            kwargs[this.pop().value] = value;
+                            value = frame.pop();
+                            kwargs[frame.pop().value] = value;
                         }
-                        args = this.popn(low);
-                        if (call(this.pop(), args, kwargs)) {
+                        args = frame.popn(low);
+                        if (call(frame.pop(), args, kwargs)) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
                 break;
 
             case OPCODES.CALL_FUNCTION_VAR:
-                switch (this.state) {
+                switch (frame.state) {
                     case 0:
-                        if (call(unpack_sequence, [this.pop()])) {
+                        if (call(unpack_sequence, [frame.pop()])) {
                             return 1;
                         }
                     case 1:
@@ -937,16 +937,16 @@ PythonFrame.prototype.eval = function () {
                         high = instruction.argument >> 8;
                         kwargs = {};
                         for (index = 0; index < high; index++) {
-                            value = this.pop();
-                            kwargs[this.pop().value] = value;
+                            value = frame.pop();
+                            kwargs[frame.pop().value] = value;
                         }
-                        args = this.popn(low).concat(vm.return_value.array);
-                        if (call(this.pop(), args, kwargs)) {
+                        args = frame.popn(low).concat(vm.return_value.array);
+                        if (call(frame.pop(), args, kwargs)) {
                             return 2;
                         }
                     case 3:
                         if (vm.return_value) {
-                            this.push(vm.return_value);
+                            frame.push(vm.return_value);
                         }
                         break;
                 }
@@ -965,36 +965,36 @@ PythonFrame.prototype.eval = function () {
                 low = instruction.argument & 0xFF;
                 mid = (instruction.argument >> 8) & 0xFF;
                 high = (instruction.argument >> 16) & 0x7FFF;
-                name = this.pop();
-                code = this.pop();
-                var options = {defaults: {}, annotations: {}, globals: this.globals};
+                name = frame.pop();
+                code = frame.pop();
+                var options = {defaults: {}, annotations: {}, globals: frame.globals};
                 if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
-                    options.closure = this.pop();
+                    options.closure = frame.pop();
                 }
                 if (high) {
-                    temp = this.pop();
+                    temp = frame.pop();
                     for (index = 0; index < high - 1; index++) {
-                        options.annotations[unpack_str(temp.get(index))] = this.pop();
+                        options.annotations[unpack_str(temp.get(index))] = frame.pop();
                     }
                 }
                 for (index = 0; index < mid; index++) {
-                    value = this.pop();
-                    options.defaults[this.pop().value] = value;
+                    value = frame.pop();
+                    options.defaults[frame.pop().value] = value;
                 }
                 for (index = 0; index < low; index++) {
-                    options.defaults[code.code.signature.argnames[index]] = this.pop();
+                    options.defaults[code.code.signature.argnames[index]] = frame.pop();
                 }
-                this.push(new PyFunction(unpack_str(name), code.code, options));
+                frame.push(new PyFunction(unpack_str(name), code.code, options));
                 break;
 
             case OPCODES.BUILD_SLICE:
-                this.push(new_slice.apply(null, this.popn(instruction.argument)));
+                frame.push(new_slice.apply(null, frame.popn(instruction.argument)));
                 break;
 
             default:
                 error('unknown opcode occoured ' + instruction.opcode);
                 break;
         }
-        this.state = 0;
+        frame.state = 0;
     }
 };

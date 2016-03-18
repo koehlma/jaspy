@@ -138,12 +138,14 @@ PyType.prototype.call_staticmethod = function (name, args, kwargs) {
     }
 };
 
+/*
+
 PyType.prototype.create = function (args, kwargs) {
     if (this.call('__call__', args, kwargs)) {
         raise(TypeError, 'invalid call to python code during object creation')
     }
     return vm.return_value;
-};
+};*/
 
 PyType.prototype.check = function (object) {
     if (!isinstance(object, this)) {

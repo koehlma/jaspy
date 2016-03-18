@@ -47,15 +47,15 @@ jaspy.module('sys', function ($, module, builtins) {
     module.$set('maxunicode', $.pack_int(0xFFFF));
 
     module.$set('version', $.pack_str('3.5.1'));
-    module.$set('version_info', VersionInfo.create([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)]));
+    module.$set('version_info', new $.PyTuple([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)], VersionInfo));
 
     module.$set('jaspy_version', $.pack_str('/* {{metadata.__version__}} */'));
-    module.$set('jaspy_version_info', VersionInfo.create([
+    module.$set('jaspy_version_info', new $.PyTuple([
         $.pack_int(/* {{metadata.__version_info__[0]}} */),
         $.pack_int(/* {{metadata.__version_info__[1]}} */),
         $.pack_int(/* {{metadata.__version_info__[2]}} */),
         $.pack_str('/* {{metadata.__version_info__[3]}} */'),
-        $.pack_int(/* {{metadata.__version_info__[4]}} */)])
+        $.pack_int(/* {{metadata.__version_info__[4]}} */)], VersionInfo)
     );
 
     module.$set('modules', new $.PyDict($.modules));
