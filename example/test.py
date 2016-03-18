@@ -341,6 +341,8 @@ a = '\N{MAHJONG TILE GREEN DRAGON}'
 print(a)
 print(len(a))
 
+print('a.b.c'.split('.'))
+
 x = True
 height = 0
 while True:

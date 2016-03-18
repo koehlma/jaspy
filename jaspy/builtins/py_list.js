@@ -22,6 +22,7 @@ py_list.$def('__str__', function (self, state, frame) {
                 frame.index = 0;
             case 1:
                 if (frame.index < self.size) {
+                    console.log(self.get(frame.index));
                     if (self.get(frame.index).call('__repr__')) {
                         return 2;
                     }

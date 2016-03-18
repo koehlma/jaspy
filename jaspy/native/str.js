@@ -24,6 +24,10 @@ PyStr.prototype.repr = function () {
     return '\'' + this.value + '\''
 };
 
+PyStr.prototype.split = function (sep) {
+    return this.value.split(sep);
+};
+
 PyStr.prototype.encode = function (encoding) {
     var encoder, result;
     if (!TextEncoder) {

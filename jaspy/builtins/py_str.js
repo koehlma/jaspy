@@ -66,6 +66,11 @@ py_str.$def('startswith', function (self, prefix) {
     return unpack_str(self).indexOf(unpack_str(prefix)) == 0 ? True : False;
 }, ['prefix']);
 
+py_str.$def('split', function (self, sep) {
+    py_str.check(self);
+    return new PyList(self.split(unpack_str(sep)).map(pack_str));
+}, ['sep']);
+
 function str(object) {
     return py_str.call_classmethod('__new__', [object]);
 }
