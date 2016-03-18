@@ -1,0 +1,1 @@
+jaspy.module('test2', (jaspy.new_code(new jaspy.PythonCode('e\x00\x00d\x00\x00\x83\x01\x00\x01d\x01\x00S', {name: '<module>',filename: 'test2.py',constants: [(jaspy.pack_str('TEST')), (jaspy.None)],flags: 64,names: ['print'],stacksize: 2,argcount: 0,kwargcount: 0,varnames: [],freevars: [],cellvars: [],firstline: 1,lnotab: ''}))));
