@@ -52,7 +52,7 @@ window['jaspy'] = (function () {
     // #include 'dis.js'
 
     // #include 'frame.js'
-    // #include 'eval.js'
+    // #include 'execute.js'
     // #include 'vm.js'
 
     return jaspy;

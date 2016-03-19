@@ -180,7 +180,6 @@ module_builtins.$def('__import__', function (name, globals, locals, fromlist, le
     name = unpack_str(name);
     switch (state) {
         case 0:
-            console.log(level);
             if (level.gt(ZERO)) {
                 raise(ImportError, 'relative imports are not supported')
             }

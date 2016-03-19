@@ -100,13 +100,41 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
 }
 
 function run() {
+    var frame, state;
     while (vm.frame) {
-        vm.frame.run();
+        frame = vm.frame;
+        if (frame instanceof PythonFrame) {
+            state = frame.execute();
+            if (state != undefined) {
+                frame.set_state(state);
+            }
+        } else if (frame instanceof NativeFrame) {
+            assert(!frame.code.simple, 'native frames\'s code is simple');
+            var result;
+            try {
+                result = frame.code.func.apply(null, frame.args.concat([frame.state, frame]));
+            } catch (error) {
+                if (error instanceof PyObject) {
+                    raise(error.cls, error, undefined, true);
+                    vm.frame = frame.back;
+                    continue;
+                }
+                //throw error;
+            }
+            if (result == undefined || result instanceof PyObject) {
+                if (result instanceof PyObject && vm.return_value) {
+                    vm.return_value = result;
+                }
+                vm.frame = frame.back;
+            } else {
+                frame.state = result;
+            }
+        }
     }
     if (vm.return_value) {
         return vm.return_value;
     } else {
-        console.error('An unhandled Exception occoured during execution!');
+        console.error('An unhandled Exception occurred during execution!');
     }
 }
 

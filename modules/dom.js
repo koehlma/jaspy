@@ -113,7 +113,6 @@ jaspy.module('dom', function ($, module, builtins) {
             $.resume(callback, [handle], {});
         }, $.unpack_int(interval)));
         return handle;
-        console.log($.unpack_int(interval));
     }, ['interval', 'resume']);
 
 }, ['builtins']);

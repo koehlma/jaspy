@@ -25,9 +25,7 @@ py_generator.$def('__next__', function (self, state, frame) {
             self.frame.back = frame;
             vm.frame = self.frame;
             vm.return_value = None;
-            if (self.frame.run()) {
-                return 1;
-            }
+            return 1;
         case 1:
             if (self.frame.why == CAUSES.YIELD) {
                 return vm.return_value;

@@ -197,16 +197,6 @@ PythonFrame.prototype.get_line_number = function () {
     return this.code.get_line_number(this.position - 1);
 };
 
-PythonFrame.prototype.run = function () {
-    var state = execute(this);
-    if (state == undefined) {
-        return false;
-    } else {
-        this.set_state(state);
-        return true;
-    }
-};
-
 
 function NativeFrame(code, options) {
     options = options || {};
@@ -215,30 +205,6 @@ function NativeFrame(code, options) {
 }
 
 extend(NativeFrame, Frame);
-
-NativeFrame.prototype.run = function () {
-    assert(!this.code.simple, 'native frames\'s code is simple');
-    var result;
-    try {
-        result = this.code.func.apply(null, this.args.concat([this.state, this]));
-    } catch (error) {
-        if (error instanceof PyObject) {
-            raise(error.cls, error, undefined, true);
-            vm.frame = this.back;
-            return;
-        }
-        throw error;
-    }
-    if (result == undefined || result instanceof PyObject) {
-        if (result instanceof PyObject && vm.return_value) {
-            vm.return_value = result;
-        }
-        vm.frame = this.back;
-    } else {
-        this.state = result;
-        return true;
-    }
-};
 
 NativeFrame.prototype.get_line_number = function () {
     return this.state;

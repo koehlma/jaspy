@@ -13,16 +13,16 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function execute(frame) {
+PythonFrame.prototype.execute = function() {
     var slot, right, left, name, key, value, block, exc_type, exc_value, exc_tb, temp;
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
-    while (vm.frame === frame) {
-        if (!vm.return_value && frame.why != CAUSES.EXCEPTION && frame.state == 0) {
-            frame.raise();
+    while (vm.frame === this) {
+        if (!vm.return_value && this.why != CAUSES.EXCEPTION && this.state == 0) {
+            this.raise();
         }
 
-        instruction = frame.code.instructions[frame.position++];
+        instruction = this.code.instructions[this.position++];
 
         if (DEBUG) {
             console.log('executing instruction', instruction);
@@ -33,33 +33,33 @@ function execute(frame) {
                 break;
 
             case OPCODES.POP_TOP:
-                frame.pop();
+                this.pop();
                 break;
 
             case OPCODES.ROT_TWO:
-                temp = frame.popn(2);
-                frame.push(temp[1]);
-                frame.push(temp[0]);
+                temp = this.popn(2);
+                this.push(temp[1]);
+                this.push(temp[0]);
                 break;
 
             case OPCODES.ROT_THREE:
-                temp = frame.popn(3);
-                frame.push(temp[2]);
-                frame.push(temp[1]);
-                frame.push(temp[0]);
+                temp = this.popn(3);
+                this.push(temp[2]);
+                this.push(temp[1]);
+                this.push(temp[0]);
                 break;
 
             case OPCODES.DUP_TOP:
-                frame.push(frame.top0());
+                this.push(this.top0());
                 break;
 
             case OPCODES.DUP_TOP_TWO:
-                frame.push(frame.top1());
-                frame.push(frame.top1());
+                this.push(this.top1());
+                this.push(this.top1());
                 break;
 
             case OPCODES.GET_YIELD_FROM_ITER:
-                if (frame.state === 0 && isiterable(frame.top0())) {
+                if (this.state === 0 && isiterable(this.top0())) {
                     break;
                 }
             case OPCODES.UNARY_POSITIVE:
@@ -67,16 +67,16 @@ function execute(frame) {
             case OPCODES.UNARY_NOT:
             case OPCODES.UNARY_INVERT:
             case OPCODES.GET_ITER:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (frame.pop().call(OPCODES_EXTRA[instruction.opcode])) {
+                        if (this.pop().call(OPCODES_EXTRA[instruction.opcode])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
                         } else if (vm.return_value) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
@@ -96,26 +96,26 @@ function execute(frame) {
             case OPCODES.BINARY_AND:
             case OPCODES.BINARY_XOR:
             case OPCODES.BINARY_OR:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
                         slot = OPCODES_EXTRA[instruction.opcode];
-                        right = frame.top0();
-                        left = frame.top1();
+                        right = this.top0();
+                        left = this.top1();
                         if (left.call('__' + slot + '__', [right])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             slot = OPCODES_EXTRA[instruction.opcode];
-                            right = frame.pop();
-                            left = frame.pop();
+                            right = this.pop();
+                            left = this.pop();
                             if (right.call('__r' + slot + '__', [left])) {
                                 return 2;
                             }
                         } else {
-                            frame.popn(2);
+                            this.popn(2);
                             if (vm.return_value) {
-                                frame.push(vm.return_value);
+                                this.push(vm.return_value);
                             }
                             break;
                         }
@@ -123,7 +123,7 @@ function execute(frame) {
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
                         } else if (vm.return_value) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
@@ -143,10 +143,10 @@ function execute(frame) {
             case OPCODES.INPLACE_XOR:
             case OPCODES.INPLACE_OR:
             case OPCODES.DELETE_SUBSCR:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        right = frame.pop();
-                        left = frame.pop();
+                        right = this.pop();
+                        left = this.pop();
                         if (left.call(OPCODES_EXTRA[instruction.opcode], [right])) {
                             return 1;
                         }
@@ -154,18 +154,18 @@ function execute(frame) {
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                             raise(TypeError, 'unsupported operand type');
                         } else if (vm.return_value && instruction.opcode != OPCODES.DELETE_SUBSCR) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
                 break;
 
             case OPCODES.STORE_SUBSCR:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        name = frame.pop();
-                        left = frame.pop();
-                        right = frame.pop();
+                        name = this.pop();
+                        left = this.pop();
+                        right = this.pop();
                         if (left.call('__setitem__', [name, right])) {
                             return 1;
                         }
@@ -178,22 +178,22 @@ function execute(frame) {
                 break;
 
             case OPCODES.PRINT_EXPR:
-                console.log(frame.pop());
+                console.log(this.pop());
                 break;
 
             case OPCODES.BREAK_LOOP:
-                frame.unwind(CAUSES.BREAK);
+                this.unwind(CAUSES.BREAK);
                 break;
 
             case OPCODES.CONTINUE_LOOP:
-                frame.unwind(CAUSES.CONTINUE);
+                this.unwind(CAUSES.CONTINUE);
                 break;
 
             case OPCODES.SET_ADD:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        value = frame.pop();
-                        if (frame.peek(instruction.argument).call('add', [value])) {
+                        value = this.pop();
+                        if (this.peek(instruction.argument).call('add', [value])) {
                             return 1;
                         }
                     case 1:
@@ -202,10 +202,10 @@ function execute(frame) {
                 break;
 
             case OPCODES.LIST_APPEND:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        value = frame.pop();
-                        if (frame.peek(instruction.argument).call('append', [value])) {
+                        value = this.pop();
+                        if (this.peek(instruction.argument).call('append', [value])) {
                             return 1;
                         }
                     case 1:
@@ -214,11 +214,11 @@ function execute(frame) {
                 break;
 
             case OPCODES.MAP_ADD:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        key = frame.pop();
-                        value = frame.pop();
-                        if (frame.peek(instruction.argument).call('__setitem__', [key, value])) {
+                        key = this.pop();
+                        value = this.pop();
+                        if (this.peek(instruction.argument).call('__setitem__', [key, value])) {
                             return 1;
                         }
                     case 1:
@@ -227,20 +227,20 @@ function execute(frame) {
                 break;
 
             case OPCODES.RETURN_VALUE:
-                vm.return_value = frame.pop();
-                frame.unwind(CAUSES.RETURN);
+                vm.return_value = this.pop();
+                this.unwind(CAUSES.RETURN);
                 break;
 
             case OPCODES.YIELD_VALUE:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        vm.return_value = frame.pop();
-                        vm.frame = frame.back;
-                        frame.why = CAUSES.YIELD;
+                        vm.return_value = this.pop();
+                        vm.frame = this.back;
+                        this.why = CAUSES.YIELD;
                         return 1;
                     case 1:
-                        frame.push(vm.return_value);
-                        frame.why = CAUSES.RUN;
+                        this.push(vm.return_value);
+                        this.why = CAUSES.RUN;
                         break;
                 }
                 break;
@@ -250,65 +250,65 @@ function execute(frame) {
                 break;
 
             case OPCODES.POP_BLOCK:
-                frame.blocks.pop();
+                this.blocks.pop();
                 break;
 
             case OPCODES.POP_EXCEPT:
-                block = frame.blocks.pop();
+                block = this.blocks.pop();
                 assert(block.type === BLOCK_TYPES.EXCEPT, 'invalid type of top block');
-                while (frame.level > block.level + 3) {
-                    frame.pop();
+                while (this.level > block.level + 3) {
+                    this.pop();
                 }
-                if (frame.level == block.level + 3) {
-                    exc_type = frame.pop();
-                    exc_value = frame.pop();
-                    exc_tb = frame.pop();
+                if (this.level == block.level + 3) {
+                    exc_type = this.pop();
+                    exc_value = this.pop();
+                    exc_tb = this.pop();
                     raise(exc_type, exc_value, exc_tb);
                 } else {
                     vm.return_value = None;
-                    frame.why = CAUSES.RUN;
+                    this.why = CAUSES.RUN;
                 }
                 break;
 
             case OPCODES.END_FINALLY:
-                frame.unwind();
+                this.unwind();
                 break;
 
             case OPCODES.LOAD_BUILD_CLASS:
-                frame.push(build_class);
+                this.push(build_class);
                 break;
 
             case OPCODES.SETUP_WITH:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (call(getattr, [frame.top0(), pack_str('__exit__')])) {
+                        if (call(getattr, [this.top0(), pack_str('__exit__')])) {
                             return 1;
                         }
                     case 1:
-                        temp = frame.pop();
+                        temp = this.pop();
                         if (!vm.return_value) {
                             break;
                         }
-                        frame.push(vm.return_value);
+                        this.push(vm.return_value);
                         if (temp.call('__enter__')) {
                             return 2;
                         }
                     case 2:
                         if (!vm.return_value) {
-                            frame.pop();
+                            this.pop();
                             break;
                         }
-                        frame.push(vm.return_value);
-                        frame.push_block(BLOCK_TYPES.FINALLY, instruction.target);
+                        this.push(vm.return_value);
+                        this.push_block(BLOCK_TYPES.FINALLY, instruction.target);
                 }
                 break;
 
             case OPCODES.WITH_CLEANUP_START:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        switch (frame.why) {
+                        switch (this.why) {
                             case CAUSES.EXCEPTION:
-                                args = [frame.pop(), frame.pop(), frame.pop()];
+                                args = [this.pop(), this.pop(), this.pop()];
                                 break;
                             case CAUSES.RETURN:
                             case CAUSES.CONTINUE:
@@ -317,35 +317,35 @@ function execute(frame) {
                                 break;
                             default:
                                 args = [None, None, None];
-                                frame.pop();
+                                this.pop();
                         }
-                        frame.return_value = vm.return_value;
+                        this.return_value = vm.return_value;
                         vm.return_value = None;
-                        if (call(frame.pop(), args)) {
+                        if (call(this.pop(), args)) {
                             return 1;
                         }
                     case 1:
                         if (!vm.return_value) {
                             break;
                         }
-                        frame.push(vm.return_value);
+                        this.push(vm.return_value);
                 }
                 break;
 
             case OPCODES.WITH_CLEANUP_FINISH:
-                if (frame.pop().bool()) {
-                    if (frame.why == CAUSES.EXCEPTION) {
-                        frame.why = CAUSES.RUN;
+                if (this.pop().bool()) {
+                    if (this.why == CAUSES.EXCEPTION) {
+                        this.why = CAUSES.RUN;
                     }
                 } else {
-                    if (frame.why == CAUSES.EXCEPTION) {
-                        frame.push(vm.last_exception.exc_tb);
-                        frame.push(vm.last_exception.exc_value);
-                        frame.push(vm.last_exception.exc_type);
+                    if (this.why == CAUSES.EXCEPTION) {
+                        this.push(vm.last_exception.exc_tb);
+                        this.push(vm.last_exception.exc_value);
+                        this.push(vm.last_exception.exc_type);
                     }
                 }
-                if (frame.why == CAUSES.RETURN) {
-                    vm.return_value = frame.return_value;
+                if (this.why == CAUSES.RETURN) {
+                    vm.return_value = this.return_value;
                 }
                 break;
 
@@ -354,23 +354,23 @@ function execute(frame) {
             case OPCODES.STORE_NAME:
             case OPCODES.DELETE_NAME:
                 if (instruction.opcode === OPCODES.STORE_FAST) {
-                    name = frame.code.varnames[instruction.argument];
+                    name = this.code.varnames[instruction.argument];
                 } else if (instruction.opcode === OPCODES.DELETE_FAST) {
-                    name = frame.code.varnames[instruction.argument];
+                    name = this.code.varnames[instruction.argument];
                 } else {
-                    name = frame.code.names[instruction.argument];
+                    name = this.code.names[instruction.argument];
                 }
-                if (frame.namespace) {
-                    switch (frame.state) {
+                if (this.namespace) {
+                    switch (this.state) {
                         case 0:
                             if (instruction.opcode === OPCODES.STORE_NAME) {
                                 slot = '__setitem__';
-                                args = [pack_str(name), frame.pop()];
+                                args = [pack_str(name), this.pop()];
                             } else {
                                 slot = '__delitem__';
                                 args = [pack_str(name)];
                             }
-                            if (frame.namespace.call(slot, args)) {
+                            if (this.namespace.call(slot, args)) {
                                 return 1;
                             }
                         case 1:
@@ -381,9 +381,9 @@ function execute(frame) {
                     }
                 } else {
                     if (instruction.opcode === OPCODES.STORE_NAME || instruction.opcode === OPCODES.STORE_FAST) {
-                        frame.locals[name] = frame.pop();
-                    } else if (name in frame.locals) {
-                        delete frame.locals[name];
+                        this.locals[name] = this.pop();
+                    } else if (name in this.locals) {
+                        delete this.locals[name];
                     } else {
                         raise(NameError, 'name \'' + name + '\' is not defined');
                     }
@@ -393,24 +393,24 @@ function execute(frame) {
             case OPCODES.LOAD_FAST:
             case OPCODES.LOAD_NAME:
                 if (instruction.opcode === OPCODES.LOAD_FAST) {
-                    name = frame.code.varnames[instruction.argument];
+                    name = this.code.varnames[instruction.argument];
                 } else {
-                    name = frame.code.names[instruction.argument];
+                    name = this.code.names[instruction.argument];
                 }
-                if (frame.namespace) {
-                    switch (frame.state) {
+                if (this.namespace) {
+                    switch (this.state) {
                         case 0:
-                            if (frame.namespace.call('__getitem__', [pack_str(name)])) {
+                            if (this.namespace.call('__getitem__', [pack_str(name)])) {
                                 return 1;
                             }
                         case 1:
                             if (vm.return_value) {
-                                frame.push(vm.return_value);
+                                this.push(vm.return_value);
                             } else if (except(MethodNotFoundError) || except(KeyError)) {
-                                if (name in frame.globals) {
-                                    frame.push(frame.globals[name]);
-                                } else if (name in frame.builtins) {
-                                    frame.push(frame.builtins[name]);
+                                if (name in this.globals) {
+                                    this.push(this.globals[name]);
+                                } else if (name in this.builtins) {
+                                    this.push(this.builtins[name]);
                                 } else {
                                     raise(NameError, 'name \'' + name + '\' is not defined');
                                 }
@@ -418,12 +418,12 @@ function execute(frame) {
                             break;
                     }
                 } else {
-                    if (name in frame.locals) {
-                        frame.push(frame.locals[name]);
-                    } else if (name in frame.globals) {
-                        frame.push(frame.globals[name]);
-                    } else if (name in frame.builtins) {
-                        frame.push(frame.builtins[name]);
+                    if (name in this.locals) {
+                        this.push(this.locals[name]);
+                    } else if (name in this.globals) {
+                        this.push(this.globals[name]);
+                    } else if (name in this.builtins) {
+                        this.push(this.builtins[name]);
                     } else {
                         raise(NameError, 'name \'' + name + '\' is not defined');
                     }
@@ -431,25 +431,25 @@ function execute(frame) {
                 break;
 
             case OPCODES.STORE_GLOBAL:
-                name = frame.code.names[instruction.argument];
-                frame.globals[name] = frame.pop();
+                name = this.code.names[instruction.argument];
+                this.globals[name] = this.pop();
                 break;
 
             case OPCODES.DELETE_GLOBAL:
-                name = frame.code.names[instruction.argument];
-                if (name in frame.globals) {
-                    delete frame.globals[name];
+                name = this.code.names[instruction.argument];
+                if (name in this.globals) {
+                    delete this.globals[name];
                 } else {
                     raise(NameError, 'name \'' + name + '\' is not defined');
                 }
                 break;
 
             case OPCODES.LOAD_GLOBAL:
-                name = frame.code.names[instruction.argument];
-                if (name in frame.globals) {
-                    frame.push(frame.globals[name]);
-                } else if (name in frame.builtins) {
-                    frame.push(frame.builtins[name]);
+                name = this.code.names[instruction.argument];
+                if (name in this.globals) {
+                    this.push(this.globals[name]);
+                } else if (name in this.builtins) {
+                    this.push(this.builtins[name]);
                 } else {
                     raise(NameError, 'name \'' + name + '\' is not defined');
                 }
@@ -457,13 +457,13 @@ function execute(frame) {
 
             case OPCODES.STORE_ATTR:
             case OPCODES.DELETE_ATTR:
-                name = frame.code.names[instruction.argument];
-                switch (frame.state) {
+                name = this.code.names[instruction.argument];
+                switch (this.state) {
                     case 0:
-                        temp = frame.pop();
+                        temp = this.pop();
                         if (instruction.opcode === OPCODES.STORE_ATTR) {
                             slot = '__setattr__';
-                            args = [pack_str(name), frame.pop()];
+                            args = [pack_str(name), this.pop()];
                         } else {
                             slot = '__delattr__';
                             args = [pack_str(name)];
@@ -484,40 +484,40 @@ function execute(frame) {
                 break;
 
             case OPCODES.LOAD_ATTR:
-                name = frame.code.names[instruction.argument];
-                switch (frame.state) {
+                name = this.code.names[instruction.argument];
+                switch (this.state) {
                     case 0:
-                        if (frame.top0().call('__getattribute__', [pack_str(name)])) {
+                        if (this.top0().call('__getattribute__', [pack_str(name)])) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value) {
-                            frame.pop();
-                            frame.push(vm.return_value);
+                            this.pop();
+                            this.push(vm.return_value);
                             break;
                         }
                         if (except(AttributeError) || except(MethodNotFoundError)) {
-                            if (frame.pop().call('__getattr__', [pack_str(name)])) {
+                            if (this.pop().call('__getattr__', [pack_str(name)])) {
                                 return 2;
                             }
                         } else {
-                            frame.pop();
+                            this.pop();
                             break;
                         }
                     case 2:
                         if (except(MethodNotFoundError)) {
                             raise(TypeError, 'object does not support attribute access');
                         } else if (vm.return_value) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
                 break;
 
             case OPCODES.UNPACK_SEQUENCE:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (call(unpack_sequence, [frame.pop(), pack_int(instruction.argument)])) {
+                        if (call(unpack_sequence, [this.pop(), pack_int(instruction.argument)])) {
                             return 1;
                         }
                     case 1:
@@ -526,7 +526,7 @@ function execute(frame) {
                                 raise(TypeError, 'not enough values to unpack (expected ' + instruction.argument + ', got ' + vm.return_value.len() + ')');
                             } else {
                                 for (index = vm.return_value.len() - 1; index >= 0; index--) {
-                                    frame.push(vm.return_value.get(index));
+                                    this.push(vm.return_value.get(index));
                                 }
                             }
                         }
@@ -534,9 +534,9 @@ function execute(frame) {
                 break;
 
             case OPCODES.UNPACK_EX:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (call(unpack_sequence, [frame.pop()])) {
+                        if (call(unpack_sequence, [this.pop()])) {
                             return 1;
                         }
                     case 1:
@@ -548,22 +548,22 @@ function execute(frame) {
                             }
                             temp = vm.return_value.len() - high;
                             for (index = vm.return_value.len() - 1; index >= temp; index--) {
-                                frame.push(vm.return_value.get(index));
+                                this.push(vm.return_value.get(index));
                             }
-                            frame.push(new PyList(vm.return_value.array.slice(low, temp)));
+                            this.push(new PyList(vm.return_value.array.slice(low, temp)));
                             for (index = low - 1; index >= 0; index--) {
-                                frame.push(vm.return_value.get(index));
+                                this.push(vm.return_value.get(index));
                             }
                         }
                 }
                 break;
 
             case OPCODES.BUILD_TUPLE:
-                frame.push(pack_tuple(frame.popn(instruction.argument)));
+                this.push(pack_tuple(this.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_LIST:
-                frame.push(new PyList(frame.popn(instruction.argument)));
+                this.push(new PyList(this.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_SET:
@@ -571,57 +571,57 @@ function execute(frame) {
                 break;
 
             case OPCODES.BUILD_MAP:
-                frame.push(new PyDict());
+                this.push(new PyDict());
                 break;
 
             case OPCODES.IMPORT_NAME:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        name = frame.code.names[instruction.argument];
-                        if (!('__import__' in frame.builtins)) {
+                        name = this.code.names[instruction.argument];
+                        if (!('__import__' in this.builtins)) {
                             raise(ImportError, '__import__ not found');
                             break;
-                        } else if (call(frame.builtins['__import__'], [pack_str(name), new PyDict(frame.globals), new PyDict(frame.locals)].concat(frame.popn(2).reverse()))) {
+                        } else if (call(this.builtins['__import__'], [pack_str(name), new PyDict(this.globals), new PyDict(this.locals)].concat(this.popn(2).reverse()))) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                 }
                 break;
 
             case OPCODES.IMPORT_STAR:
-                temp = frame.pop();
+                temp = this.pop();
                 for (name in temp.dict) {
                     if (name.indexOf('_') != 0 && temp.dict.hasOwnProperty(name)) {
-                        frame.locals[name] = temp.dict[name];
+                        this.locals[name] = temp.dict[name];
                     }
                 }
                 break;
 
             case OPCODES.IMPORT_FROM:
-                name = frame.code.names[instruction.argument];
-                if (name in frame.top0().dict) {
-                    frame.push(frame.top0().dict[name])
+                name = this.code.names[instruction.argument];
+                if (name in this.top0().dict) {
+                    this.push(this.top0().dict[name])
                 } else {
                     raise(ImportError, 'cannot import name \'' + name + '\'');
                 }
                 break;
 
             case OPCODES.JUMP_FORWARD:
-                frame.position = instruction.target;
+                this.position = instruction.target;
                 break;
 
             case OPCODES.JUMP_ABSOLUTE:
-                frame.position = instruction.target;
+                this.position = instruction.target;
                 break;
 
             case OPCODES.COMPARE_OP:
                 switch (instruction.argument) {
                     case COMPARE_OPS.EXC:
-                        exc_type = frame.pop();
-                        frame.push(issubclass(frame.pop(), exc_type) ? True : False);
+                        exc_type = this.pop();
+                        this.push(issubclass(this.pop(), exc_type) ? True : False);
                         break;
                     case COMPARE_OPS.LT:
                     case COMPARE_OPS.LE:
@@ -629,11 +629,11 @@ function execute(frame) {
                     case COMPARE_OPS.GE:
                     case COMPARE_OPS.EQ:
                     case COMPARE_OPS.NE:
-                        switch (frame.state) {
+                        switch (this.state) {
                             case 0:
                                 slot = COMPARE_SLOTS[instruction.argument];
-                                right = frame.pop();
-                                left = frame.pop();
+                                right = this.pop();
+                                left = this.pop();
                                 if (left.call(slot, [right])) {
                                     return 1;
                                 }
@@ -641,7 +641,7 @@ function execute(frame) {
                                 if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
                                     raise(TypeError, 'unsupported boolean operator');
                                 } else if (vm.return_value) {
-                                    frame.push(vm.return_value);
+                                    this.push(vm.return_value);
                                 }
                                 break;
                         }
@@ -649,12 +649,12 @@ function execute(frame) {
 
                     case COMPARE_OPS.IS:
                     case COMPARE_OPS.NIS:
-                        right = frame.pop();
-                        left = frame.pop();
+                        right = this.pop();
+                        left = this.pop();
                         if (right.is(left)) {
-                            frame.push(instruction.argument == COMPARE_OPS.IS ? True : False)
+                            this.push(instruction.argument == COMPARE_OPS.IS ? True : False)
                         } else {
-                            frame.push(instruction.argument == COMPARE_OPS.NIS ? False : True)
+                            this.push(instruction.argument == COMPARE_OPS.NIS ? False : True)
                         }
                         break;
 
@@ -664,20 +664,20 @@ function execute(frame) {
                 break;
 
             case OPCODES.POP_JUMP_IF_TRUE:
-                if (frame.top0().cls === py_int) {
-                    if (frame.pop().bool()) {
-                        frame.position = instruction.target;
+                if (this.top0().cls === py_int) {
+                    if (this.pop().bool()) {
+                        this.position = instruction.target;
                     }
                     break;
                 }
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (frame.top0().call('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (frame.pop().call('__len__')) {
+                            if (this.pop().call('__len__')) {
                                 return 2;
                             }
                         }
@@ -686,12 +686,12 @@ function execute(frame) {
                             break;
                         }
                         if (except(MethodNotFoundError)) {
-                            frame.position = instruction.target;
+                            this.position = instruction.target;
                             break;
                         } else if (vm.return_value) {
                             if (vm.return_value instanceof PyInt) {
                                 if (vm.return_value.bool()) {
-                                    frame.position = instruction.target;
+                                    this.position = instruction.target;
                                     break;
                                 }
                             } else {
@@ -703,32 +703,32 @@ function execute(frame) {
                 break;
 
             case OPCODES.POP_JUMP_IF_FALSE:
-                if (frame.top0().cls === py_bool || frame.top0().cls === py_int) {
-                    if (!frame.pop().bool()) {
-                        frame.position = instruction.target;
+                if (this.top0().cls === py_bool || this.top0().cls === py_int) {
+                    if (!this.pop().bool()) {
+                        this.position = instruction.target;
                     }
                     break;
                 }
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (frame.top0().call('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (frame.top0().call('__len__')) {
+                            if (this.top0().call('__len__')) {
                                 return 2;
                             }
                         } else if (!vm.return_value) {
-                            frame.pop();
+                            this.pop();
                             break;
                         }
                     case 2:
-                        frame.pop();
+                        this.pop();
                         if (!except(MethodNotFoundError)) {
                             if (vm.return_value instanceof PyInt) {
                                 if (!vm.return_value.bool()) {
-                                    frame.position = instruction.target;
+                                    this.position = instruction.target;
                                     break;
                                 }
                             } else if (vm.return_value) {
@@ -740,88 +740,88 @@ function execute(frame) {
                 break;
 
             case OPCODES.JUMP_IF_TRUE_OR_POP:
-                if (frame.top0().cls === py_int) {
-                    if (frame.top0().bool()) {
-                        frame.position = instruction.target;
+                if (this.top0().cls === py_int) {
+                    if (this.top0().bool()) {
+                        this.position = instruction.target;
                     } else {
-                        frame.pop();
+                        this.pop();
                     }
                     break;
                 }
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (frame.top0().call('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (frame.top0().call('__len__')) {
+                            if (this.top0().call('__len__')) {
                                 return 2;
                             }
                         } else if (!vm.return_value) {
-                            frame.pop();
+                            this.pop();
                             break;
                         }
                     case 2:
                         if (except(MethodNotFoundError)) {
-                            frame.position = instruction.target;
+                            this.position = instruction.target;
                         } else if (vm.return_value) {
                             if (vm.return_value instanceof PyInt) {
                                 if (vm.return_value.bool()) {
-                                    frame.position = instruction.target;
+                                    this.position = instruction.target;
                                 } else {
-                                    frame.pop();
+                                    this.pop();
                                 }
                             } else {
-                                frame.pop();
+                                this.pop();
                                 raise(TypeError, 'invalid result type of boolean conversion');
                             }
                         } else {
-                            frame.pop();
+                            this.pop();
                         }
                         break;
                 }
                 break;
 
             case OPCODES.JUMP_IF_FALSE_OR_POP:
-                if (frame.top0().cls === py_int) {
-                    if (!frame.top0().bool()) {
-                        frame.position = instruction.target;
+                if (this.top0().cls === py_int) {
+                    if (!this.top0().bool()) {
+                        this.position = instruction.target;
                     } else {
-                        frame.pop();
+                        this.pop();
                     }
                     break;
                 }
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (frame.top0().call('__bool__')) {
+                        if (this.top0().call('__bool__')) {
                             return 1;
                         }
                     case 1:
                         if (except(MethodNotFoundError)) {
-                            if (frame.top0().call('__len__')) {
+                            if (this.top0().call('__len__')) {
                                 return 2;
                             }
                         } else if (!vm.return_value) {
-                            frame.pop();
-                            frame.raise();
+                            this.pop();
+                            this.raise();
                             break;
                         }
                     case 2:
                         if (!except(MethodNotFoundError)) {
                             if (vm.return_value instanceof PyInt) {
                                 if (!vm.return_value.bool()) {
-                                    frame.position = instruction.target;
+                                    this.position = instruction.target;
                                 } else {
-                                    frame.pop();
+                                    this.pop();
                                 }
                             } else if (vm.return_value) {
-                                frame.pop();
+                                this.pop();
                                 raise(TypeError, 'invalid result type of boolean conversion');
-                                frame.raise();
+                                this.raise();
                             } else {
-                                frame.pop();
-                                frame.raise();
+                                this.pop();
+                                this.raise();
                             }
                         }
                         break;
@@ -829,22 +829,22 @@ function execute(frame) {
                 break;
 
             case OPCODES.FOR_ITER:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (frame.top0().call('__next__')) {
+                        if (this.top0().call('__next__')) {
                             return 1;
                         }
                     case 1:
                         if (!vm.return_value) {
-                            frame.pop();
+                            this.pop();
                             if (except(MethodNotFoundError)) {
                                 raise(TypeError, 'object does not support iteration');
                             } else if (except(StopIteration)) {
-                                frame.position = instruction.target;
+                                this.position = instruction.target;
                                 break;
                             }
                         } else {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
@@ -854,22 +854,22 @@ function execute(frame) {
             case OPCODES.SETUP_LOOP:
             case OPCODES.SETUP_EXCEPT:
             case OPCODES.SETUP_FINALLY:
-                frame.push_block(OPCODES_EXTRA[instruction.opcode], instruction.target);
+                this.push_block(OPCODES_EXTRA[instruction.opcode], instruction.target);
                 break;
 
             case OPCODES.LOAD_CLOSURE:
-                if (instruction.argument < frame.code.cellvars.length) {
-                    frame.push(frame.cells[frame.code.cellvars[instruction.argument]]);
+                if (instruction.argument < this.code.cellvars.length) {
+                    this.push(this.cells[this.code.cellvars[instruction.argument]]);
                 } else {
-                    frame.push(frame.cells[frame.code.freevars[instruction.argument]]);
+                    this.push(this.cells[this.code.freevars[instruction.argument]]);
                 }
                 break;
 
             case OPCODES.LOAD_DEREF:
-                if (instruction.argument < frame.code.cellvars.length) {
-                    frame.push(frame.cells[frame.code.cellvars[instruction.argument]].get());
+                if (instruction.argument < this.code.cellvars.length) {
+                    this.push(this.cells[this.code.cellvars[instruction.argument]].get());
                 } else {
-                    frame.push(frame.cells[frame.code.freevars[instruction.argument]].get());
+                    this.push(this.cells[this.code.freevars[instruction.argument]].get());
                 }
                 break;
 
@@ -878,8 +878,8 @@ function execute(frame) {
                 break;
 
             case OPCODES.STORE_DEREF:
-                if (instruction.argument < frame.code.cellvars.length) {
-                    frame.cells[frame.code.cellvars[instruction.argument]].set(frame.pop());
+                if (instruction.argument < this.code.cellvars.length) {
+                    this.cells[this.code.cellvars[instruction.argument]].set(this.pop());
                 } else {
                     error('load free variable closure not implemented');
                 }
@@ -893,40 +893,40 @@ function execute(frame) {
                 if (instruction.argument != 1) {
                     error('unsupported raise format');
                 }
-                exc_value = frame.pop();
+                exc_value = this.pop();
                 raise(exc_value.cls, exc_value);
                 break;
 
             case OPCODES.LOAD_CONST:
-                frame.push(frame.code.constants[instruction.argument]);
+                this.push(this.code.constants[instruction.argument]);
                 break;
 
             case OPCODES.CALL_FUNCTION:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
                         low = instruction.argument & 0xFF;
                         high = instruction.argument >> 8;
                         kwargs = {};
                         for (index = 0; index < high; index++) {
-                            value = frame.pop();
-                            kwargs[frame.pop().value] = value;
+                            value = this.pop();
+                            kwargs[this.pop().value] = value;
                         }
-                        args = frame.popn(low);
-                        if (call(frame.pop(), args, kwargs)) {
+                        args = this.popn(low);
+                        if (call(this.pop(), args, kwargs)) {
                             return 1;
                         }
                     case 1:
                         if (vm.return_value) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
                 break;
 
             case OPCODES.CALL_FUNCTION_VAR:
-                switch (frame.state) {
+                switch (this.state) {
                     case 0:
-                        if (call(unpack_sequence, [frame.pop()])) {
+                        if (call(unpack_sequence, [this.pop()])) {
                             return 1;
                         }
                     case 1:
@@ -937,16 +937,16 @@ function execute(frame) {
                         high = instruction.argument >> 8;
                         kwargs = {};
                         for (index = 0; index < high; index++) {
-                            value = frame.pop();
-                            kwargs[frame.pop().value] = value;
+                            value = this.pop();
+                            kwargs[this.pop().value] = value;
                         }
-                        args = frame.popn(low).concat(vm.return_value.array);
-                        if (call(frame.pop(), args, kwargs)) {
+                        args = this.popn(low).concat(vm.return_value.array);
+                        if (call(this.pop(), args, kwargs)) {
                             return 2;
                         }
                     case 3:
                         if (vm.return_value) {
-                            frame.push(vm.return_value);
+                            this.push(vm.return_value);
                         }
                         break;
                 }
@@ -965,36 +965,36 @@ function execute(frame) {
                 low = instruction.argument & 0xFF;
                 mid = (instruction.argument >> 8) & 0xFF;
                 high = (instruction.argument >> 16) & 0x7FFF;
-                name = frame.pop();
-                code = frame.pop();
-                var options = {defaults: {}, annotations: {}, globals: frame.globals};
+                name = this.pop();
+                code = this.pop();
+                var options = {defaults: {}, annotations: {}, globals: this.globals};
                 if (instruction.opcode == OPCODES.MAKE_CLOSURE) {
-                    options.closure = frame.pop();
+                    options.closure = this.pop();
                 }
                 if (high) {
-                    temp = frame.pop();
+                    temp = this.pop();
                     for (index = 0; index < high - 1; index++) {
-                        options.annotations[unpack_str(temp.get(index))] = frame.pop();
+                        options.annotations[unpack_str(temp.get(index))] = this.pop();
                     }
                 }
                 for (index = 0; index < mid; index++) {
-                    value = frame.pop();
-                    options.defaults[frame.pop().value] = value;
+                    value = this.pop();
+                    options.defaults[this.pop().value] = value;
                 }
                 for (index = 0; index < low; index++) {
-                    options.defaults[code.code.signature.argnames[index]] = frame.pop();
+                    options.defaults[code.code.signature.argnames[index]] = this.pop();
                 }
-                frame.push(new PyFunction(unpack_str(name), code.code, options));
+                this.push(new PyFunction(unpack_str(name), code.code, options));
                 break;
 
             case OPCODES.BUILD_SLICE:
-                frame.push(new_slice.apply(null, frame.popn(instruction.argument)));
+                this.push(new_slice.apply(null, this.popn(instruction.argument)));
                 break;
 
             default:
                 error('unknown opcode occoured ' + instruction.opcode);
                 break;
         }
-        frame.state = 0;
+        this.state = 0;
     }
 };
