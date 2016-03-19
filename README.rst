@@ -11,7 +11,7 @@ ready for productive use. Some of the features listed bellow aren't yet implemen
 Features
 --------
 - easily **extensible** with native JavaScript modules (time_, dom_, …)
-- **suspendable** interpreter (coroutine and greenlet support)
+- **suspendable** interpreter — support for **threading** and greenlets
 - full support for meta-classes and builtin subclassing
 - arbitrary-length integers based on BigInteger.js_
 - flexible architecture, build your own Jaspy with the modules you really need
