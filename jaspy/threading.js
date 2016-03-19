@@ -15,27 +15,32 @@
 
 var THREADING_THRESHOLD = ([(THREADING_THRESHOLD)]);
 
-vm.last_frame = null;
-vm.step_counter = 0;
+var threading = {};
+
+threading.last_frame = null;
+threading.step_counter = 0;
 
 function Thread(frame) {
     this.frame = frame;
 }
 
 function internal_step() {
-    if (vm.step_counter > THREADING_THRESHOLD) {
-        vm.last_frame = vm.frame;
+    if (threading.step_counter > THREADING_THRESHOLD) {
+        threading.last_frame = vm.frame;
+        threading.step_counter = 0;
         vm.frame = null;
-        vm.step_counter = 0;
         window.postMessage('jaspy-resume', '*');
         return true;
     }
-    vm.step_counter++;
+    threading.step_counter++;
 }
 
 window.addEventListener('message', function (event) {
     if (event.source == window && event.data == 'jaspy-resume') {
         event.stopPropagation();
-        resume(vm.last_frame);
+        resume(threading.last_frame);
     }
 }, true);
+
+
+$.threading = threading;

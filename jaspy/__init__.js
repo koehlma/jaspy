@@ -14,11 +14,11 @@
  */
 
 // << if INCLUDE_BIGINT
-//  #include '../libs/biginteger/BigInteger.js'
+    // #include '../libs/biginteger/BigInteger.js'
 // >>
 
 // << if INCLUDE_ENCODING
-//  #include '../libs/text-encoding/lib/encoding.js'
+    // #include '../libs/text-encoding/lib/encoding.js'
 // >>
 
 window['jaspy'] = (function () {
@@ -65,5 +65,5 @@ window['jaspy'] = (function () {
 // #include 'sys.js'
 
 // << for module in modules
-//  #include '../modules/' + module + '.js'
+    // #include '../modules/' + module + '.js'
 // >>
