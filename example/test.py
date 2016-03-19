@@ -336,7 +336,15 @@ try:
 except ImportError:
     print('no relative imports')
 
+counter = 0
 
+while True:
+    counter += 1
+    if counter > 500000:
+        print(counter)
+        counter = 0
+
+'''
 a = '\N{MAHJONG TILE GREEN DRAGON}'
 print(a)
 print(len(a))
@@ -357,3 +365,4 @@ while True:
         else:
             p.css('background', '#0000FF')
             x = True
+'''

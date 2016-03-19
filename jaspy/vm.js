@@ -109,6 +109,11 @@ function run() {
                 frame.set_state(state);
             }
         } else if (frame instanceof NativeFrame) {
+            // << if THREADING_SUPPORT
+                if (internal_step()) {
+                    return;
+                }
+            // >>
             assert(!frame.code.simple, 'native frames\'s code is simple');
             var result;
             try {

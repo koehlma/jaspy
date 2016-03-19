@@ -55,6 +55,10 @@ window['jaspy'] = (function () {
     // #include 'execute.js'
     // #include 'vm.js'
 
+    // << if THREADING_SUPPORT
+        // #include 'thread.js'
+    // >>
+
     return jaspy;
 })();
 

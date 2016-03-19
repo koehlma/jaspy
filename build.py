@@ -31,6 +31,9 @@ if __name__ == '__main__':
         'INCLUDE_BIGINT': True,
         'INCLUDE_ENCODING': False,
 
+        'THREADING_SUPPORT': True,
+        'THREADING_THRESHOLD': 5000,
+
         'modules': [],
 
         'metadata': metadata
