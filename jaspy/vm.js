@@ -43,6 +43,7 @@ function resume(object, args, kwargs) {
         call(object, args, kwargs);
         // << if THREADING_SUPPORT
             var thread = new Thread(vm.frame);
+            vm.frame.thread = thread;
             thread.start();
             threading.resume();
             vm.frame = null;
