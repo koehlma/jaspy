@@ -64,6 +64,10 @@ window['jaspy'] = (function () {
 
 // #include 'sys.js'
 
+// << if THREADING_SUPPORT
+    // #include '../modules/_thread.js'
+// >>
+
 // << for module in modules
     // #include '../modules/' + module + '.js'
 // >>

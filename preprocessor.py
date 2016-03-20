@@ -41,6 +41,7 @@ import re
 
 node_regex = re.compile(
     r'(?P<block_start>//\s*<<\s*(?P<block_kind>if|for|while)\s*(?P<block_expr>.+))|'
+    r'(?P<block_else>//\s*--\s*else\s*)|'
     r'(?P<block_end>//\s*>>)|'
 
     r'(?P<define>//\s*#define\s*(?P<define_name>.+?)'
@@ -109,9 +110,19 @@ class Root(Block):
 
 
 class If(Block):
+    def __init__(self, expr=None):
+        super().__init__(expr)
+        self.alternative = None
+
     def evaluate(self, context):
         if context.eval(self.expr):
             super().evaluate(context)
+        elif self.alternative:
+            self.alternative.evaluate(context)
+
+
+class Else(Block):
+    pass
 
 
 class For(Block):
@@ -189,14 +200,24 @@ class Exec(Node):
 
 def parse_block_start(blocks, match):
     groups = match.groupdict()
+    if len(blocks) < 1:
+        raise Exception('block stack underflow at char {}'.format(match.start()))
     blocks.append(block_table[groups['block_kind']](groups['block_expr'].strip()))
+    blocks[-2].append(blocks[-1])
+
+
+def parse_block_else(blocks, _):
+    if not isinstance(blocks[-1], If):
+        raise Exception('else block outside of if block')
+    if_block = blocks.pop()
+    if_block.alternative = Else()
+    blocks.append(if_block.alternative)
 
 
 def parse_block_end(blocks, match):
     if len(blocks) <= 1:
         raise Exception('block stack underflow at char {}'.format(match.start()))
-    block = blocks.pop()
-    blocks[-1].append(block)
+    blocks.pop()
 
 
 def parse_define(blocks, match):
@@ -227,7 +248,7 @@ def parse_exec(blocks, match):
 
 parse_table = {'block_start': parse_block_start, 'block_end': parse_block_end,
                'define': parse_define, 'include': parse_include, 'inline': parse_inline,
-               'eval': parse_eval, 'exec': parse_exec}
+               'eval': parse_eval, 'exec': parse_exec, 'block_else': parse_block_else}
 
 
 def parse(source):

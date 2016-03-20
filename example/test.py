@@ -336,6 +336,34 @@ try:
 except ImportError:
     print('no relative imports')
 
+a = '\N{MAHJONG TILE GREEN DRAGON}'
+print(a)
+print(len(a))
+
+print('a.b.c'.split('.'))
+
+
+def animation():
+    print('start animation')
+    x = True
+    height = 0
+    while True:
+        time.sleep(0.02)
+        height += 1
+        p.css('height', str(height) + 'px')
+        height %= 100
+        if height == 0:
+            if x:
+                p.css('background', '#00FF00')
+                x = False
+            else:
+                p.css('background', '#0000FF')
+                x = True
+
+
+import _thread
+_thread.start_new_thread(animation)
+
 counter = 0
 
 while True:
@@ -343,26 +371,3 @@ while True:
     if counter > 500000:
         print(counter)
         counter = 0
-
-'''
-a = '\N{MAHJONG TILE GREEN DRAGON}'
-print(a)
-print(len(a))
-
-print('a.b.c'.split('.'))
-
-x = True
-height = 0
-while True:
-    time.sleep(0.02)
-    height += 1
-    p.css('height', str(height) + 'px')
-    height %= 100
-    if height == 0:
-        if x:
-            p.css('background', '#00FF00')
-            x = False
-        else:
-            p.css('background', '#0000FF')
-            x = True
-'''

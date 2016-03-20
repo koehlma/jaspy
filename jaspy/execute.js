@@ -18,15 +18,15 @@ PythonFrame.prototype.execute = function() {
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
     while (vm.frame === this) {
+        if (!vm.return_value && this.why != CAUSES.EXCEPTION && this.state == 0) {
+            this.raise();
+        }
+
         // << if THREADING_SUPPORT
             if (threading.internal_step()) {
                 return;
             }
         // >>
-
-        if (!vm.return_value && this.why != CAUSES.EXCEPTION && this.state == 0) {
-            this.raise();
-        }
 
         instruction = this.code.instructions[this.position++];
 

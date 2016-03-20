@@ -26,7 +26,11 @@ function suspend() {
     if (vm.simple_depth != 0) {
         raise(RuntimeError, 'unable to suspend interpreter within a simple native frame');
     } else {
-        vm.frame = null;
+        // << if THREADING_SUPPORT
+            threading.yield();
+        // -- else
+            vm.frame = null;
+        // >>
     }
 }
 
@@ -39,13 +43,19 @@ function resume(object, args, kwargs) {
         call(object, args, kwargs);
         // << if THREADING_SUPPORT
             var thread = new Thread(vm.frame);
-            console.log(thread);
             thread.start();
+            threading.resume();
             vm.frame = null;
             return;
         // >>
     } else if (object instanceof Frame) {
-        vm.frame = object;
+        // << if THREADING_SUPPORT
+            object.thread.enqueue();
+            threading.resume();
+            return;
+        // -- else
+            vm.frame = object;
+        // >>
     } else {
         raise(TypeError, 'invalid type of object to resume to');
     }

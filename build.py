@@ -33,6 +33,7 @@ if __name__ == '__main__':
 
         'THREADING_SUPPORT': True,
         'THREADING_THRESHOLD': 5000,
+        'THREADING_DEBUG': False,
 
         'modules': [],
 

@@ -24,6 +24,10 @@ function Frame(code, options) {
     this.builtins = options.builtins || (this.back ? this.back.builtins : builtins);
 
     this.state = options.state || 0;
+
+    // << if THREADING_SUPPORT
+        this.thread = this.back ? this.back.thread : threading.thread;
+    // >>
 }
 
 
@@ -167,6 +171,11 @@ PythonFrame.prototype.unwind = function (cause) {
                     return;
                 } else if (block.type == BLOCK_TYPES.BASE) {
                     vm.frame = this.back;
+                    // << if THREADING_SUPPORT
+                        if (!vm.frame) {
+                            threading.finished();
+                        }
+                    // >>
                     return;
                 } else {
                     this.blocks.pop()
