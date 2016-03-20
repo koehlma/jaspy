@@ -17,28 +17,53 @@ var THREADING_THRESHOLD = ([(THREADING_THRESHOLD)]);
 
 var threading = {};
 
-threading.last_frame = null;
-threading.step_counter = 0;
+threading.counter = 0;
 
 function Thread(frame) {
     this.frame = frame;
+    this.counter = 0;
+    this.finished = false;
 }
 
+Thread.prototype.start = function () {
+    threading.queue.push(this);
+};
+
+threading.thread = new Thread();
+threading.queue = [];
+
 threading.internal_step = function () {
-    if (threading.step_counter > THREADING_THRESHOLD) {
-        threading.last_frame = vm.frame;
-        threading.step_counter = 0;
+    if (threading.counter > THREADING_THRESHOLD) {
+        threading.thread.frame = vm.frame;
+        threading.counter = 0;
         vm.frame = null;
         window.postMessage('jaspy-resume', '*');
         return true;
     }
-    threading.step_counter++;
+    if (threading.thread.counter > THREADING_THRESHOLD / threading.queue.length) {
+        threading.thread.counter = 0;
+        threading.thread.frame = vm.frame;
+        threading.queue.push(threading.thread);
+        threading.thread = threading.queue.shift();
+        vm.frame = threading.thread.frame;
+        return true;
+    }
+    threading.counter++;
+    threading.thread.counter++;
+};
+
+threading.finished = function () {
+    threading.thread.finished = true;
+    if (threading.queue.length) {
+        threading.thread = threading.queue.shift();
+        vm.frame = threading.thread.frame;
+    }
 };
 
 window.addEventListener('message', function (event) {
     if (event.source == window && event.data == 'jaspy-resume') {
         event.stopPropagation();
-        resume(threading.last_frame);
+        resume(threading.thread.frame);
     }
 }, true);
 

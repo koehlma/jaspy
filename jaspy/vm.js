@@ -37,6 +37,13 @@ function resume(object, args, kwargs) {
 
     if (object instanceof PyObject) {
         call(object, args, kwargs);
+        // << if THREADING_SUPPORT
+            var thread = new Thread(vm.frame);
+            console.log(thread);
+            thread.start();
+            vm.frame = null;
+            return;
+        // >>
     } else if (object instanceof Frame) {
         vm.frame = object;
     } else {
@@ -122,6 +129,11 @@ function run() {
                 if (error instanceof PyObject) {
                     raise(error.cls, error, undefined, true);
                     vm.frame = frame.back;
+                    // << if THREADING_SUPPORT
+                        if (!vm.frame) {
+                            threading.finished();
+                        }
+                    // >>
                     continue;
                 }
                 //throw error;
@@ -131,6 +143,11 @@ function run() {
                     vm.return_value = result;
                 }
                 vm.frame = frame.back;
+                // << if THREADING_SUPPORT
+                    if (!vm.frame) {
+                        threading.finished();
+                    }
+                // >>
             } else {
                 frame.state = result;
             }
