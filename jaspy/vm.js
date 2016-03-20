@@ -110,8 +110,8 @@ function run() {
             }
         } else if (frame instanceof NativeFrame) {
             // << if THREADING_SUPPORT
-                if (internal_step()) {
-                    return;
+                if (threading.internal_step()) {
+                    continue;
                 }
             // >>
             assert(!frame.code.simple, 'native frames\'s code is simple');

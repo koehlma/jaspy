@@ -24,7 +24,7 @@ function Thread(frame) {
     this.frame = frame;
 }
 
-function internal_step() {
+threading.internal_step = function () {
     if (threading.step_counter > THREADING_THRESHOLD) {
         threading.last_frame = vm.frame;
         threading.step_counter = 0;
@@ -33,7 +33,7 @@ function internal_step() {
         return true;
     }
     threading.step_counter++;
-}
+};
 
 window.addEventListener('message', function (event) {
     if (event.source == window && event.data == 'jaspy-resume') {

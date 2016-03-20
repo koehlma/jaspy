@@ -19,7 +19,7 @@ PythonFrame.prototype.execute = function() {
 
     while (vm.frame === this) {
         // << if THREADING_SUPPORT
-            if (internal_step()) {
+            if (threading.internal_step()) {
                 return;
             }
         // >>
