@@ -213,17 +213,10 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
     vm.return_value = null;
 
     if (!exc_tb) {
-        next_tb = None;
-
         frame = vm.frame;
         while (frame) {
-            exc_tb = py_traceback.make();
-            exc_tb.next = next_tb;
-            exc_tb.frame = frame;
-            exc_tb.position = frame.position - 1;
-            exc_tb.line = frame.get_line_number();
+            exc_tb = new PyTraceback(frame, frame.position - 1, frame.get_line_number(), exc_tb);
             frame = frame.back;
-            next_tb = exc_tb;
         }
     }
 

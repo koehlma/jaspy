@@ -28,14 +28,7 @@ function make_exception(cls, message) {
 }
 
 
-function format_traceback(traceback) {
-    var string = ['Traceback (most recent call last):'];
-    while (traceback && traceback != None) {
-        string.push('    File \'' + traceback.frame.code.filename + '\', line ' + traceback.line + ', in ' + traceback.frame.code.name);
-        traceback = traceback.next;
-    }
-    return string.join('\n');
-}
+
 
 function format_exception(exc_value) {
     var string = [];
@@ -48,10 +41,6 @@ function format_exception(exc_value) {
         string.push(exc_value.cls.name);
     }
     return string.join('\n');
-}
-
-function print_traceback(traceback) {
-    console.error(format_traceback(traceback));
 }
 
 function print_exception(exc_value) {
