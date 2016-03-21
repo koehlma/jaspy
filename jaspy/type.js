@@ -17,7 +17,7 @@ function get_mro(cls) {
     return cls.mro;
 }
 
-function compute_mro(cls) {
+function linearize(cls) {
     var pending = cls.bases.map(get_mro), result = [cls];
     var index, head, good;
     while (pending.length != 0) {
@@ -55,7 +55,7 @@ function PyType(name, bases, attributes, mcs) {
     PyObject.call(this, mcs || py_type, attributes || {});
     this.name = name;
     this.bases = bases || [py_object];
-    this.mro = compute_mro(this);
+    this.mro = linearize(this);
     this.native = null;
     for (index = 0; index < this.mro.length; index++) {
         native = this.mro[index].native;
