@@ -27,13 +27,15 @@ os.chdir(__path__)
 if __name__ == '__main__':
     namespace = {
         'DEBUG': True,
+        'DEBUG_EXCEPTIONS': True,
+        'DEBUG_THREADING': False,
 
         'INCLUDE_BIGINT': True,
         'INCLUDE_ENCODING': False,
 
         'THREADING_SUPPORT': True,
         'THREADING_LIMIT': 5000,
-        'THREADING_DEBUG': False,
+
 
         'modules': [],
 

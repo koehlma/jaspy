@@ -14,7 +14,7 @@
  */
 
 
-// << if THREADING_DEBUG
+// << if DEBUG_THREADING
     function threading_debug_enter() {
         console.log('[threading] entering thread ' + threading.thread.identifier);
     }
@@ -42,7 +42,7 @@ var threading = {
     },
 
     finished: function () {
-        // << if THREADING_DEBUG
+        // << if DEBUG_THREADING
             threading_debug_leave();
             if (vm.return_value) {
                 console.log('[threading] thread finished execution without exception');
@@ -56,12 +56,12 @@ var threading = {
         if (threading.queue.length) {
             threading.thread = threading.queue.shift();
             threading.thread.restore();
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_enter();
             // >>
             vm.frame = threading.thread.frame;
         } else {
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 console.log('[threading] passing control back to browser, no more queued threads');
             // >>
             threading.counter = 0;
@@ -75,7 +75,7 @@ var threading = {
             threading.counter = 0;
             threading.resumeing = true;
             threading.thread.save();
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_leave();
                 console.log('[threading] passing control back to browser, limit reached');
             // >>
@@ -88,12 +88,12 @@ var threading = {
             threading.thread.counter = 0;
             threading.thread.save();
             threading.thread.enqueue();
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_leave();
             // >>
             threading.thread = threading.queue.shift();
             threading.thread.restore();
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_enter();
             // >>
             vm.frame = threading.thread.frame;
@@ -110,12 +110,12 @@ var threading = {
         }
         threading.thread.save();
         if (threading.queue.length) {
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_leave();
             // >>
             threading.thread = threading.queue.shift();
             threading.thread.restore();
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_enter();
             // >>
             vm.frame = threading.thread.frame;
@@ -133,7 +133,7 @@ var threading = {
             if (!threading.thread) {
                 threading.thread = threading.queue.shift();
             }
-            // << if THREADING_DEBUG
+            // << if DEBUG_THREADING
                 threading_debug_enter();
             // >>
             threading.thread.restore();

@@ -229,7 +229,7 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
 
     exc_value.traceback = exc_tb;
 
-    // << if DEBUG
+    // << if DEBUG_EXCEPTIONS
         print_exception(exc_value);
     // >>
 
