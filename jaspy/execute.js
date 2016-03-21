@@ -13,6 +13,19 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+/* <<
+import opcode
+>> */
+
+// << if DEBUG_INSTRUCTIONS
+    var OP_NAMES = {};
+    // << for name, code in opcode.opmap.items()
+        OP_NAMES['$$code$$'] = '/* {{ name }} */';
+    // >>
+// >>
+
+
 PythonFrame.prototype.execute = function() {
     var slot, right, left, name, key, value, block, exc_type, exc_value, exc_tb, temp;
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
@@ -30,9 +43,9 @@ PythonFrame.prototype.execute = function() {
 
         instruction = this.code.instructions[this.position++];
 
-        if (DEBUG) {
-            console.log('executing instruction', instruction);
-        }
+        // << if DEBUG_INSTRUCTIONS
+            console.log('[execute] executing instruction ' + OP_NAMES[instruction.opcode] + '(' + instruction.argument + ') at position ' + instruction.position + ' with state ' + this.state + ' in ' + this.code.name+ '[' + this.code.filename + ']');
+        // >>
 
         switch (instruction.opcode) {
             case OPCODES.NOP:

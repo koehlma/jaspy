@@ -27,6 +27,7 @@ os.chdir(__path__)
 if __name__ == '__main__':
     namespace = {
         'DEBUG': True,
+        'DEBUG_INSTRUCTIONS': False,
         'DEBUG_EXCEPTIONS': True,
         'DEBUG_THREADING': False,
 

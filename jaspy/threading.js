@@ -27,7 +27,7 @@
 
 var threading = {
     counter: 0,
-    limit: $$THREADING_LIMIT$$,
+    limit: '$$THREADING_LIMIT$$',
     identifier: 1,
     thread: null,
     queue: [],
