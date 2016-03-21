@@ -29,7 +29,7 @@ function suspend() {
         raise(RuntimeError, 'unable to suspend interpreter within simple native frame');
     } else {
         // << if THREADING_SUPPORT
-            threading.yield();
+            threading.drop();
         // -- else
             vm.frame = null;
         // >>
@@ -46,7 +46,7 @@ function resume(object, args, kwargs) {
         call(object, args, kwargs);
         // << if THREADING_SUPPORT
             vm.frame.thread = new Thread(vm.frame);
-            vm.frame.thread.start();
+            vm.frame.thread.enqueue();
             vm.frame = null;
         // >>
     } else if (object instanceof Frame) {

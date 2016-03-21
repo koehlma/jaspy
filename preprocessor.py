@@ -50,7 +50,7 @@ node_regex = re.compile(
     r'(?P<include>//\s*#include\s*(?P<include_expr>.+))|'
 
     r'(?P<eval>/\*\s*\{\{(?P<eval_expr>.+?)\}\}\s*\*/)|'
-    r'(?P<inline>\(\[\((?P<inline_expr>.+)\)\]\))|'
+    r'(?P<inline>\$\$(?P<inline_expr>.+)\$\$)|'
 
     r'(?P<exec>/\*\s*<<(?P<exec_code>(.|\n)*)>>\s*\*/)')
 

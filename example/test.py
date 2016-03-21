@@ -360,9 +360,35 @@ def animation():
                 p.css('background', '#0000FF')
                 x = True
 
-
 import _thread
+
+
+lock = _thread.allocate_lock()
+
+
+def test_lock_1():
+    while True:
+        lock.acquire()
+        print('1: acquire lock')
+        time.sleep(5)
+        print('1: release lock')
+        lock.release()
+
+
+def test_lock_2():
+    while True:
+        lock.acquire()
+        print('2: critical section')
+        lock.release()
+
+
+_thread.start_new_thread(test_lock_1)
+_thread.start_new_thread(test_lock_2)
+
+
 _thread.start_new_thread(animation)
+
+
 
 counter = 0
 

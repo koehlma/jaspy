@@ -49,7 +49,7 @@ py_int.$def('__str__', function (self) {
     return pack_str(self.toString());
 });
 
-py_int.define_alias('__str__', '__repr__');
+py_int.$def_alias('__str__', '__repr__');
 
 py_int.$def('__bool__', function (self) {
     return pack_bool(self.ne(False));
@@ -90,71 +90,71 @@ py_int.$def('__ge__', function (self, other) {
 py_int.$def('__pow__', function (self, other) {
     return self.pow(other);
 }, ['other']);
-py_int.define_alias('__pow__', '__ipow__');
-py_int.define_alias('__pow__', '__rpow__');
+py_int.$def_alias('__pow__', '__ipow__');
+py_int.$def_alias('__pow__', '__rpow__');
 
 py_int.$def('__mul__', function (self, other) {
     return self.mul(other);
 }, ['other']);
-py_int.define_alias('__mul__', '__imul__');
-py_int.define_alias('__mul__', '__rmul__');
+py_int.$def_alias('__mul__', '__imul__');
+py_int.$def_alias('__mul__', '__rmul__');
 
 py_int.$def('__floordiv__', function (self, other) {
     return self.floordiv(other);
 }, ['other']);
-py_int.define_alias('__floordiv__', '__ifloordiv__');
-py_int.define_alias('__floordiv__', '__rfloordiv__');
+py_int.$def_alias('__floordiv__', '__ifloordiv__');
+py_int.$def_alias('__floordiv__', '__rfloordiv__');
 
 py_int.$def('__truediv__', function (self, other) {
     return self.truediv(other);
 }, ['other']);
-py_int.define_alias('__truediv__', '__itruediv__');
-py_int.define_alias('__truediv__', '__rtruediv__');
+py_int.$def_alias('__truediv__', '__itruediv__');
+py_int.$def_alias('__truediv__', '__rtruediv__');
 
 py_int.$def('__mod__', function (self, other) {
     return self.mod(other);
 }, ['other']);
-py_int.define_alias('__mod__', '__imod__');
-py_int.define_alias('__mod__', '__rmod__');
+py_int.$def_alias('__mod__', '__imod__');
+py_int.$def_alias('__mod__', '__rmod__');
 
 py_int.$def('__add__', function (self, other) {
     return self.add(other);
 }, ['other']);
-py_int.define_alias('__add__', '__iadd__');
-py_int.define_alias('__add__', '__radd__');
+py_int.$def_alias('__add__', '__iadd__');
+py_int.$def_alias('__add__', '__radd__');
 
 py_int.$def('__sub__', function (self, other) {
     return self.sub(other);
 }, ['other']);
-py_int.define_alias('__sub__', '__isub__');
-py_int.define_alias('__sub__', '__rsub__');
+py_int.$def_alias('__sub__', '__isub__');
+py_int.$def_alias('__sub__', '__rsub__');
 
 py_int.$def('__lshift__', function (self, other) {
     return self.lshift(other);
 }, ['other']);
-py_int.define_alias('__lshift__', '__ilshift__');
-py_int.define_alias('__lshift__', '__rlshift__');
+py_int.$def_alias('__lshift__', '__ilshift__');
+py_int.$def_alias('__lshift__', '__rlshift__');
 
 py_int.$def('__rshift__', function (self, other) {
     return self.rshift(other);
 }, ['other']);
-py_int.define_alias('__rshift__', '__irshift__');
-py_int.define_alias('__rshift__', '__rrshift__');
+py_int.$def_alias('__rshift__', '__irshift__');
+py_int.$def_alias('__rshift__', '__rrshift__');
 
 py_int.$def('__and__', function (self, other) {
     return self.and(other);
 }, ['other']);
-py_int.define_alias('__and__', '__iand__');
-py_int.define_alias('__and__', '__rand__');
+py_int.$def_alias('__and__', '__iand__');
+py_int.$def_alias('__and__', '__rand__');
 
 py_int.$def('__xor__', function (self, other) {
     return self.xor(other);
 }, ['other']);
-py_int.define_alias('__xor__', '__ixor__');
-py_int.define_alias('__xor__', '__rxor__');
+py_int.$def_alias('__xor__', '__ixor__');
+py_int.$def_alias('__xor__', '__rxor__');
 
 py_int.$def('__or__', function (self, other) {
     return self.or(other);
 }, ['other']);
-py_int.define_alias('__or__', '__ior__');
-py_int.define_alias('__or__', '__ror__');
+py_int.$def_alias('__or__', '__ior__');
+py_int.$def_alias('__or__', '__ror__');

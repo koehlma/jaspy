@@ -55,8 +55,8 @@ py_str.$def('__len__', function (self)  {
 py_str.$def('__add__', function (self, other) {
     return pack_str(unpack_str(self) + unpack_str(other));
 }, ['other']);
-py_str.define_alias('__add__', '__iadd__');
-py_str.define_alias('__add__', '__radd__');
+py_str.$def_alias('__add__', '__iadd__');
+py_str.$def_alias('__add__', '__radd__');
 
 py_str.$def('__hash__', function (self) {
     return self;

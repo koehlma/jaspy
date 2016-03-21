@@ -87,7 +87,7 @@ PyType.prototype.define = function (name, item) {
     return item;
 };
 
-PyType.prototype.define_alias = function (name, alias) {
+PyType.prototype.$def_alias = function (name, alias) {
     return this.define(alias, this.lookup(name));
 };
 
@@ -163,6 +163,10 @@ PyType.native = function (name, bases, attributes, mcs) {
     var type = new PyType(name, bases, attributes, mcs);
     type.native = type;
     return type;
+};
+
+PyType.prototype.make = function (dict) {
+    return new PyObject(this, dict)
 };
 
 function $class(name, bases, attributes, mcs) {

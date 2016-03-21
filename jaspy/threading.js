@@ -13,31 +13,147 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var THREADING_THRESHOLD = ([(THREADING_THRESHOLD)]);
 
-var thread_identity = 0;
+// << if THREADING_DEBUG
+    function threading_debug_enter() {
+        console.log('[threading] entering thread ' + threading.thread.identifier);
+    }
 
-var threading = {};
+    function threading_debug_leave() {
+        console.log('[threading] leaving thread ' + threading.thread.identifier);
+    }
+// >>
 
-threading.counter = 0;
+
+var threading = {
+    counter: 0,
+    limit: $$THREADING_LIMIT$$,
+    identifier: 1,
+    thread: null,
+    queue: [],
+    resuming: false,
+
+    resume: function () {
+        if (!threading.resumeing) {
+            threading.resumeing = true;
+            window.postMessage('jaspy-resume', '*');
+        }
+    },
+
+    finished: function () {
+        // << if THREADING_DEBUG
+        threading_debug_leave();
+        if (vm.return_value) {
+            console.log('[threading] thread finished execution without exception');
+        } else {
+            console.log('[threading] thread finished execution with exception');
+        }
+        // >>
+        threading.thread.save();
+        threading.thread.finished = true;
+        threading.thread.frame = null;
+        if (threading.queue.length) {
+            threading.thread = threading.queue.shift();
+            threading.thread.restore();
+            // << if THREADING_DEBUG
+            threading_debug_enter();
+            // >>
+            vm.frame = threading.thread.frame;
+        } else {
+            // << if THREADING_DEBUG
+            console.log('[threading] passing control back to browser, no more queued threads');
+            // >>
+            threading.counter = 0;
+            threading.thread = null;
+            vm.frame = null;
+        }
+    },
+
+    step: function () {
+        if (threading.counter > threading.limit) {
+            threading.counter = 0;
+            threading.resumeing = true;
+            threading.thread.save();
+            // << if THREADING_DEBUG
+            threading_debug_leave();
+            console.log('[threading] passing control back to browser, limit reached');
+            // >>
+            window.postMessage('jaspy-resume', '*');
+            vm.frame = null;
+            return true;
+        }
+
+        if (threading.thread.counter > threading.limit / threading.queue.length) {
+            threading.thread.counter = 0;
+            threading.thread.save();
+            threading.thread.enqueue();
+            // << if THREADING_DEBUG
+            threading_debug_leave();
+            // >>
+            threading.thread = threading.queue.shift();
+            threading.thread.restore();
+            // << if THREADING_DEBUG
+            threading_debug_enter();
+            // >>
+            vm.frame = threading.thread.frame;
+            return true;
+        }
+
+        threading.counter++;
+        threading.thread.counter++;
+    },
+
+    drop: function (requeue) {
+        if (requeue) {
+            threading.thread.enqueue();
+        }
+        threading.thread.save();
+        if (threading.queue.length) {
+            // << if THREADING_DEBUG
+            threading_debug_leave();
+            // >>
+            threading.thread = threading.queue.shift();
+            threading.thread.restore();
+            // << if THREADING_DEBUG
+            threading_debug_enter();
+            // >>
+            vm.frame = threading.thread.frame;
+        } else {
+            threading.counter = 0;
+            threading.thread = null;
+            vm.frame = null;
+        }
+    },
+
+    wakeup: function (event) {
+        if (event.source == window && event.data == 'jaspy-resume') {
+            threading.resumeing = false;
+            event.stopPropagation();
+            if (!threading.thread) {
+                threading.thread = threading.queue.shift();
+            }
+            // << if THREADING_DEBUG
+            threading_debug_enter();
+            // >>
+            threading.thread.restore();
+            run();
+        }
+    }
+};
 
 
 function Thread(frame) {
     this.frame = frame;
     this.counter = 0;
     this.finished = false;
-    this.identity = thread_identity++;
+    this.identifier = threading.identifier++;
 
     this.return_value = None;
     this.last_exception = null;
 }
 
 Thread.prototype.toString = function () {
-    return '<Thread ' + this.identity.toString() + '>';
-};
-
-Thread.prototype.start = function () {
-    threading.queue.push(this);
+    return '<Thread ' + this.identifier.toString() + '>';
 };
 
 Thread.prototype.enqueue = function () {
@@ -58,124 +174,56 @@ Thread.prototype.restore = function () {
     vm.last_exception = this.last_exception;
 };
 
-threading.thread = null;
-threading.queue = [];
-threading.resumeing = false;
 
-// << if THREADING_DEBUG
-    function threading_debug_enter() {
-        var frame = threading.thread.frame;
-        var message = '[threading] entering thread ' + threading.thread.identity + ' with state ' + frame.state;
-        if (frame instanceof PythonFrame) {
-            console.log(message + ' at position ' + frame.position + '\n', frame, frame.stack.slice());
-        } else {
-            console.log(message + '\n', frame);
-        }
-    }
+function Lock(reentrant) {
+    this.reentrant = reentrant;
+    this.waiting = [];
+    this.thread = null;
+}
 
-    function threading_debug_leave() {
-        var frame = threading.thread.frame;
-        var message = '[threading] leaving thread ' + threading.thread.identity + ' with state ' + frame.state;
-        if (frame instanceof PythonFrame) {
-            console.log(message + ' at position ' + threading.thread.frame.position + '\n', frame, frame.stack.slice());
-        } else {
-            console.log(message + '\n', frame);
-        }
-    }
-// >>
-
-threading.resume = function () {
-    if (!threading.resumeing) {
-        threading.resumeing = true;
-        window.postMessage('jaspy-resume', '*');
-    }
-};
-
-threading.internal_step = function () {
-    if (threading.counter > THREADING_THRESHOLD) {
-        threading.thread.save();
-        // << if THREADING_DEBUG
-            threading_debug_leave();
-        // >>
-        threading.counter = 0;
-        vm.frame = null;
-        threading.resumeing = true;
-        window.postMessage('jaspy-resume', '*');
+Lock.prototype.acquire = function (thread) {
+    thread = thread || threading.thread;
+    if (!this.thread || (this.reentrant && this.thread === thread)) {
+        this.thread = thread;
         return true;
     }
-    if (threading.thread.counter > THREADING_THRESHOLD / threading.queue.length) {
-        threading.thread.counter = 0;
-        threading.thread.save();
-        threading.thread.enqueue();
-        // << if THREADING_DEBUG
-            threading_debug_leave();
-        // >>
-        threading.thread = threading.queue.shift();
-        threading.thread.restore();
-        // << if THREADING_DEBUG
-            threading_debug_enter();
-        // >>
-        vm.frame = threading.thread.frame;
+    this.waiting.push(thread);
+    return false;
+};
+
+Lock.prototype.release = function (thread) {
+    thread = thread || threading.thread;
+    if (this.thread === thread) {
+        if (this.waiting.length) {
+            this.thread = this.waiting.shift();
+            this.thread.enqueue();
+        } else {
+            this.thread = null;
+        }
         return true;
     }
-    threading.counter++;
-    threading.thread.counter++;
+    raise(ValueError, 'unable to release lock, lock is not acquired by given thread');
 };
 
-threading.finished = function () {
-    threading.thread.finished = true;
-    if (threading.queue.length) {
-        threading.thread = threading.queue.shift();
-        threading.thread.restore();
-        // << if THREADING_DEBUG
-            threading_debug_enter();
-        // >>
-        vm.frame = threading.thread.frame;
+Lock.prototype.remove = function (thread) {
+    thread = thread || threading.thread;
+    var index = this.waiting.indexOf(thread);
+    if (index > -1) {
+        this.waiting.splice(index, 1);
     } else {
-        threading.counter = 0;
-        threading.thread = null;
-        vm.frame = null;
+        raise(ValueError, 'unable to remove thread from waiting threads, thread not found');
     }
 };
 
-threading.yield = function (requeue) {
-    if (requeue) {
-        threading.thread.enqueue();
-    }
-    threading.thread.save();
-    if (threading.queue.length) {
-        // << if THREADING_DEBUG
-            threading_debug_leave();
-        // >>
-        threading.thread = threading.queue.shift();
-        threading.thread.restore();
-        // << if THREADING_DEBUG
-            threading_debug_enter();
-        // >>
-        vm.frame = threading.thread.frame;
-    } else {
-        threading.counter = 0;
-        threading.thread = null;
-        vm.frame = null;
-    }
+Lock.prototype.locked = function () {
+    return this.thread != null;
 };
 
-window.addEventListener('message', function (event) {
-    if (event.source == window && event.data == 'jaspy-resume') {
-        threading.resumeing = false;
-        event.stopPropagation();
-        if (!threading.thread) {
-            threading.thread = threading.queue.shift();
-        }
-        // << if THREADING_DEBUG
-            threading_debug_enter();
-        // >>
-        threading.thread.restore();
-        run();
-    }
-}, true);
+
+window.addEventListener('message', threading.wakeup, true);
 
 
 $.threading = threading;
 
 $.Thread = Thread;
+$.Lock = Lock;

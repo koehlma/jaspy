@@ -81,41 +81,41 @@ py_float.$def('__ge__', function (self, other) {
 py_float.$def('__pow__', function (self, other) {
     return pack_float(Math.pow(unpack_number(self), unpack_number(other)));
 }, ['other']);
-py_float.define_alias('__pow__', '__ipow__');
-py_float.define_alias('__pow__', '__rpow__');
+py_float.$def_alias('__pow__', '__ipow__');
+py_float.$def_alias('__pow__', '__rpow__');
 
 py_float.$def('__mul__', function (self, other) {
     return pack_float(unpack_number(self) * unpack_number(other));
 }, ['other']);
-py_float.define_alias('__mul__', '__imul__');
-py_float.define_alias('__mul__', '__rmul__');
+py_float.$def_alias('__mul__', '__imul__');
+py_float.$def_alias('__mul__', '__rmul__');
 
 py_float.$def('__floordiv__', function (self, other) {
     return pack_int(Math.floor(unpack_number(self) / unpack_number(other)));
 }, ['other']);
-py_float.define_alias('__floordiv__', '__ifloordiv__');
-py_float.define_alias('__floordiv__', '__rfloordiv__');
+py_float.$def_alias('__floordiv__', '__ifloordiv__');
+py_float.$def_alias('__floordiv__', '__rfloordiv__');
 
 py_float.$def('__truediv__', function (self, other) {
     return pack_float(unpack_number(self) / unpack_number(other));
 }, ['other']);
-py_float.define_alias('__truediv__', '__itruediv__');
-py_float.define_alias('__truediv__', '__rtruediv__');
+py_float.$def_alias('__truediv__', '__itruediv__');
+py_float.$def_alias('__truediv__', '__rtruediv__');
 
 py_float.$def('__mod__', function (self, other) {
     return pack_float(unpack_number(self) % unpack_number(other));
 }, ['other']);
-py_float.define_alias('__mod__', '__imod__');
-py_float.define_alias('__mod__', '__rmod__');
+py_float.$def_alias('__mod__', '__imod__');
+py_float.$def_alias('__mod__', '__rmod__');
 
 py_float.$def('__add__', function (self, other) {
     return pack_float(unpack_number(self) + unpack_number(other));
 }, ['other']);
-py_float.define_alias('__add__', '__iadd__');
-py_float.define_alias('__add__', '__radd__');
+py_float.$def_alias('__add__', '__iadd__');
+py_float.$def_alias('__add__', '__radd__');
 
 py_float.$def('__sub__', function (self, other) {
     return pack_float(unpack_number(self) - unpack_number(other));
 }, ['other']);
-py_float.define_alias('__sub__', '__isub__');
-py_float.define_alias('__sub__', '__rsub__');
+py_float.$def_alias('__sub__', '__isub__');
+py_float.$def_alias('__sub__', '__rsub__');

@@ -32,7 +32,7 @@ if __name__ == '__main__':
         'INCLUDE_ENCODING': False,
 
         'THREADING_SUPPORT': True,
-        'THREADING_THRESHOLD': 5000,
+        'THREADING_LIMIT': 5000,
         'THREADING_DEBUG': False,
 
         'modules': [],

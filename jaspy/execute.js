@@ -23,7 +23,7 @@ PythonFrame.prototype.execute = function() {
         }
 
         // << if THREADING_SUPPORT
-            if (threading.internal_step()) {
+            if (threading.step()) {
                 return;
             }
         // >>
@@ -1008,7 +1008,7 @@ PythonFrame.prototype.execute = function() {
 
 NativeFrame.prototype.execute = function () {
     // << if THREADING_SUPPORT
-        if (threading.internal_step()) {
+        if (threading.step()) {
             return;
         }
     // >>
