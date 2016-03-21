@@ -58,7 +58,7 @@ Thread.prototype.restore = function () {
     vm.last_exception = this.last_exception;
 };
 
-threading.thread = new Thread();
+threading.thread = null;
 threading.queue = [];
 threading.resumeing = false;
 

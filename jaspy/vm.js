@@ -13,18 +13,20 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var vm = {};
 
-vm.frame = null;
+var vm = {
+    frame: null,
 
-vm.return_value = None;
-vm.last_exception = null;
+    return_value: None,
+    last_exception: null,
 
-vm.simple_depth = 0;
+    simple_depth: 0
+};
+
 
 function suspend() {
     if (vm.simple_depth != 0) {
-        raise(RuntimeError, 'unable to suspend interpreter within a simple native frame');
+        raise(RuntimeError, 'unable to suspend interpreter within simple native frame');
     } else {
         // << if THREADING_SUPPORT
             threading.yield();
@@ -34,6 +36,7 @@ function suspend() {
     }
 }
 
+
 function resume(object, args, kwargs) {
     if (vm.frame) {
         raise(RuntimeError, 'interpreter is already running');
@@ -42,18 +45,13 @@ function resume(object, args, kwargs) {
     if (object instanceof PyObject) {
         call(object, args, kwargs);
         // << if THREADING_SUPPORT
-            var thread = new Thread(vm.frame);
-            vm.frame.thread = thread;
-            thread.start();
-            threading.resume();
+            vm.frame.thread = new Thread(vm.frame);
+            vm.frame.thread.start();
             vm.frame = null;
-            return;
         // >>
     } else if (object instanceof Frame) {
         // << if THREADING_SUPPORT
             object.thread.enqueue();
-            threading.resume();
-            return;
         // -- else
             vm.frame = object;
         // >>
@@ -61,8 +59,36 @@ function resume(object, args, kwargs) {
         raise(TypeError, 'invalid type of object to resume to');
     }
 
-    return run();
+    // << if THREADING_SUPPORT
+        threading.resume();
+    // -- else
+        return run();
+    // >>
 }
+
+
+function run() {
+    var frame, state;
+
+    while (vm.frame) {
+        frame = vm.frame;
+        state = frame.execute();
+        if (state != undefined) {
+            frame.set_state(state);
+        }
+    }
+
+    // << if not THREADING_SUPPORT
+        if (vm.return_value) {
+            return vm.return_value;
+        } else {
+            console.error('An unhandled Exception occurred during execution!');
+        }
+    // >>
+}
+
+
+
 
 function except(exc_type) {
     if (!vm.return_value && issubclass(vm.last_exception.exc_type, exc_type)) {
@@ -117,59 +143,7 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
     }
 }
 
-function run() {
-    var frame, state;
-    while (vm.frame) {
-        frame = vm.frame;
-        if (frame instanceof PythonFrame) {
-            state = frame.execute();
-            if (state != undefined) {
-                frame.set_state(state);
-            }
-        } else if (frame instanceof NativeFrame) {
-            // << if THREADING_SUPPORT
-                if (threading.internal_step()) {
-                    continue;
-                }
-            // >>
-            assert(!frame.code.simple, 'native frames\'s code is simple');
-            var result;
-            try {
-                result = frame.code.func.apply(null, frame.args.concat([frame.state, frame]));
-            } catch (error) {
-                if (error instanceof PyObject) {
-                    raise(error.cls, error, undefined, true);
-                    vm.frame = frame.back;
-                    // << if THREADING_SUPPORT
-                        if (!vm.frame) {
-                            threading.finished();
-                        }
-                    // >>
-                    continue;
-                }
-                //throw error;
-            }
-            if (result == undefined || result instanceof PyObject) {
-                if (result instanceof PyObject && vm.return_value) {
-                    vm.return_value = result;
-                }
-                vm.frame = frame.back;
-                // << if THREADING_SUPPORT
-                    if (!vm.frame) {
-                        threading.finished();
-                    }
-                // >>
-            } else {
-                frame.state = result;
-            }
-        }
-    }
-    if (vm.return_value) {
-        return vm.return_value;
-    } else {
-        console.error('An unhandled Exception occurred during execution!');
-    }
-}
+
 
 function main(module, argv) {
     if (vm.frame) {
@@ -181,6 +155,9 @@ function main(module, argv) {
     get_namespace('sys')['argv'] = new PyList((argv || ['']).map(pack_str));
     register_module('__main__', module);
     module.dict['__name__'] = pack_str('__main__');
+    // << if THREADING_SUPPORT
+        threading.thread = new Thread();
+    // >>
     vm.frame = new PythonFrame(module.code, {
         builtins: builtins, locals: module.dict,
         globals: module.dict

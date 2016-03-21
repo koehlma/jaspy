@@ -1004,3 +1004,42 @@ PythonFrame.prototype.execute = function() {
         this.state = 0;
     }
 };
+
+
+NativeFrame.prototype.execute = function () {
+    // << if THREADING_SUPPORT
+        if (threading.internal_step()) {
+            return;
+        }
+    // >>
+    assert(!this.code.simple, 'native frames\'s code is simple');
+    var result;
+    try {
+        result = this.code.func.apply(null, this.args.concat([this.state, this]));
+    } catch (error) {
+        if (error instanceof PyObject) {
+            raise(error.cls, error, undefined, true);
+            vm.frame = this.back;
+            // << if THREADING_SUPPORT
+                if (!vm.frame) {
+                    threading.finished();
+                }
+            // >>
+            return;
+        }
+        //throw error;
+    }
+    if (result == undefined || result instanceof PyObject) {
+        if (result instanceof PyObject && vm.return_value) {
+            vm.return_value = result;
+        }
+        vm.frame = this.back;
+        // << if THREADING_SUPPORT
+            if (!vm.frame) {
+                threading.finished();
+            }
+        // >>
+    } else {
+        this.state = result;
+    }
+};
