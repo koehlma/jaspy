@@ -32,6 +32,7 @@ var threading = {
     thread: null,
     queue: [],
     resuming: false,
+    main: null,
 
     resume: function () {
         if (!threading.resumeing) {
@@ -221,6 +222,9 @@ Lock.prototype.locked = function () {
 
 
 window.addEventListener('message', threading.wakeup, true);
+
+
+threading.main = new Thread();
 
 
 $.threading = threading;

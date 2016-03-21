@@ -88,6 +88,159 @@ function run() {
 }
 
 
+function main(module, argv) {
+    if (vm.frame) {
+        raise(RuntimeError, 'interpreter is already running');
+    }
+    if (!(module instanceof PythonModule)) {
+        raise(TypeError, 'invalid type of main module');
+    }
+
+    // << if THREADING_SUPPORT
+        if (threading.main.frame) {
+            raise(RuntimeError, 'main thread is already running');
+        }
+    // >>
+
+    get_namespace('sys')['argv'] = new PyList((argv || ['']).map(pack_str));
+    register_module('__main__', module);
+
+    module.dict['__name__'] = pack_str('__main__');
+
+    vm.frame = new PythonFrame(module.code, {
+        builtins: builtins,
+        locals: module.dict,
+        globals: module.dict
+    });
+
+    // << if THREADING_SUPPORT
+        vm.frame.thread = threading.main;
+        vm.frame.thread.frame = vm.frame;
+
+        vm.frame.thread.return_value = None;
+        vm.frame.thread.last_exception = null;
+
+        vm.frame.thread.enqueue();
+
+        threading.resume();
+    // -- else
+        return run();
+    // >>
+}
+
+
+function call(object, args, kwargs, defaults, closure, globals, namespace) {
+    var code, result;
+    while (true) {
+        if (object instanceof PythonCode) {
+            if ((object.flags & CODE_FLAGS.GENERATOR) != 0) {
+                vm.return_value = new PyGenerator(object, new PythonFrame(object, {
+                    back: null, defaults: defaults, args: args, kwargs: kwargs,
+                    globals: globals, closure: closure, namespace: namespace
+                }));
+                return null;
+            } else {
+                vm.frame = new PythonFrame(object, {
+                    back: vm.frame, defaults: defaults, args: args, kwargs: kwargs,
+                    globals: globals, closure: closure, namespace: namespace
+                });
+                return vm.frame;
+            }
+        } else if (object instanceof NativeCode) {
+            if (object.simple) {
+                vm.simple_depth++;
+                try {
+                    result = object.func.apply(null, object.parse_args(args, kwargs, defaults));
+                    vm.return_value = result || None;
+                } catch (error) {
+                    if (error instanceof PyObject) {
+                        raise(error.cls, error, null, true);
+                    } else {
+                        raise(JSError, pack_error(error), null, true);
+                    }
+                } finally {
+                    vm.simple_depth--;
+                }
+                return null;
+            } else {
+                vm.frame = new NativeFrame(object, {
+                    back: vm.frame, defaults: defaults, args: args, kwargs: kwargs,
+                    globals: globals, closure: closure, namespace: namespace
+                });
+                return vm.frame;
+            }
+        } else if (object instanceof PyFunction) {
+            closure = object.closure;
+            globals = object.globals;
+            defaults = object.defaults;
+            object = object.code;
+        } else if (object instanceof PyMethod) {
+            args = [object.self].concat(args);
+            object = object.func;
+        } else if (object instanceof PyObject) {
+            result = object.call('__call__', args, kwargs);
+            if (except(MethodNotFoundError)) {
+                raise(TypeError, object.cls.name + ' object is not callable', null, true);
+                return null;
+            } else {
+                return result;
+            }
+        } else if (object instanceof PythonModule) {
+            vm.frame = new PythonFrame(object.code, {
+                back: vm.frame, locals: object.dict, globals: object.dict
+            });
+            return vm.frame;
+        } else {
+            raise(TypeError, 'invalid low level callable \'' + object + '\'', null, true);
+        }
+    }
+}
+
+
+function raise(exc_type, exc_value, exc_tb, suppress) {
+    var frame, next_tb;
+
+    if (!vm.frame) {
+        error(exc_value);
+    }
+
+    if (typeof exc_value == 'string') {
+        exc_value = make_exception(exc_type, exc_value);
+    }
+
+    exc_value.context = vm.return_value === null ? vm.last_exception.exc_value : None;
+
+    vm.return_value = null;
+
+    if (!exc_tb) {
+        next_tb = None;
+
+        frame = vm.frame;
+        while (frame) {
+            exc_tb = py_traceback.make();
+            exc_tb.next = next_tb;
+            exc_tb.frame = frame;
+            exc_tb.position = frame.position - 1;
+            exc_tb.line = frame.get_line_number();
+            frame = frame.back;
+            next_tb = exc_tb;
+        }
+
+        exc_value.traceback = exc_tb;
+    }
+
+    // << if DEBUG
+        print_exception(exc_value);
+    // >>
+
+    vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
+
+    if ((vm.frame instanceof NativeFrame || vm.simple_depth > 0) && !suppress) {
+        throw exc_value;
+    } else {
+        return exc_value;
+    }
+}
 
 
 function except(exc_type) {
@@ -98,152 +251,6 @@ function except(exc_type) {
     return false;
 }
 
-function raise(exc_type, exc_value, exc_tb, suppress) {
-    var frame;
-
-    if (!vm.frame) {
-        error(exc_value);
-    }
-
-    if (typeof exc_value == 'string') {
-        exc_value = new_exception(exc_type, exc_value);
-    }
-
-    if (vm.return_value === null) {
-        exc_value.dict['__context__'] = vm.last_exception.exc_value;
-    }
-    vm.return_value = null;
-
-    // TODO: create an traceback object
-    if (!exc_tb) {
-        if (TRACEBACK_ON_EXCEPTION) {
-            var message = [];
-            frame = vm.frame;
-            while (frame) {
-                message.push('    File "' + frame.code.filename + '", line ' + frame.get_line_number() + ', in ' + frame.code.name);
-                frame = frame.back;
-            }
-            message.push('Traceback (most recent call last):');
-            message = message.reverse();
-            if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').array[0] instanceof PyStr) {
-                message.push(exc_type.name + ': ' + exc_value.getattr('args').array[0]);
-            } else {
-                message.push(exc_type.name);
-            }
-            console.error(message.join('\n'));
-        }
-        exc_tb = None;
-        exc_value.dict['__traceback__'] = exc_tb;
-    }
-
-    vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
-
-    if ((vm.frame instanceof NativeFrame || vm.simple_depth > 0) && !suppress) {
-        throw exc_value;
-    }
-}
-
-
-
-function main(module, argv) {
-    if (vm.frame) {
-        raise(RuntimeError, 'interpreter is already running');
-    }
-    if (!(module instanceof PythonModule)) {
-        raise(TypeError, 'invalid type of module');
-    }
-    get_namespace('sys')['argv'] = new PyList((argv || ['']).map(pack_str));
-    register_module('__main__', module);
-    module.dict['__name__'] = pack_str('__main__');
-    // << if THREADING_SUPPORT
-        threading.thread = new Thread();
-    // >>
-    vm.frame = new PythonFrame(module.code, {
-        builtins: builtins, locals: module.dict,
-        globals: module.dict
-    });
-    return run();
-}
-
-function call(object, args, kwargs, defaults, closure, globals, namespace) {
-    var code, result, frame;
-    while (true) {
-        if (object instanceof PythonCode) {
-            if ((object.flags & CODE_FLAGS.GENERATOR) != 0) {
-                vm.return_value = new PyGenerator(object, new PythonFrame(object, {
-                    back: null, defaults: defaults, args: args, kwargs: kwargs,
-                    closure: closure, namespace: namespace
-                }));
-                return null;
-            }
-            frame = new PythonFrame(object, {
-                vm: vm, back: vm.frame, defaults: defaults,
-                args: args, kwargs: kwargs, closure: closure,
-                globals: globals, namespace: namespace
-            });
-            vm.frame = frame;
-            return frame;
-        } else if (object instanceof NativeCode) {
-            if (object.simple) {
-                args = object.parse_args(args, kwargs, defaults);
-                vm.simple_depth++;
-                try {
-                    result = object.func.apply(null, args);
-                    vm.return_value = result || None;
-                } catch (error) {
-                    if (error instanceof PyObject) {
-                        raise(error.cls, error);
-                        vm.frame = vm.frame.back;
-                    } else {
-                        throw error;
-                    }
-                } finally {
-                    vm.simple_depth--;
-                }
-                return null;
-            } else {
-                vm.frame = frame = new NativeFrame(object, {
-                    back: vm.frame, defaults: defaults,
-                    args: args, kwargs: kwargs
-                });
-                return frame;
-            }
-        } else if (object instanceof PyFunction) {
-            code = object.code;
-            closure = object.closure;
-            globals = object.globals;
-            if (code instanceof Code) {
-                defaults = object.defaults;
-                object = code;
-                if (closure instanceof PyTuple) {
-                    closure = closure.value;
-                }
-            } else {
-                raise(TypeError, 'invalid type of function code')
-                return null;
-            }
-        } else if (object instanceof PyMethod) {
-            args = [object.self].concat(args);
-            object = object.func;
-        } else if (object instanceof PyObject) {
-            result = object.call('__call__', args, kwargs);
-            if (except(MethodNotFoundError)) {
-                raise(TypeError, object.cls.name + ' object is not callable');
-                return null;
-            }
-            return result;
-        } else if (object instanceof PythonModule) {
-            vm.frame = new PythonFrame(object.code, {
-                locals: object.dict,
-                globals: object.dict, back: vm.frame
-            });
-            return vm.frame;
-        } else {
-            error('invalid callable ' + object);
-        }
-    }
-}
-
 
 $.vm = vm;
 
@@ -251,3 +258,5 @@ $.suspend = suspend;
 $.resume = resume;
 $.main = main;
 $.call = call;
+$.raise = raise;
+$.except = except;

@@ -125,7 +125,7 @@ var TimeoutError = new PyType('TimeoutError', [OSError]);
 var MethodNotFoundError = new PyType('MethodNotFoundError', [TypeError]);
 var METHOD_NOT_FOUND = {
     exc_type: MethodNotFoundError,
-    exc_value: new_exception(MethodNotFoundError, 'method not found'),
+    exc_value: make_exception(MethodNotFoundError, 'method not found'),
     exc_tb: None
 };
 

@@ -21,10 +21,39 @@ function PyException(args, cls) {
 extend(PyException, PyObject);
 
 
-function new_exception(cls, message) {
+function make_exception(cls, message) {
     var exc_value = new PyObject(cls, {});
     exc_value.dict['args'] = pack_tuple([pack_str(message)]);
     return exc_value;
 }
 
 
+function format_traceback(traceback) {
+    var string = ['Traceback (most recent call last):'];
+    while (traceback && traceback != None) {
+        string.push('    File \'' + traceback.frame.code.filename + '\', line ' + traceback.line + ', in ' + traceback.frame.code.name);
+        traceback = traceback.next;
+    }
+    return string.join('\n');
+}
+
+function format_exception(exc_value) {
+    var string = [];
+    if (exc_value.traceback) {
+        string.push(format_traceback(exc_value.traceback));
+    }
+    if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').array[0] instanceof PyStr) {
+        string.push(exc_value.cls.name + ': ' + exc_value.getattr('args').array[0]);
+    } else {
+        string.push(exc_value.cls.name);
+    }
+    return string.join('\n');
+}
+
+function print_traceback(traceback) {
+    console.error(format_traceback(traceback));
+}
+
+function print_exception(exc_value) {
+    console.error(format_exception(exc_value));
+}
