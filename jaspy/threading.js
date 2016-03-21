@@ -42,12 +42,12 @@ var threading = {
 
     finished: function () {
         // << if THREADING_DEBUG
-        threading_debug_leave();
-        if (vm.return_value) {
-            console.log('[threading] thread finished execution without exception');
-        } else {
-            console.log('[threading] thread finished execution with exception');
-        }
+            threading_debug_leave();
+            if (vm.return_value) {
+                console.log('[threading] thread finished execution without exception');
+            } else {
+                console.log('[threading] thread finished execution with exception');
+            }
         // >>
         threading.thread.save();
         threading.thread.finished = true;
@@ -56,12 +56,12 @@ var threading = {
             threading.thread = threading.queue.shift();
             threading.thread.restore();
             // << if THREADING_DEBUG
-            threading_debug_enter();
+                threading_debug_enter();
             // >>
             vm.frame = threading.thread.frame;
         } else {
             // << if THREADING_DEBUG
-            console.log('[threading] passing control back to browser, no more queued threads');
+                console.log('[threading] passing control back to browser, no more queued threads');
             // >>
             threading.counter = 0;
             threading.thread = null;
@@ -75,8 +75,8 @@ var threading = {
             threading.resumeing = true;
             threading.thread.save();
             // << if THREADING_DEBUG
-            threading_debug_leave();
-            console.log('[threading] passing control back to browser, limit reached');
+                threading_debug_leave();
+                console.log('[threading] passing control back to browser, limit reached');
             // >>
             window.postMessage('jaspy-resume', '*');
             vm.frame = null;
@@ -88,12 +88,12 @@ var threading = {
             threading.thread.save();
             threading.thread.enqueue();
             // << if THREADING_DEBUG
-            threading_debug_leave();
+                threading_debug_leave();
             // >>
             threading.thread = threading.queue.shift();
             threading.thread.restore();
             // << if THREADING_DEBUG
-            threading_debug_enter();
+                threading_debug_enter();
             // >>
             vm.frame = threading.thread.frame;
             return true;
@@ -110,12 +110,12 @@ var threading = {
         threading.thread.save();
         if (threading.queue.length) {
             // << if THREADING_DEBUG
-            threading_debug_leave();
+                threading_debug_leave();
             // >>
             threading.thread = threading.queue.shift();
             threading.thread.restore();
             // << if THREADING_DEBUG
-            threading_debug_enter();
+                threading_debug_enter();
             // >>
             vm.frame = threading.thread.frame;
         } else {
@@ -133,7 +133,7 @@ var threading = {
                 threading.thread = threading.queue.shift();
             }
             // << if THREADING_DEBUG
-            threading_debug_enter();
+                threading_debug_enter();
             // >>
             threading.thread.restore();
             run();
