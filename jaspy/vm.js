@@ -225,9 +225,9 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
             frame = frame.back;
             next_tb = exc_tb;
         }
-
-        exc_value.traceback = exc_tb;
     }
+
+    exc_value.traceback = exc_tb;
 
     // << if DEBUG
         print_exception(exc_value);
