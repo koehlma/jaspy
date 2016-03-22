@@ -34,7 +34,9 @@ if __name__ == '__main__':
         'INCLUDE_BIGINT': True,
         'INCLUDE_ENCODING': False,
 
-        'THREADING_SUPPORT': True,
+        'ENABLE_DEBUGGER': True,
+        'ENABLE_THREADING': True,
+
         'THREADING_LIMIT': 5000,
 
 

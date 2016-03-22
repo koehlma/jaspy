@@ -25,7 +25,7 @@ function Frame(code, options) {
 
     this.state = options.state || 0;
 
-    // << if THREADING_SUPPORT
+    // << if ENABLE_THREADING
         this.thread = this.back ? this.back.thread : threading.thread;
     // >>
 }
@@ -171,7 +171,7 @@ PythonFrame.prototype.unwind = function (cause) {
                     return;
                 } else if (block.type == BLOCK_TYPES.BASE) {
                     vm.frame = this.back;
-                    // << if THREADING_SUPPORT
+                    // << if ENABLE_THREADING
                         if (!vm.frame) {
                             threading.finished();
                         }
@@ -184,7 +184,7 @@ PythonFrame.prototype.unwind = function (cause) {
             case CAUSES.RETURN:
                 if (block.type == BLOCK_TYPES.BASE) {
                     vm.frame = this.back;
-                    // << if THREADING_SUPPORT
+                    // << if ENABLE_THREADING
                         if (!vm.frame) {
                             threading.finished();
                         }

@@ -33,7 +33,7 @@
             }
             setTimeout(run, 500);*/
             var start = (new Date()).getTime();
-            jaspy.main(jaspy.get_module('test'), ['-a', 'abc']);
+            jaspy.debug(jaspy.get_module('test'), ['-a', 'abc'], 'ws://localhost:8080/debug', {redirect_console: true});
             var stop = (new Date()).getTime();
             console.log('execution time: ' + (stop - start));
         }

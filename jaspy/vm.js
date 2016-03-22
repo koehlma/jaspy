@@ -28,7 +28,7 @@ function suspend() {
     if (vm.simple_depth != 0) {
         raise(RuntimeError, 'unable to suspend interpreter within simple native frame');
     } else {
-        // << if THREADING_SUPPORT
+        // << if ENABLE_THREADING
             threading.drop();
         // -- else
             vm.frame = null;
@@ -44,13 +44,13 @@ function resume(object, args, kwargs) {
 
     if (object instanceof PyObject) {
         call(object, args, kwargs);
-        // << if THREADING_SUPPORT
+        // << if ENABLE_THREADING
             vm.frame.thread = new Thread(vm.frame);
             vm.frame.thread.enqueue();
             vm.frame = null;
         // >>
     } else if (object instanceof Frame) {
-        // << if THREADING_SUPPORT
+        // << if ENABLE_THREADING
             object.thread.enqueue();
         // -- else
             vm.frame = object;
@@ -59,7 +59,7 @@ function resume(object, args, kwargs) {
         raise(TypeError, 'invalid type of object to resume to');
     }
 
-    // << if THREADING_SUPPORT
+    // << if ENABLE_THREADING
         threading.resume();
     // -- else
         return run();
@@ -78,7 +78,7 @@ function run() {
         }
     }
 
-    // << if not THREADING_SUPPORT
+    // << if not ENABLE_THREADING
         if (vm.return_value) {
             return vm.return_value;
         } else {
@@ -96,7 +96,7 @@ function main(module, argv) {
         raise(TypeError, 'invalid type of main module');
     }
 
-    // << if THREADING_SUPPORT
+    // << if ENABLE_THREADING
         if (threading.main.frame) {
             raise(RuntimeError, 'main thread is already running');
         }
@@ -113,7 +113,7 @@ function main(module, argv) {
         globals: module.dict
     });
 
-    // << if THREADING_SUPPORT
+    // << if ENABLE_THREADING
         vm.frame.thread = threading.main;
         vm.frame.thread.frame = vm.frame;
 
@@ -131,6 +131,11 @@ function main(module, argv) {
 
 function call(object, args, kwargs, defaults, closure, globals, namespace) {
     var code, result;
+
+    // << if ENABLE_DEBUGGER
+        debugging.trace_call();
+    // >>
+
     while (true) {
         if (object instanceof PythonCode) {
             if ((object.flags & CODE_FLAGS.GENERATOR) != 0) {

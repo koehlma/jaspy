@@ -13,6 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 function get_mro(cls) {
     return cls.mro;
 }
@@ -87,9 +88,7 @@ PyType.prototype.define = function (name, item) {
     return item;
 };
 
-PyType.prototype.$def_alias = function (name, alias) {
-    return this.define(alias, this.lookup(name));
-};
+
 
 PyType.prototype.$def = function (name, func, signature, options) {
     options = options || {};
@@ -106,7 +105,7 @@ PyType.prototype.$def_property = function (name, getter, setter) {
     if (setter) {
         setter = $def(setter, ['self', 'value'], options);
     }
-    return this.define(name, new new_property(getter, setter));
+    return this.define(name, new_property(getter, setter));
 };
 
 PyType.prototype.$def_classmethod = function (name, func, signature, options) {
@@ -114,6 +113,10 @@ PyType.prototype.$def_classmethod = function (name, func, signature, options) {
     options.name = options.name || name;
     options.qualname = options.qualname || (this.name + '.' + options.name);
     return this.define(name, $def(func, ['cls'].concat(signature || []), options));
+};
+
+PyType.prototype.$def_alias = function (name, alias) {
+    return this.define(alias, this.lookup(name));
 };
 
 PyType.prototype.call_classmethod = function (name, args, kwargs) {
@@ -138,15 +141,6 @@ PyType.prototype.call_staticmethod = function (name, args, kwargs) {
     }
 };
 
-/*
-
-PyType.prototype.create = function (args, kwargs) {
-    if (this.call('__call__', args, kwargs)) {
-        raise(TypeError, 'invalid call to python code during object creation')
-    }
-    return vm.return_value;
-};*/
-
 PyType.prototype.check = function (object) {
     if (!isinstance(object, this)) {
         raise(TypeError, 'native type check failed');
@@ -159,14 +153,14 @@ PyType.prototype.check_subclass = function (cls) {
     }
 };
 
+PyType.prototype.make = function (dict) {
+    return new PyObject(this, dict)
+};
+
 PyType.native = function (name, bases, attributes, mcs) {
     var type = new PyType(name, bases, attributes, mcs);
     type.native = type;
     return type;
-};
-
-PyType.prototype.make = function (dict) {
-    return new PyObject(this, dict)
 };
 
 function $class(name, bases, attributes, mcs) {

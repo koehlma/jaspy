@@ -35,7 +35,7 @@ PythonFrame.prototype.execute = function() {
             this.raise();
         }
 
-        // << if THREADING_SUPPORT
+        // << if ENABLE_THREADING
             if (threading.step()) {
                 return;
             }
@@ -1020,7 +1020,7 @@ PythonFrame.prototype.execute = function() {
 
 
 NativeFrame.prototype.execute = function () {
-    // << if THREADING_SUPPORT
+    // << if ENABLE_THREADING
         if (threading.step()) {
             return;
         }
@@ -1033,7 +1033,7 @@ NativeFrame.prototype.execute = function () {
         if (error instanceof PyObject) {
             raise(error.cls, error, undefined, true);
             vm.frame = this.back;
-            // << if THREADING_SUPPORT
+            // << if ENABLE_THREADING
                 if (!vm.frame) {
                     threading.finished();
                 }
@@ -1047,7 +1047,7 @@ NativeFrame.prototype.execute = function () {
             vm.return_value = result;
         }
         vm.frame = this.back;
-        // << if THREADING_SUPPORT
+        // << if ENABLE_THREADING
             if (!vm.frame) {
                 threading.finished();
             }

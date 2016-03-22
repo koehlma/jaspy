@@ -55,8 +55,12 @@ window['jaspy'] = (function () {
     // #include 'execute.js'
     // #include 'vm.js'
 
-    // << if THREADING_SUPPORT
+    // << if ENABLE_THREADING
         // #include 'threading.js'
+    // >>
+
+    // << if ENABLE_DEBUGGER
+        // #include 'debugger.js'
     // >>
 
     return jaspy;
@@ -64,7 +68,7 @@ window['jaspy'] = (function () {
 
 // #include 'sys.js'
 
-// << if THREADING_SUPPORT
+// << if ENABLE_THREADING
     // #include '../modules/_thread.js'
 // >>
 

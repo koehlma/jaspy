@@ -12,6 +12,7 @@ Features
 --------
 - easily **extensible** with native JavaScript modules (time_, dom_, …)
 - **suspendable** interpreter — support for **threading** and greenlets
+- integrated **debugger** — interactive command line remote debugger
 - full support for meta-classes and builtin subclassing
 - arbitrary-length integers based on BigInteger.js_
 - flexible architecture, build your own Jaspy with the modules you really need

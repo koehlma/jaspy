@@ -33,6 +33,7 @@ var threading = {
     queue: [],
     resuming: false,
     main: null,
+    registry: {},
 
     resume: function () {
         if (!threading.resumeing) {
@@ -53,6 +54,7 @@ var threading = {
         threading.thread.save();
         threading.thread.finished = true;
         threading.thread.frame = null;
+        delete threading.registry[threading.thread.identifier];
         if (threading.queue.length) {
             threading.thread = threading.queue.shift();
             threading.thread.restore();
@@ -102,6 +104,10 @@ var threading = {
 
         threading.counter++;
         threading.thread.counter++;
+
+        // << if ENABLE_DEBUGGER
+            return debugging.step();
+        // >>
     },
 
     drop: function (requeue) {
@@ -151,6 +157,13 @@ function Thread(frame) {
 
     this.return_value = None;
     this.last_exception = null;
+
+    // << if ENABLE_DEBUGGER
+        this.debug_break = false;
+        this.debug_line = -1;
+    // >>
+
+    threading.registry[this.identifier] = this;
 }
 
 Thread.prototype.toString = function () {
