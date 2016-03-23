@@ -10,12 +10,12 @@ ready for productive use. Some of the features listed bellow aren't yet implemen
 
 Features
 --------
+- **suspendable** interpreter with support for **threading** and greenlets
+- integrated **debugger** - interactive remote debugger, PyCharm, …
+- **flexible** architecture, build Jaspy with the features you really need
 - easily **extensible** with native JavaScript modules (time_, dom_, …)
-- **suspendable** interpreter — support for **threading** and greenlets
-- integrated **debugger** — interactive command line remote debugger
 - full support for meta-classes and builtin subclassing
 - arbitrary-length integers based on BigInteger.js_
-- flexible architecture, build your own Jaspy with the modules you really need
 
 .. _BigInteger.js: https://github.com/peterolson/BigInteger.js
 .. _time: https://github.com/koehlma/jaspy/blob/master/modules/time.js
