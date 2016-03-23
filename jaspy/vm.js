@@ -133,7 +133,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
     var code, result;
 
     // << if ENABLE_DEBUGGER
-        debugging.trace_call();
+        debugging.trace_call(object, args, kwargs, defaults, closure, globals, namespace);
     // >>
 
     while (true) {
@@ -232,6 +232,10 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
     // >>
 
     vm.last_exception = {exc_type: exc_type, exc_value: exc_value, exc_tb: exc_tb};
+
+    // << if ENABLE_DEBUGGER
+        debugging.trace_raise(exc_type, exc_value, exc_tb);
+    // >>
 
     if ((vm.frame instanceof NativeFrame || vm.simple_depth > 0) && !suppress) {
         throw exc_value;

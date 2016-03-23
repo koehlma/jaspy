@@ -221,6 +221,10 @@ function PythonCode(bytecode, options) {
 extend(PythonCode, Code);
 
 PythonCode.prototype.get_line_number = function (position) {
+    if (position < 0) {
+        return 0;
+    }
+
     var index, offset_increment, line_increment;
     var address = this.instructions[position].start;
     var line_number = this.firstline;

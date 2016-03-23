@@ -23,12 +23,26 @@ var debugging = {
 
     websocket: null,
 
+    breakpoints: {},
+
     id: 0,
 
     step: function () {
+        var line;
+
         if (debugging.connected) {
+            if (vm.frame.code.filename in debugging.breakpoints) {
+                line = vm.frame.get_line_number();
+                if (line != vm.frame.debug_line && line in debugging.breakpoints[vm.frame.code.filename]) {
+                    vm.frame.debug_line = line;
+                    debugging.send_message('pause', [threading.thread.identifier]);
+                    threading.drop();
+                    return true;
+                }
+                vm.frame.debug_line = line;
+            }
             if (threading.thread.debug_break) {
-                debug_send_message('PAUSE', [threading.thread.identifier]);
+                debug_send_message('pause', [threading.thread.identifier]);
                 threading.drop();
                 return true;
             }
@@ -37,6 +51,11 @@ var debugging = {
 
     trace_call: function () {
         //debugging.websocket.send('call');
+    },
+
+
+    trace_raise: function (exc_type, exc_value, exc_tb) {
+        console.log('trace exception');
     },
 
     send_message: function (cmd, args, id) {
@@ -78,6 +97,24 @@ var debugging = {
             threading.registry[identifier].enqueue();
             threading.resume();
         },
+
+
+        'break_add': function (id, filename, line) {
+            if (!(filename in debugging.breakpoints)) {
+                debugging.breakpoints[filename] = {};
+            }
+            debugging.breakpoints[filename][line] = true;
+        },
+
+
+        'js_eval': function (id, code) {
+            eval(code);
+        },
+
+        'js_debugger': function (id) {
+            debugger;
+        },
+
 
         'EXCEPTION_BREAK_ADD': function () {
 
