@@ -27,7 +27,7 @@ window['jaspy'] = (function () {
     var $ = {};
     var jaspy = $;
 
-    // << if DEBUG
+    // << if ENABLE_DEBUGGER
         console.info('Jaspy Python Interpreter\nDebugging Mode!');
     // >>
 
