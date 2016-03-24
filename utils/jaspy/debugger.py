@@ -17,12 +17,22 @@ import json
 
 import aiohttp
 
+from . import converter
+from . import event
+
 sessions = []
 
 
 EVENTS = {
-    'emit_threads': 'on_threads',
-    'emit_pause': 'on_pause'
+    'threads': 'on_threads',
+    'suspended': 'on_suspended',
+
+
+    'hello': 'on_hello',
+
+    'thread_created': 'on_thread_created',
+    'thread_suspended': 'on_thread_suspended',
+    'thread_finished': 'on_thread_finished'
 }
 
 
@@ -66,15 +76,25 @@ class Debugger:
     def unregister_listener(self, listener):
         self.listeners.remove(listener)
 
+    def exec(self, source):
+        code = compile(source, '<debugger>', 'exec')
+        self.send('exec', converter.convert(code))
+
+    def eval(self, thread_id, frame_id, string):
+        code = compile(string, '<debugger>', 'eval')
+        self.send('eval', thread_id, frame_id, converter.convert(code))
+
     async def handle(self):
         sessions.append(self)
 
         try:
+            event.emit('session_created', self)
             async for message in self.websocket:
                 if message.tp == aiohttp.MsgType.text:
                     data = json.loads(message.data)
-                    event = EVENTS[data['cmd']]
+                    handle = EVENTS[data['cmd']]
                     for listener in self.listeners:
-                        getattr(listener, event)(int(data['seq']), *data['args'])
+                        getattr(listener, handle)(self, int(data['seq']), *data['args'])
         finally:
             sessions.remove(self)
+            event.emit('session_closed', self)

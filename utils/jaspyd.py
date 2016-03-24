@@ -31,6 +31,7 @@ parser.add_argument('--port', default=8080, type=int)
 parser.add_argument('--root-directory', default='.')
 parser.add_argument('--jaspy-js', default=default_jaspy_js)
 parser.add_argument('--modules-directory', default=default_modules_dir)
+parser.add_argument('--interactive', action='store_true')
 
 arguments = parser.parse_args()
 
@@ -40,6 +41,11 @@ server = jaspy.Server(arguments.jaspy_js, arguments.modules_directory,
                       arguments.host, arguments.port, root_directory)
 
 server.start()
+
+if arguments.interactive:
+    import jaspy.interactive
+    console = jaspy.interactive.InteractiveConsole()
+    console.start()
 
 asyncio.get_event_loop().run_forever()
 

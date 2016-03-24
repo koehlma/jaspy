@@ -34,6 +34,9 @@ setup(
     url='https://github.com/koehlma/jaspy',
     license='LGPLv3',
     scripts=['build', 'jaspy'],
+    extras_require={
+        'interactive remote console': ['ptpython']
+    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

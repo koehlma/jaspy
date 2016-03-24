@@ -19,6 +19,7 @@ import os.path
 import aiohttp
 import aiohttp.web
 
+from .debugger import Debugger
 from .converter import compile_and_convert
 
 
@@ -41,7 +42,13 @@ class Server:
         self.router.add_static('/', self.root_dir)
 
     async def debugger(self, request):
-        print(self, request)
+        websocket = aiohttp.web.WebSocketResponse()
+        await websocket.prepare(request)
+
+        debugger = Debugger(websocket)
+        await debugger.handle()
+
+        return websocket
 
     async def load(self, request):
         name = request.match_info['name']

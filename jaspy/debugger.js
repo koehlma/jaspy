@@ -25,7 +25,27 @@ var debugging = {
 
     breakpoints: {},
 
+    suspended: [],
+
     id: 0,
+
+
+    suspend: function () {
+        var frame, frames;
+        debugging.suspended.push(threading.thread);
+        frame = threading.thread.frame;
+        frames = [];
+        while (frame) {
+            frames.push({
+                'file': frame.code.filename,
+                'line': frame.get_line_number(),
+                'name': frame.code.name
+            });
+            frame = frame.back;
+        }
+        debugging.send_message('suspended', [threading.thread.identifier, frames]);
+        threading.drop();
+    },
 
     step: function () {
         var line;
@@ -39,20 +59,7 @@ var debugging = {
                 vm.frame.debug_line = line;
             }
             if (threading.thread.debug_break) {
-                var frame = vm.frame;
-                var frames = [];
-                while (frame) {
-                    var locals = {};
-                    frames.push({
-                        'file': frame.code.filename,
-                        'name': frame.code.name,
-                        'line': frame.get_line_number()
-                    });
-                    frame = frame.back;
-                }
-                debug_send_message('pause', [threading.thread.identifier, frames]);
-                threading.drop();
-                return true;
+                debugging.suspend();
             }
         }
     },
@@ -68,7 +75,7 @@ var debugging = {
 
     send_message: function (cmd, args, id) {
         id = id == undefined ? debugging.id++ : id;
-        debugging.websocket.send(JSON.stringify({'cmd': cmd, 'id': id, 'args': args}));
+        debugging.websocket.send(JSON.stringify({'cmd': cmd, 'seq': id, 'args': args || []}));
     },
 
     send_hello: function () {
@@ -147,8 +154,23 @@ var debugging = {
             debugging.send_message('locals', [thread_id, frame_id, locals], id);
         },
 
+        eval: function (seq, thread_id, frame_number, source) {
+            var code = eval(source);
+            var thread = threading.get_thread(thread_id);
+            var frame = thread.get_frame(frame_number);
+            thread.restore();
+            vm.frame = new PythonFrame(code.code, {
+                back: vm.frame, locals: frame.locals, globals: frame.globals,
+                namespace: frame.namespace
+            });
+            thread.save();
+        },
 
-
+        exec: function (seq, source) {
+            var code = eval(source);
+            (new Thread(new PythonFrame(code.code))).enqueue();
+            threading.resume();
+        },
 
         'break_add': function (id, filename, line) {
             if (!(filename in debugging.breakpoints)) {

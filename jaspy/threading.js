@@ -35,6 +35,10 @@ var threading = {
     main: null,
     registry: {},
 
+    get_thread: function (identifier) {
+        return threading.registry[identifier];
+    },
+
     resume: function () {
         if (!threading.resumeing) {
             threading.resumeing = true;
@@ -186,6 +190,15 @@ Thread.prototype.restore = function () {
 
     vm.return_value = this.return_value;
     vm.last_exception = this.last_exception;
+};
+
+Thread.prototype.get_frame = function (number) {
+    var frame = this.frame;
+    while (number > 0) {
+        frame = frame.back;
+        number--;
+    }
+    return frame;
 };
 
 
