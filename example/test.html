@@ -5,18 +5,14 @@
 
     <title>Jaspy</title>
 
-    <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
+    <script src="/jaspy.js"></script>
 
-    <script src="../build/jaspy.js"></script>
+    <script src="/load/test"></script>
+    <script src="/load/example"></script>
 
-    <script src="test.py.js"></script>
-
-    <script src="../modules/time.js"></script>
-    <script src="../modules/dom.js"></script>
-    <script src="../modules/greenlet.js"></script>
-
-
-    <script src="example.py.js"></script>
+    <script src="/modules/time.js"></script>
+    <script src="/modules/dom.js"></script>
+    <script src="/modules/greenlet.js"></script>
 
     <script>
         function on_load() {
@@ -33,7 +29,8 @@
             }
             setTimeout(run, 500);*/
             var start = (new Date()).getTime();
-            jaspy.debug(jaspy.get_module('test'), ['-a', 'abc'], 'ws://localhost:8080/debug', {redirect_console: true});
+            //jaspy.debug(jaspy.get_module('test'), ['-a', 'abc'], 'ws://localhost:8080/debug', {redirect_console: true});
+            jaspy.main(jaspy.get_module('test'), ['-a', 'abc']);
             var stop = (new Date()).getTime();
             console.log('execution time: ' + (stop - start));
         }

@@ -34,15 +34,23 @@ var debugging = {
             if (vm.frame.code.filename in debugging.breakpoints) {
                 line = vm.frame.get_line_number();
                 if (line != vm.frame.debug_line && line in debugging.breakpoints[vm.frame.code.filename]) {
-                    vm.frame.debug_line = line;
-                    debugging.send_message('pause', [threading.thread.identifier]);
-                    threading.drop();
-                    return true;
+                    threading.thread.debug_break = true;
                 }
                 vm.frame.debug_line = line;
             }
             if (threading.thread.debug_break) {
-                debug_send_message('pause', [threading.thread.identifier]);
+                var frame = vm.frame;
+                var frames = [];
+                while (frame) {
+                    var locals = {};
+                    frames.push({
+                        'file': frame.code.filename,
+                        'name': frame.code.name,
+                        'line': frame.get_line_number()
+                    });
+                    frame = frame.back;
+                }
+                debug_send_message('pause', [threading.thread.identifier, frames]);
                 threading.drop();
                 return true;
             }
@@ -73,30 +81,73 @@ var debugging = {
     },
 
     commands: {
-        'run': function () {
-            main(debugging.module, debugging.argv);
+        'run': function (seq, thread_id) {
+            if (thread_id == 0) {
+                main(debugging.module, debugging.argv);
+            } else {
+                threading.registry[thread_id].debug_break = false;
+                threading.registry[thread_id].enqueue();
+                threading.resume();
+            }
         },
 
-        'get_threads': function (id) {
+        'suspend': function (id, thread_id) {
+            threading.registry[thread_id].debug_break = true;
+        },
+
+        'kill': function (id, thread_id) {
+            var thread = threading.registry[thread_id];
+            thread.restore();
+            raise(SystemExit, 'thread has been killed by debugger', null, true);
+            thread.save();
+        },
+
+        'get_threads': function (seq) {
             var identifier;
             var result = [];
             for (identifier in threading.registry) {
                 if (threading.registry.hasOwnProperty(identifier)) {
-                    result.push(identifier);
+                    result.push(parseInt(identifier));
                 }
             }
-            debugging.send_message('get_threads', [result], id);
+            debugging.send_message('threads', [result], seq);
         },
 
-        'thread_suspend': function (id, identifier) {
-            threading.registry[identifier].debug_break = true;
+        'get_locals': function (id, thread_id, frame_id) {
+            var name;
+            var locals = {};
+            var frame = threading.registry[thread_id].frame;
+            while (frame_id > 0) {
+                frame = frame.back;
+                frame_id--;
+            }
+            if (!frame) {
+                debugging.send_message('error', ['invalid frame number'], id);
+            }
+            if (frame instanceof PythonFrame) {
+                for (name in frame.locals) {
+                    if (frame.locals.hasOwnProperty(name)) {
+                        locals[name] = {
+                            'type': frame.locals[name].cls.name,
+                            'repr': frame.locals[name].repr()
+                        }
+                    }
+                }
+            } else {
+                for (name in frame) {
+                    if (frame.hasOwnProperty(name)) {
+                        locals[name] = {
+                            'type': typeof frame[name],
+                            'repr': frame[name].toString()
+                        }
+                    }
+                }
+            }
+
+            debugging.send_message('locals', [thread_id, frame_id, locals], id);
         },
 
-        'thread_run': function (id, identifier) {
-            threading.registry[identifier].debug_break = false;
-            threading.registry[identifier].enqueue();
-            threading.resume();
-        },
+
 
 
         'break_add': function (id, filename, line) {
@@ -106,6 +157,10 @@ var debugging = {
             debugging.breakpoints[filename][line] = true;
         },
 
+        'break_remove': function (seq, filename, line) {
+            delete debugging.breakpoints[filename][line];
+        },
+
 
         'js_eval': function (id, code) {
             eval(code);
@@ -113,34 +168,7 @@ var debugging = {
 
         'js_debugger': function (id) {
             debugger;
-        },
-
-
-        'EXCEPTION_BREAK_ADD': function () {
-
-        },
-
-        'EXCEPTION_BREAK_REMOVE': function () {
-
-        },
-
-        'BREAK_ADD': function () {
-
-        },
-
-        'BREAK_REMOVE': function () {
-
-        },
-
-        'THREAD_RUN': function () {
-
-        },
-
-        'GET_THREADS': function () {
-
         }
-
-
     }
 };
 
