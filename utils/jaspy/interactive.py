@@ -117,7 +117,7 @@ class InteractiveConsole:
 
         session.on_thread_suspended += self.on_thread_suspended
 
-        session.on_variable += self.on_variable
+        #session.on_variable += self.on_variable
 
         session.on_console_log += self.on_console_log
         session.on_console_error += self.on_console_error

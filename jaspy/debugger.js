@@ -54,13 +54,7 @@ var debug_run_in_frame = new NativeCode(function (seq, in_frame, code, state, fr
             debugging.emit('success', [vm.return_value.toString()], seq);
             return;
     }
-    console.log(seq, frame, code, state);
 }, {name: 'run_in_frame'}, ['seq', 'in_frame', 'code']);
-
-
-var debug_get_variable = new NativeCode(function (seq, in_frame, path, state) {
-    console.log(in_frame, path);
-}, {name: 'get_variable'}, ['seq', 'in_frame', 'path']);
 
 
 var debugging = {
@@ -387,11 +381,6 @@ var debugging = {
             debugging.emit('threads', [result], seq);
         },
 
-        get_variable: function (seq, thread_id, frame_id, path) {
-            var frame = threading.get_thread(thread_id).get_frame(frame_id);
-            debugging.inject(thread_id, debug_get_variable, [seq, frame, path]);
-        },
-
         add_break: function (seq, filename, line, condition, expression) {
             var condition_code = condition ? eval(condition).code : null;
             var expression_code = expression ? eval(expression).code : null;
@@ -463,6 +452,7 @@ function debug(module, argv, url, options) {
     if (debugging.enabled) {
         raise(RuntimeError, 'debugger has already been started');
     }
+
     debugging.enabled = true;
     debugging.module = module;
     debugging.argv = argv;

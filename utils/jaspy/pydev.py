@@ -100,10 +100,13 @@ class PyDevRemote:
         self.writer.write(command.make(sequence_number, *arguments).encode('uft-8'))
 
     def thread_created(self, session, seq, thread_name, thread_id):
-        pass
+        name = quote(make_xml_value(thread_name))
+        self.send(Commands.THREAD_CREATE, XML_THREAD.format(name, thread_id))
 
     def send_error(self, message):
         self.send(Commands.ERROR, message)
+
+    """"
 
     def cmd_version(self, seq, version, platform='WINDOWS', breakpoint_id=None):
         print('PyCharm New Connection')
@@ -152,7 +155,7 @@ class PyDevRemote:
 
     def on_thread_finished(self, debugger, seq, thread_id):
         self.send(104, thread_id)
-
+    """
 
 
 

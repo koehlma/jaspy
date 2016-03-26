@@ -34,7 +34,6 @@ class Commands(enum.Enum):
     STEP_INTO = 'step_into'
     STEP_OUT = 'step_out'
 
-    GET_VARIABLE = 'get_variable'
     GET_THREADS = 'get_threads'
 
     ADD_BREAK = 'add_break'
@@ -72,7 +71,6 @@ class Events(enum.Enum):
     EXCEPTION_BREAK_ADDED = 'exception_break_added'
     EXCEPTION_BREAK_REMOVED = 'exception_break_removed'
 
-    VARIABLE = 'variable'
     THREADS = 'threads'
 
     CONSOLE_LOG = 'console_log'
@@ -107,7 +105,6 @@ class Debugger:
         self.on_exception_break_added = Event()
         self.on_exception_break_removed = Event()
 
-        self.on_variable = Event()
         self.on_threads = Event()
 
         self.on_console_log = Event()
@@ -132,7 +129,6 @@ class Debugger:
             Events.EXCEPTION_BREAK_ADDED: self.on_exception_break_added,
             Events.EXCEPTION_BREAK_REMOVED: self.on_exception_break_added,
 
-            Events.VARIABLE: self.on_variable,
             Events.THREADS: self.on_threads,
 
             Events.CONSOLE_LOG: self.on_console_log,
@@ -166,9 +162,6 @@ class Debugger:
 
     def step_out(self, thread_id):
         self.send(Commands.STEP_OUT, thread_id)
-
-    def get_variable(self, thread_id, frame_id, *path):
-        self.send(Commands.GET_VARIABLE, thread_id, frame_id, path)
 
     def get_threads(self):
         self.send(Commands.GET_THREADS)

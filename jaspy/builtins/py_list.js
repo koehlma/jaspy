@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_list.$def('__str__', function (self, state, frame) {
+py_list.$def('__repr__', function (self, state, frame) {
     while (true) {
         switch (state) {
             case 0:
@@ -47,3 +47,10 @@ py_list.$def('append', function (self, item) {
     py_list.check(self);
     self.append(item);
 }, ['item']);
+
+
+py_list.$def('__getitem__', function (self, index_or_slice) {
+    py_list.check(self);
+    // TODO: do conversion with __index__ and support slice
+    return self.get(unpack_int(index_or_slice));
+}, ['index_or_slice']);
