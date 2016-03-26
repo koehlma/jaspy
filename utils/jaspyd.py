@@ -40,14 +40,20 @@ root_directory = os.path.abspath(arguments.root_directory)
 server = jaspy.Server(arguments.jaspy_js, arguments.modules_directory,
                       arguments.host, arguments.port, root_directory)
 
-server.start()
+
+def raise_keyboard_interrupt():
+    raise KeyboardInterrupt()
+
 
 if arguments.interactive:
     import jaspy.interactive
-    console = jaspy.interactive.InteractiveConsole()
-    console.start()
+    console = jaspy.interactive.InteractiveConsole(server)
+    future = console.start()
+    future.add_done_callback(lambda _: raise_keyboard_interrupt())
 
-asyncio.get_event_loop().run_forever()
+server.run()
+
+
 
 
 

@@ -14,25 +14,18 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-class Bus:
+class Event:
     def __init__(self):
-        self.events = {}
+        self.listeners = []
 
-    def register(self, name, listener):
-        if name not in self.events:
-            self.events[name] = []
-        self.events[name].append(listener)
+    def __iadd__(self, listener):
+        self.listeners.append(listener)
+        return self
 
-    def unregister(self, name, listener):
-        self.events[name].remove(listener)
+    def __isub__(self, listener):
+        self.listeners.remove(listener)
+        return self
 
-    def emit(self, name, *arguments, **keywords):
-        for listener in self.events.get(name, ()):
+    def emit(self, *arguments, **keywords):
+        for listener in self.listeners:
             listener(*arguments, **keywords)
-
-
-global_bus = Bus()
-
-register = global_bus.register
-unregister = global_bus.unregister
-emit = global_bus.emit

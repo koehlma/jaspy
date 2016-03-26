@@ -56,6 +56,9 @@ var threading = {
             }
         // >>
         threading.thread.save();
+        // << if ENABLE_DEBUGGER
+            debugging.trace_thread_finished(threading.thread);
+        // >>
         threading.thread.finished = true;
         threading.thread.frame = null;
         delete threading.registry[threading.thread.identifier];
@@ -108,10 +111,6 @@ var threading = {
 
         threading.counter++;
         threading.thread.counter++;
-
-        // << if ENABLE_DEBUGGER
-            return debugging.step();
-        // >>
     },
 
     drop: function (requeue) {
@@ -153,11 +152,12 @@ var threading = {
 };
 
 
-function Thread(frame) {
+function Thread(frame, name) {
     this.frame = frame;
     this.counter = 0;
     this.finished = false;
     this.identifier = threading.identifier++;
+    this.name = name || ('Thread-' + this.identifier);
 
     this.return_value = None;
     this.last_exception = null;
@@ -165,6 +165,10 @@ function Thread(frame) {
     // << if ENABLE_DEBUGGER
         this.debug_break = false;
         this.debug_line = -1;
+
+        if (debugging) {
+            debugging.trace_thread_created(this);
+        }
     // >>
 
     threading.registry[this.identifier] = this;
@@ -250,7 +254,7 @@ Lock.prototype.locked = function () {
 window.addEventListener('message', threading.wakeup, true);
 
 
-threading.main = new Thread();
+threading.main = new Thread(null, 'MainThread');
 
 
 $.threading = threading;

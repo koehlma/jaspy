@@ -132,12 +132,14 @@ function main(module, argv) {
 function call(object, args, kwargs, defaults, closure, globals, namespace) {
     var code, result;
 
-    // << if ENABLE_DEBUGGER
-        debugging.trace_call(object, args, kwargs, defaults, closure, globals, namespace);
-    // >>
-
     while (true) {
-        if (object instanceof PythonCode) {
+        if (object instanceof Frame) {
+            vm.frame = object;
+            // << if ENABLE_DEBUGGER
+                debugging.trace_call(vm.frame);
+            // >>
+            return vm.frame;
+        } else if (object instanceof PythonCode) {
             if ((object.flags & CODE_FLAGS.GENERATOR) != 0) {
                 vm.return_value = new PyGenerator(object, new PythonFrame(object, {
                     back: null, defaults: defaults, args: args, kwargs: kwargs,
@@ -149,6 +151,9 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                     back: vm.frame, defaults: defaults, args: args, kwargs: kwargs,
                     globals: globals, closure: closure, namespace: namespace
                 });
+                // << if ENABLE_DEBUGGER
+                    debugging.trace_call(vm.frame);
+                // >>
                 return vm.frame;
             }
         } else if (object instanceof NativeCode) {
@@ -172,6 +177,9 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                     back: vm.frame, defaults: defaults, args: args, kwargs: kwargs,
                     globals: globals, closure: closure, namespace: namespace
                 });
+                // << if ENABLE_DEBUGGER
+                    debugging.trace_call(vm.frame);
+                // >>
                 return vm.frame;
             }
         } else if (object instanceof PyFunction) {

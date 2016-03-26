@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import os.path
 
 import aiohttp
 import aiohttp.web
 
+from .event import Event
 from .debugger import Debugger
 from .converter import compile_and_convert
 
@@ -34,6 +34,8 @@ class Server:
         self.root_dir = root_dir
 
         self.application = aiohttp.web.Application()
+        self.application.on_shutdown.append(self.on_shutdown)
+
         self.router = self.application.router
         self.router.add_route('GET', '/debugger', self.debugger)
         self.router.add_route('GET', '/load/{name}', self.load)
@@ -41,13 +43,23 @@ class Server:
         self.router.add_static('/modules', self.modules_dir)
         self.router.add_static('/', self.root_dir)
 
+        self.on_running = Event()
+
+        self.connections = []
+
+    async def on_shutdown(self, application):
+        for websocket in self.connections:
+            await websocket.close(message='Server Shutdown')
+
     async def debugger(self, request):
         websocket = aiohttp.web.WebSocketResponse()
-        await websocket.prepare(request)
-
-        debugger = Debugger(websocket)
-        await debugger.handle()
-
+        self.connections.append(websocket)
+        try:
+            await websocket.prepare(request)
+            debugger = Debugger(websocket)
+            await debugger.debug()
+        finally:
+            self.connections.remove(websocket)
         return websocket
 
     async def load(self, request):
@@ -66,7 +78,10 @@ class Server:
             text = jaspy_js_file.read()
         return aiohttp.web.Response(text=text, content_type='application/javascript')
 
-    def start(self):
-        loop = asyncio.get_event_loop()
-        coro = loop.create_server(self.application.make_handler(), self.host, self.port)
-        asyncio.ensure_future(coro)
+    def run(self):
+        aiohttp.web.run_app(self.application, host=self.host, port=self.port,
+                            shutdown_timeout=5,
+                            print=lambda *_: self.on_running.emit(self))
+
+    def shutdown(self):
+        self.application.shutdown()

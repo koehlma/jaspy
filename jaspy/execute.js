@@ -41,6 +41,18 @@ PythonFrame.prototype.execute = function() {
             }
         // >>
 
+        // << if ENABLE_DEBUGGER
+            var line = this.get_line_number();
+            if (line != this.debug_line) {
+                debugging.trace_line(this, line);
+                this.debug_line = line;
+            }
+
+            if (debugging.step()) {
+                return;
+            }
+        // >>
+
         instruction = this.code.instructions[this.position++];
 
         // << if DEBUG_INSTRUCTIONS
@@ -1025,6 +1037,13 @@ NativeFrame.prototype.execute = function () {
             return;
         }
     // >>
+
+    // << if ENABLE_DEBUGGER
+        if (debugging.step()) {
+            return;
+        }
+    // >>
+
     assert(!this.code.simple, 'native frames\'s code is simple');
     var result;
     try {
@@ -1046,6 +1065,9 @@ NativeFrame.prototype.execute = function () {
         if (result instanceof PyObject && vm.return_value) {
             vm.return_value = result;
         }
+        // << if ENABLE_DEBUGGER
+            debugging.trace_return(this);
+        // >>
         vm.frame = this.back;
         // << if ENABLE_THREADING
             if (!vm.frame) {

@@ -35,7 +35,7 @@ setup(
     license='LGPLv3',
     scripts=['build', 'jaspy'],
     extras_require={
-        'interactive remote console': ['ptpython']
+        'interactive remote console': ['ptpython', 'pygments']
     },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

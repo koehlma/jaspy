@@ -28,6 +28,14 @@ function Frame(code, options) {
     // << if ENABLE_THREADING
         this.thread = this.back ? this.back.thread : threading.thread;
     // >>
+
+    // << if ENABLE_DEBUGGER
+        this.debug_line = -1;
+        this.debug_break = false;
+        this.debug_step_over = false;
+        this.debug_step_into = false;
+        this.debug_step_out = false;
+    // >>
 }
 
 
@@ -183,6 +191,9 @@ PythonFrame.prototype.unwind = function (cause) {
                 break;
             case CAUSES.RETURN:
                 if (block.type == BLOCK_TYPES.BASE) {
+                    // << if ENABLE_DEBUGGER
+                        debugging.trace_return(this);
+                    // >>
                     vm.frame = this.back;
                     // << if ENABLE_THREADING
                         if (!vm.frame) {

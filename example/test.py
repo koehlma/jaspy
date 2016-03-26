@@ -389,7 +389,6 @@ _thread.start_new_thread(test_lock_2)
 _thread.start_new_thread(animation)
 
 
-
 counter = 0
 
 while True:
@@ -397,3 +396,4 @@ while True:
     if counter > 500000:
         print(counter)
         counter = 0
+
