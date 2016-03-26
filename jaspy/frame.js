@@ -40,8 +40,6 @@ function Frame(code, options) {
         this.debug_in_frame = null;
 
         this.debug_internal = options.debug_internal || false;
-        this.debug_return_value = options.debug_return_value || None;
-        this.debug_last_exception = options.debug_last_excetpion || null;
     // >>
 }
 

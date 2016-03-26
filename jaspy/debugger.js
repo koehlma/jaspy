@@ -59,7 +59,7 @@ var debug_run_in_frame = new NativeCode(function (seq, in_frame, code, state, fr
 
 
 var debug_get_variable = new NativeCode(function (seq, in_frame, path, state) {
-    console.log(in_frame);
+    console.log(in_frame, path);
 }, {name: 'get_variable'}, ['seq', 'in_frame', 'path']);
 
 
@@ -155,24 +155,11 @@ var debugging = {
         debugging.resume(thread);
     },
 
-    inject: function (thread_id, native_code, args, kwargs) {
-        var thread = threading.get_thread(thread_id);
-        var options = {
-            back: thread.frame, args: args, kwargs: kwargs,
-
-            debug_internal: true,
-
-            debug_return_value: thread.return_value,
-            debug_last_exception: thread.last_exception
-        };
-        if (!thread.debug_suspended) {
-            throw new Error('Thread ' + thread_id + ' not suspended by debugger!');
-        }
-        thread.frame.debug_break = true;
-        thread.frame = new NativeFrame(native_code, options);
-        debugging.resume(thread);
+    call: function (native_code, args, kwargs) {
+        var frame = new NativeFrame(native_code, {args: args, kwargs: kwargs});
+        (new Thread(frame)).enqueue();
+        threading.resume();
     },
-
 
     connect: function (url) {
         debugging.websocket = new WebSocket(url);
@@ -235,10 +222,6 @@ var debugging = {
             frame.debug_step_out = false;
             frame.debug_step_over = false;
         }
-        if (frame.debug_internal) {
-            vm.return_value = frame.debug_return_value;
-            vm.last_exception = frame.debug_last_exception;
-        }
     },
 
     trace_raise: function (exc_type, exc_value, exc_tb) {
@@ -246,11 +229,16 @@ var debugging = {
     },
 
     trace_thread_created: function (thread) {
-        debugging.emit_thread_created(thread);
+        if (!thread.frame.debug_internal) {
+            thread.debug_intenal = true;
+            debugging.emit_thread_created(thread);
+        }
     },
 
     trace_thread_finished: function (thread) {
-        debugging.emit_thread_finished(thread);
+        if (!thread.debug_internal) {
+            debugging.emit_thread_finished(thread);
+        }
     },
 
     trace_console_log: function () {
@@ -308,7 +296,6 @@ var debugging = {
             }
         }
     },
-
 
     emit: function (cmd, args, seq) {
         if (debugging.connected) {
@@ -369,7 +356,7 @@ var debugging = {
 
         run_in_frame: function (seq, thread_id, frame_id, source) {
             var frame = threading.get_thread(thread_id).get_frame(frame_id);
-            debugging.inject(thread_id, debug_run_in_frame, [seq, frame, eval(source).code]);
+            debugging.call(debug_run_in_frame, [seq, frame, eval(source).code]);
         },
 
         run_in_thread: function (seq, source) {

@@ -163,8 +163,7 @@ function Thread(frame, name) {
     this.last_exception = null;
 
     // << if ENABLE_DEBUGGER
-        this.debug_break = false;
-        this.debug_line = -1;
+        this.debug_internal = false;
 
         if (debugging) {
             debugging.trace_thread_created(this);
