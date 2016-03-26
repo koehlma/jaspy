@@ -40,9 +40,7 @@ class Commands(enum.Enum):
     ADD_BREAK = 'add_break'
     REMOVE_BREAK = 'remove_break'
 
-    EXEC_IN_FRAME = 'exec_in_frame'
-    EVAL_IN_FRAME = 'eval_in_frame'
-
+    RUN_IN_FRAME = 'run_in_frame'
     RUN_IN_THREAD = 'run_in_thread'
 
     ADD_EXCEPTION_BREAK = 'add_exception_break'
@@ -141,7 +139,7 @@ class Debugger:
             Events.CONSOLE_ERROR: self.on_console_error
         }
 
-        self.sequence_counter = itertools.count()
+        self.sequence_counter = itertools.count(1, 2)
 
     def send(self, command, *arguments, sequence_number=None):
         if sequence_number is None:
@@ -181,11 +179,11 @@ class Debugger:
     def remove_break(self, filename, line):
         self.send(Commands.REMOVE_BREAK, filename, line)
 
-    def add_exception_break(self, exception_name):
-        self.send(Commands.ADD_EXCEPTION_BREAK, exception_name)
+    def add_exception_break(self, name, on_termination=False, on_raise=True):
+        self.send(Commands.ADD_EXCEPTION_BREAK, name, on_termination, on_raise)
 
-    def remove_exception_break(self, exception_name):
-        self.send(Commands.REMOVE_EXCEPTION_BREAK, exception_name)
+    def remove_exception_break(self, name):
+        self.send(Commands.REMOVE_EXCEPTION_BREAK, name)
 
     def js_eval(self, source):
         self.send(Commands.JS_EVAL, source)
@@ -195,11 +193,11 @@ class Debugger:
 
     def exec_in_frame(self, thread_id, frame_id, source):
         code = compile(source, '<debugger>', 'exec')
-        self.send(Commands.EXEC_IN_FRAME, thread_id, frame_id, converter.convert(code))
+        self.send(Commands.RUN_IN_FRAME, thread_id, frame_id, converter.convert(code))
 
     def eval_in_frame(self, thread_id, frame_id, source):
         code = compile(source, '<debugger>', 'eval')
-        self.send(Commands.EVAL_IN_FRAME, thread_id, frame_id, converter.convert(code))
+        self.send(Commands.RUN_IN_FRAME, thread_id, frame_id, converter.convert(code))
 
     def run_in_thread(self, source):
         code = compile(source, '<debugger>', 'exec')

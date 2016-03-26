@@ -27,6 +27,42 @@
  */
 
 
+var debug_run_in_frame = new NativeCode(function (seq, in_frame, code, state, frame) {
+    var py_frame;
+    switch (state) {
+        case 0:
+            py_frame = new PythonFrame(code, {
+                back: frame, locals: in_frame.locals, globals: in_frame.globals,
+                builtins: in_frame.builtins
+            });
+            if (call(py_frame)) {
+                return 1;
+            }
+        case 1:
+            if (!vm.return_value) {
+                // TODO: send exception data back
+                return;
+            }
+            if (vm.return_value.call('__repr__')) {
+                return 2;
+            }
+        case 2:
+            if (!vm.return_value) {
+                // TODO: send exception data back
+                return;
+            }
+            debugging.emit('success', [vm.return_value.toString()], seq);
+            return;
+    }
+    console.log(seq, frame, code, state);
+}, {name: 'run_in_frame'}, ['seq', 'in_frame', 'code']);
+
+
+var debug_get_variable = new NativeCode(function (seq, in_frame, path, state) {
+    console.log(in_frame);
+}, {name: 'get_variable'}, ['seq', 'in_frame', 'path']);
+
+
 var debugging = {
     enabled: false,
     connected: false,
@@ -41,7 +77,7 @@ var debugging = {
 
     console_patched: false,
 
-    sequence_counter: 0,
+    sequence_counter: 2,
 
 
     run: function () {
@@ -119,6 +155,24 @@ var debugging = {
         debugging.resume(thread);
     },
 
+    inject: function (thread_id, native_code, args, kwargs) {
+        var thread = threading.get_thread(thread_id);
+        var options = {
+            back: thread.frame, args: args, kwargs: kwargs,
+
+            debug_internal: true,
+
+            debug_return_value: thread.return_value,
+            debug_last_exception: thread.last_exception
+        };
+        if (!thread.debug_suspended) {
+            throw new Error('Thread ' + thread_id + ' not suspended by debugger!');
+        }
+        thread.frame.debug_break = true;
+        thread.frame = new NativeFrame(native_code, options);
+        debugging.resume(thread);
+    },
+
 
     connect: function (url) {
         debugging.websocket = new WebSocket(url);
@@ -175,10 +229,15 @@ var debugging = {
     },
 
     trace_return: function (frame) {
+        var return_value, last_exception;
         if (frame.back && (frame.debug_step_out || frame.debug_step_over)) {
             frame.back.debug_break = true;
             frame.debug_step_out = false;
             frame.debug_step_over = false;
+        }
+        if (frame.debug_internal) {
+            vm.return_value = frame.debug_return_value;
+            vm.last_exception = frame.debug_last_exception;
         }
     },
 
@@ -230,7 +289,7 @@ var debugging = {
         threading.drop();
     },
 
-    resume: function (thread) {
+    resume: function (thread, first) {
         if (!thread.debug_suspended) {
             throw new Error('Unable to resume thread not suspended by debugger!');
         }
@@ -253,7 +312,7 @@ var debugging = {
 
     emit: function (cmd, args, seq) {
         if (debugging.connected) {
-            seq = seq == undefined ? debugging.sequence_counter++ : seq;
+            seq = seq == undefined ? debugging.sequence_counter += 2 : seq;
             debugging.websocket.send(JSON.stringify({'event': cmd, 'seq': seq, 'args': args || []}));
         }
     },
@@ -263,7 +322,7 @@ var debugging = {
     },
 
     emit_error: function (message, seq) {
-        debugging.emit('error', [massage], seq);
+        debugging.emit('error', [message], seq);
     },
 
     emit_thread_created: function (thread) {
@@ -273,6 +332,7 @@ var debugging = {
     emit_thread_finished: function (thread) {
         debugging.emit('thread_finished', [thread.identifier]);
     },
+
 
 
     commands: {
@@ -307,137 +367,60 @@ var debugging = {
             debugging.step_out(thread_id);
         },
 
-
-
-
-        'get_threads': function (seq) {
-            var identifier;
-            var result = [];
-            for (identifier in threading.registry) {
-                if (threading.registry.hasOwnProperty(identifier)) {
-                    result.push(parseInt(identifier));
-                }
-            }
-            debugging.emit('threads', [result], seq);
+        run_in_frame: function (seq, thread_id, frame_id, source) {
+            var frame = threading.get_thread(thread_id).get_frame(frame_id);
+            debugging.inject(thread_id, debug_run_in_frame, [seq, frame, eval(source).code]);
         },
 
-        'get_locals': function (id, thread_id, frame_id) {
-            var name;
-            var locals = {};
-            var frame = threading.registry[thread_id].frame;
-            while (frame_id > 0) {
-                frame = frame.back;
-                frame_id--;
-            }
-            if (!frame) {
-                debugging.emit('error', ['invalid frame number'], id);
-            }
-            if (frame instanceof PythonFrame) {
-                for (name in frame.locals) {
-                    if (frame.locals.hasOwnProperty(name)) {
-                        locals[name] = {
-                            'type': frame.locals[name].cls.name,
-                            'repr': frame.locals[name].repr()
-                        }
-                    }
-                }
-            } else {
-                for (name in frame) {
-                    if (frame.hasOwnProperty(name)) {
-                        locals[name] = {
-                            'type': typeof frame[name],
-                            'repr': frame[name].toString()
-                        }
-                    }
-                }
-            }
-
-            debugging.emit('locals', [thread_id, frame_id, locals], id);
-        },
-
-        get_variable: function (seq, thread_id, frame_id, path) {
-            var index, name, value;
-            var thread = threading.get_thread(thread_id);
-            var frame = thread.get_frame(frame_id);
-            var current = frame.locals;
-            for (index = 0; index < path.length; index++) {
-                name = path[index];
-                if (name in current) {
-                    if (current instanceof PyObject) {
-                        current = current.get(name);
-                    } else {
-                        current = current[name];
-                    }
-                } else {
-                    throw new Error('Unable to find variable ' + path.join('.') + '!');
-                }
-            }
-            var result = {};
-            if (current instanceof Object) {
-                for (name in current) {
-                    if (current.hasOwnProperty(name)) {
-                        value = current[name];
-                        result[name] = {
-                            'type': value.cls.name,
-                            'value': value.toString()
-                        };
-                    }
-                }
-            }
-            debugging.emit('variable', [thread_id, frame_id, path, result], seq);
-            console.info(path, current);
-        },
-
-        /*
-
-        step_over: function (seq, thread_id, frame_number) {
-            var thread = threading.get_thread(thread_id);
-            var frame = thread.get_frame(frame_number || 0);
-            if (!thread.debug_suspended) {
-                console.error('tried to step over in running thread');
-                return;
-            }
-            frame.debug_step_over = true;
-            debugging.resume(thread);
-        },*/
-
-        eval: function (seq, thread_id, frame_number, source) {
-            var code = eval(source);
-            var thread = threading.get_thread(thread_id);
-            var frame = thread.get_frame(frame_number);
-            thread.restore();
-            vm.frame = new PythonFrame(code.code, {
-                back: vm.frame, locals: frame.locals, globals: frame.globals,
-                namespace: frame.namespace
-            });
-            thread.save();
-        },
-
-        exec: function (seq, source) {
+        run_in_thread: function (seq, source) {
             var code = eval(source);
             (new Thread(new PythonFrame(code.code))).enqueue();
             threading.resume();
         },
 
-        add_line_break: function (id, filename, line) {
-            if (!(filename in debugging.line_breakpoints)) {
-                debugging.line_breakpoints[filename] = {};
-            }
-            debugging.line_breakpoints[filename][line] = true;
-            debugging.emit('success', ['Line breakpoint for file \'' + filename + '\' on line ' + line + ' added!'], id);
+        js_eval: function (seq, source) {
+            eval(source);
         },
 
-        'remove_line_break': function (seq, filename, line) {
-            delete debugging.line_breakpoints[filename][line];
-        },
-
-
-        'js_eval': function (id, code) {
-            eval(code);
-        },
-
-        'js_debugger': function (id) {
+        js_debugger: function (seq) {
             debugger;
+        },
+
+        get_threads: function (seq) {
+            var identifier;
+            var result = [];
+            for (identifier in threading.registry) {
+                if (threading.registry.hasOwnProperty(identifier)) {
+                    result.push({
+                        'id' : parseInt(identifier),
+                        'name': threading.get_thread(identifier).name
+                    });
+                }
+            }
+            debugging.emit('threads', [result], seq);
+        },
+
+        get_variable: function (seq, thread_id, frame_id, path) {
+            var frame = threading.get_thread(thread_id).get_frame(frame_id);
+            debugging.inject(thread_id, debug_get_variable, [seq, frame, path]);
+        },
+
+        add_break: function (seq, filename, line, condition, expression) {
+            var condition_code = condition ? eval(condition).code : null;
+            var expression_code = expression ? eval(expression).code : null;
+            debugging.add_break(filename, line, condition_code, expression_code);
+        },
+
+        remove_break: function (seq, filename, line) {
+            debugging.remove_break(filename, line);
+        },
+
+        add_exception_break: function (seq, name, on_termination, on_raise) {
+            debugging.add_exception_break(name, on_termination, on_raise);
+        },
+
+        remove_exception_break: function (seq, name) {
+            debugging.remove_exception_break(name);
         }
     }
 };
@@ -482,12 +465,10 @@ function debugger_patch_console() {
 
         enable_patch();
     } else {
-        window.console = {
-            log: debugging.console_log,
-            error: debugging.console_error
-        }
+        window.console = {};
+        window.console.log = debugging.trace_console_log;
+        window.console.error = debugging.trace_console_error;
     }
-
 }
 
 

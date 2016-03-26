@@ -1065,10 +1065,10 @@ NativeFrame.prototype.execute = function () {
         if (result instanceof PyObject && vm.return_value) {
             vm.return_value = result;
         }
+        vm.frame = this.back;
         // << if ENABLE_DEBUGGER
             debugging.trace_return(this);
         // >>
-        vm.frame = this.back;
         // << if ENABLE_THREADING
             if (!vm.frame) {
                 threading.finished();

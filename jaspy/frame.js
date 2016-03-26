@@ -32,9 +32,16 @@ function Frame(code, options) {
     // << if ENABLE_DEBUGGER
         this.debug_line = -1;
         this.debug_break = false;
+
         this.debug_step_over = false;
         this.debug_step_into = false;
         this.debug_step_out = false;
+
+        this.debug_in_frame = null;
+
+        this.debug_internal = options.debug_internal || false;
+        this.debug_return_value = options.debug_return_value || None;
+        this.debug_last_exception = options.debug_last_excetpion || null;
     // >>
 }
 
@@ -191,10 +198,10 @@ PythonFrame.prototype.unwind = function (cause) {
                 break;
             case CAUSES.RETURN:
                 if (block.type == BLOCK_TYPES.BASE) {
+                    vm.frame = this.back;
                     // << if ENABLE_DEBUGGER
                         debugging.trace_return(this);
                     // >>
-                    vm.frame = this.back;
                     // << if ENABLE_THREADING
                         if (!vm.frame) {
                             threading.finished();
