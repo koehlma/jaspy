@@ -44,18 +44,20 @@ class Commands(enum.IntEnum):
     REMOVE_EXCEPTION_BREAK = 123
 
     GET_VARIABLE = 110
+    GET_FRAME = 114
+
+    WRITE_TO_CONSOLE = 116
 
     def make(self, sequence_number, *arguments):
         payload = quote('\t'.join(map(str, arguments)), '/<>_=" \t')
-        return '{}\t{}\t{}\n'.format(self, sequence_number, payload)
+        return '{}\t{}\t{}\n'.format(self, sequence_number, payload).encode('utf-8')
 
 
-VERSION_CMD = Commands.VERSION.make(1, 'PY-143.1919.0')
+VERSION_CMD = Commands.VERSION.make(1, 'PY-145.260.1')
 
 XML_THREAD = '<thread id="{}" name="{}" />'
-XML_THREAD_SUSPEND = '<thread id="{}">{}</thread>'
-
 XML_FRAME = '<frame id="{}" name="{}" file="{}" line="{}" />'
+XML_VAR = '<var name="{}" type="{}" value="{}" isContainer="False" />'
 
 
 def make_xml_value(value):
@@ -70,7 +72,16 @@ class PyDevRemote:
         self.reader = None
         self.writer = None
 
-        self.debugger.on_thread_created += self.thread_created
+        self.debugger.on_thread_created += self.on_thread_created
+        self.debugger.on_thread_finished += self.on_thread_finished
+        self.debugger.on_thread_suspended += self.on_thread_suspended
+
+        self.debugger.on_locals += self.on_locals
+
+        self.debugger.on_console_log += self.on_console_log
+        self.debugger.on_console_error += self.on_console_error
+
+        self.locals_requests = {}
 
         self.sequence_counter = itertools.count(2, 2)
 
@@ -87,7 +98,7 @@ class PyDevRemote:
                 self.send_error('invalid message format')
                 continue
             try:
-                getattr(self, Commands(cmd).name.lower())(int(seq), *args)
+                getattr(self, 'cmd_' + Commands(cmd).name.lower())(int(seq), *args)
             except Exception as error:
                 self.send_error('error executing command \'{}\''.format(error))
 
@@ -97,14 +108,99 @@ class PyDevRemote:
     def send(self, command, *arguments, sequence_number=None):
         if sequence_number is None:
             sequence_number = next(self.sequence_counter)
-        self.writer.write(command.make(sequence_number, *arguments).encode('uft-8'))
-
-    def thread_created(self, session, seq, thread_name, thread_id):
-        name = quote(make_xml_value(thread_name))
-        self.send(Commands.THREAD_CREATE, XML_THREAD.format(name, thread_id))
+        self.writer.write(command.make(sequence_number, *arguments))
 
     def send_error(self, message):
         self.send(Commands.ERROR, message)
+
+    def cmd_version(self, seq, version, platform=None):
+        print(seq, version, platform)
+
+    def cmd_run(self, seq):
+        self.debugger.run()
+        self.on_thread_created(None, None, 'MainThread', 1)
+
+    def cmd_add_exception_break(self, seq, name, *flags):
+        print(seq, name, flags)
+
+    def cmd_step_over(self, seq, thread_id):
+        self.debugger.step_over(thread_id)
+        self.send(Commands.THREAD_RUN, thread_id, Commands.STEP_OVER.value)
+
+    def cmd_step_into(self, seq, thread_id):
+        self.debugger.step_into(thread_id)
+
+    def cmd_step_return(self, seq, thread_id):
+        self.debugger.step_out(thread_id)
+
+    def cmd_thread_run(self, seq, thread_id):
+        self.debugger.resume_thread(thread_id)
+
+    def cmd_add_break(self, seq, kind, filename, line, name, condition, expression):
+        self.debugger.add_break(filename, int(line))
+
+    def cmd_remove_break(self, seq, kind, filename, line):
+        self.debugger.remove_break(filename, int(line))
+
+    def cmd_get_frame(self, seq, thread_id, frame_id, *path):
+        self.locals_requests[self.debugger.get_locals(thread_id, frame_id)] = seq
+
+    def on_locals(self, session, seq, result):
+        if seq not in self.locals_requests:
+            return
+        else:
+            seq = self.locals_requests.pop(seq)
+        payload = ['<xml>']
+        for name in sorted(result.keys()):
+            info = result[name]
+            name = make_xml_value(name)
+            type_ = make_xml_value(info['type'])
+            value = make_xml_value(info['value'])
+            payload.append(XML_VAR.format(name, type_, value))
+        payload.append('</xml>')
+        self.send(Commands.GET_VARIABLE, ''.join(payload), sequence_number=seq)
+
+    def cmd_get_variable(self, seq, thread_id, frame_id, *path):
+        print(path)
+        msg = '<xml><var name="test" type="int" value="3" isContainer="False" /></xml>'
+        self.send(Commands.GET_VARIABLE, msg, sequence_number=seq)
+
+    def on_thread_created(self, session, seq, thread_name, thread_id):
+        name = quote(make_xml_value(thread_name))
+        payload = '<xml>' + XML_THREAD.format(thread_id, name) + '</xml>'
+        self.send(Commands.THREAD_CREATE, payload)
+
+    def on_thread_finished(self, session, seq, thread_id):
+        self.send(Commands.THREAD_KILL, thread_id)
+
+    def on_thread_suspended(self, session, seq, thread_id, frames):
+        payload = [
+            '<xml>',
+            '<thread id="{}" stop_reason="105" message="None">'.format(thread_id)
+        ]
+        for number, frame in enumerate(frames):
+            if frame['file'] == '<native>':
+                continue
+            name = make_xml_value(frame['name'])
+            file = make_xml_value(frame['file'])
+            line = frame['line']
+            payload.append(XML_FRAME.format(number, name, file, line))
+        payload.append('</thread></xml>')
+        self.send(Commands.THREAD_SUSPEND, ''.join(payload))
+
+    def on_console_log(self, session, seq, data):
+        string = make_xml_value(quote(data + '\n'))
+        msg = '<xml><io s="{}" ctx="1"/></xml>'.format(string)
+        self.send(Commands.WRITE_TO_CONSOLE, msg)
+
+    def on_console_error(self, session, seq, data):
+        string = make_xml_value(quote(data + '\n'))
+        msg = '<xml><io s="{}" ctx="2"/></xml>'.format(string)
+        self.send(Commands.WRITE_TO_CONSOLE, msg)
+
+
+
+
 
     """"
 

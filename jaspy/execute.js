@@ -1049,21 +1049,28 @@ NativeFrame.prototype.execute = function () {
     try {
         result = this.code.func.apply(null, this.args.concat([this.state, this]));
     } catch (error) {
-        if (error instanceof PyObject) {
-            raise(error.cls, error, undefined, true);
-            vm.frame = this.back;
-            // << if ENABLE_THREADING
-                if (!vm.frame) {
-                    threading.finished();
-                }
-            // >>
-            return;
+        if (!(error instanceof PyObject)) {
+            error = pack_error(error);
         }
-        //throw error;
+        raise(error.cls, error, undefined, true);
+        vm.frame = this.back;
+        // << if ENABLE_DEBUGGER
+            debugging.trace_return(this);
+        // >>
+        // << if ENABLE_THREADING
+            if (!vm.frame) {
+                threading.finished();
+            }
+        // >>
+        return;
     }
     if (result == undefined || result instanceof PyObject) {
-        if (result instanceof PyObject && vm.return_value) {
-            vm.return_value = result;
+        if (vm.return_value) {
+            if (result instanceof PyObject) {
+                vm.return_value = result;
+            } else {
+                vm.return_value = None;
+            }
         }
         vm.frame = this.back;
         // << if ENABLE_DEBUGGER

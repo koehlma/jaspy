@@ -23,6 +23,10 @@ function PyJSObject(object, cls) {
 
 extend(PyJSObject, PyObject);
 
+PyJSObject.prototype.primitive = function () {
+    return this.object;
+};
+
 
 function PyJSArray(array, cls) {
     if (!(array instanceof Array)) {
@@ -34,6 +38,10 @@ function PyJSArray(array, cls) {
 
 extend(PyJSArray, PyObject);
 
+PyJSArray.prototype.primitive = function () {
+    return this.array;
+};
+
 
 function PyJSFunction(func, cls) {
     if (typeof func != 'function') {
@@ -44,6 +52,10 @@ function PyJSFunction(func, cls) {
 }
 
 extend(PyJSFunction, PyObject);
+
+PyJSFunction.prototype.primitive = function () {
+    return this.func;
+};
 
 
 $.PyJSObject = PyJSObject;

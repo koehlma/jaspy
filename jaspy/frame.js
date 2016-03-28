@@ -37,7 +37,7 @@ function Frame(code, options) {
         this.debug_step_into = false;
         this.debug_step_out = false;
 
-        this.debug_in_frame = null;
+        this.debug_future = null;
 
         this.debug_internal = options.debug_internal || false;
     // >>

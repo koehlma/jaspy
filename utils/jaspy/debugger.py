@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import enum
 import itertools
 import json
@@ -35,6 +36,7 @@ class Commands(enum.Enum):
     STEP_OUT = 'step_out'
 
     GET_THREADS = 'get_threads'
+    GET_LOCALS = 'get_locals'
 
     ADD_BREAK = 'add_break'
     REMOVE_BREAK = 'remove_break'
@@ -72,6 +74,7 @@ class Events(enum.Enum):
     EXCEPTION_BREAK_REMOVED = 'exception_break_removed'
 
     THREADS = 'threads'
+    LOCALS = 'locals'
 
     CONSOLE_LOG = 'console_log'
     CONSOLE_ERROR = 'console_error'
@@ -106,6 +109,7 @@ class Debugger:
         self.on_exception_break_removed = Event()
 
         self.on_threads = Event()
+        self.on_locals = Event()
 
         self.on_console_log = Event()
         self.on_console_error = Event()
@@ -130,10 +134,13 @@ class Debugger:
             Events.EXCEPTION_BREAK_REMOVED: self.on_exception_break_added,
 
             Events.THREADS: self.on_threads,
+            Events.LOCALS: self.on_locals,
 
             Events.CONSOLE_LOG: self.on_console_log,
             Events.CONSOLE_ERROR: self.on_console_error
         }
+
+        self.futures = {}
 
         self.sequence_counter = itertools.count(1, 2)
 
@@ -141,6 +148,7 @@ class Debugger:
         if sequence_number is None:
             sequence_number = next(self.sequence_counter)
         self.websocket.send_str(command.make(sequence_number, *arguments))
+        return sequence_number
 
     def run(self):
         self.send(Commands.RUN)
@@ -185,27 +193,35 @@ class Debugger:
         self.send(Commands.JS_DEBUGGER)
 
     def exec_in_frame(self, thread_id, frame_id, source):
-        code = compile(source, '<debugger>', 'exec')
-        self.send(Commands.RUN_IN_FRAME, thread_id, frame_id, converter.convert(code))
+        code = converter.convert(compile(source, '<debugger>', 'exec'))
+        return self.send(Commands.RUN_IN_FRAME, thread_id, frame_id, code)
 
     def eval_in_frame(self, thread_id, frame_id, source):
-        code = compile(source, '<debugger>', 'eval')
-        self.send(Commands.RUN_IN_FRAME, thread_id, frame_id, converter.convert(code))
+        code = converter.convert(compile(source, '<debugger>', 'eval'))
+        return self.send(Commands.RUN_IN_FRAME, thread_id, frame_id, code)
 
     def run_in_thread(self, source):
-        code = compile(source, '<debugger>', 'exec')
-        self.send(Commands.RUN_IN_THREAD, converter.convert(code))
+        code = converter.convert(compile(source, '<debugger>', 'exec'))
+        return self.send(Commands.RUN_IN_THREAD, code)
+
+    def get_locals(self, thread_id, frame_id):
+        seq = self.send(Commands.GET_LOCALS, thread_id, frame_id)
+        self.futures[seq] = asyncio.Future()
+        return self.futures[seq]
 
     async def debug(self):
         sessions.append(self)
-
         try:
             session_created.emit(self)
             async for message in self.websocket:
                 if message.tp == aiohttp.MsgType.text:
                     data = json.loads(message.data)
+                    seq = int(data['seq'])
+                    if seq in self.futures:
+                        self.futures[seq].set_result((data['event'], data['args']))
+                        del self.futures[seq]
                     event = self.events[Events(data['event'])]
-                    event.emit(self, int(data['seq']), *data['args'])
+                    event.emit(self, seq, *data['args'])
         finally:
             sessions.remove(self)
             session_closed.emit(self)

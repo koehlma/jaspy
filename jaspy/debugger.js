@@ -13,18 +13,39 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * Implements a debugger for Jaspy. The Debugger requires the threading module.
- *
- *  - line breakpoints specified by filename and line number
- *  - exception breakpoints specified by qualified exception name
- *      - on raise: break directly when exception is raised
- *      - on termination: break after thread has been terminated (post mortem)
- *  - step over — step forward to next line in the current or outer frame
- *  - step out — step to the next step in the outer frame
- *  - step into — stop into new child frame on function call and step over otherwise
- *
- */
+
+function Future() {
+    this.result = null;
+    this.exception = null;
+
+    this.success = false;
+    this.error = false;
+
+    this.callbacks = [];
+}
+
+Future.prototype.done = function (callback) {
+    this.callbacks.push(callback);
+};
+
+Future.prototype.run_callbacks = function () {
+    for (var index = 0; index < this.callbacks.length; index++) {
+        this.callbacks[index](this)
+    }
+};
+
+Future.prototype.set_result = function (result) {
+    this.result = result;
+    this.success = true;
+    this.run_callbacks();
+};
+
+Future.prototype.set_exception = function (exception) {
+    this.exception = exception;
+    this.error = true;
+    this.run_callbacks();
+};
+
 
 
 var debug_run_in_frame = new NativeCode(function (seq, in_frame, code, state, frame) {
@@ -56,6 +77,41 @@ var debug_run_in_frame = new NativeCode(function (seq, in_frame, code, state, fr
     }
 }, {name: 'run_in_frame'}, ['seq', 'in_frame', 'code']);
 
+
+var debug_get_frame_locals = new NativeCode(function (in_frame, state, frame) {
+    var name;
+    while (true) {
+        switch (state) {
+            case 0:
+                frame.names = Object.keys(in_frame.locals);
+                frame.result = {};
+                frame.index = 0;
+            case 1:
+                if (frame.index >= frame.names.length) {
+                    state = 3;
+                    break;
+                }
+                if (in_frame.locals[frame.names[frame.index]].call('__repr__')) {
+                    return 2;
+                }
+            case 2:
+                // TODO: handle exceptions and deleted names
+                if (!vm.return_value) {
+                    console.log('error')
+                } else {
+                    name = frame.names[frame.index++];
+                    frame.result[name] = {
+                        type: in_frame.locals[name].cls.name,
+                        value: vm.return_value.toString()
+                    };
+                }
+                state = 1;
+                break;
+            case 3:
+                return pack_object(frame.result);
+        }
+    }
+}, {name: 'get_locals'}, ['in_frame']);
 
 var debugging = {
     enabled: false,
@@ -151,8 +207,10 @@ var debugging = {
 
     call: function (native_code, args, kwargs) {
         var frame = new NativeFrame(native_code, {args: args, kwargs: kwargs});
+        frame.debug_future = new Future();
         (new Thread(frame)).enqueue();
         threading.resume();
+        return frame.debug_future;
     },
 
     connect: function (url) {
@@ -211,6 +269,13 @@ var debugging = {
 
     trace_return: function (frame) {
         var return_value, last_exception;
+        if (frame.debug_future) {
+            if (vm.return_value) {
+                frame.debug_future.set_result(vm.return_value);
+            } else {
+                frame.debug_future.set_exception(vm.last_exception);
+            }
+        }
         if (frame.back && (frame.debug_step_out || frame.debug_step_over)) {
             frame.back.debug_break = true;
             frame.debug_step_out = false;
@@ -379,6 +444,17 @@ var debugging = {
                 }
             }
             debugging.emit('threads', [result], seq);
+        },
+
+        get_locals: function (seq, thread_id, frame_id) {
+            var frame = threading.get_thread(thread_id).get_frame(frame_id);
+            debugging.call(debug_get_frame_locals, [frame]).done(function (future) {
+                if (future.success) {
+                    debugging.emit('locals', [future.result.primitive()], seq);
+                } else {
+                    debugging.emit_error('error receiving frame locals', seq)
+                }
+            });
         },
 
         add_break: function (seq, filename, line, condition, expression) {

@@ -117,7 +117,7 @@ class InteractiveConsole:
 
         session.on_thread_suspended += self.on_thread_suspended
 
-        #session.on_variable += self.on_variable
+        session.on_locals += self.on_locals
 
         session.on_console_log += self.on_console_log
         session.on_console_error += self.on_console_error
@@ -162,5 +162,19 @@ class InteractiveConsole:
 
     def on_console_error(self, session, seq, *strings):
         self.print_tokens([(Token.Warning, ' '.join(strings) + os.linesep)])
+
+    def on_locals(self, session, seq, result):
+        self.print_message('Received local frame variables!')
+        tokens = []
+        for name in sorted(result.keys()):
+            info = result[name]
+            tokens.extend([
+                (Token.Trace, '| '),
+                (Token.Variable, name),
+                (Token.Normal, ' = '),
+                (Token.Trace, '{%s} ' % info['type']),
+                (Token.Normal, info['value'] + os.linesep)
+            ])
+        self.print_tokens(tokens)
 
 
