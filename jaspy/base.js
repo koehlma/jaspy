@@ -33,6 +33,29 @@ function extend(subclass, superclass) {
 }
 
 
+function assign(target, source) {
+    var name, value;
+    for (name in source) {
+        if (source.hasOwnProperty(name)) {
+            target[name] = source[name];
+        }
+    }
+}
+
+function Class(attributes, superclass) {
+    var constructor = attributes.constructor;
+    if (superclass) {
+        constructor.prototype = Object.create(superclass.prototype);
+    }
+    assign(constructor.prototype, attributes);
+    constructor.superclass = superclass;
+    constructor.extend = function (attributes) {
+        return Class(attributes, constructor);
+    };
+    return constructor;
+}
+
+
 $.error = error;
 $.raise = raise;
 $.assert = assert;

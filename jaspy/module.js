@@ -38,56 +38,58 @@ function unregister_module(name) {
 }
 
 
-function Module(name, depends) {
-    this.name = name;
-    this.depends = depends || [];
-    this.dict = {};
-    if (this.name) {
-        register_module(this.name, this);
+var Module = Class({
+    constructor: function (name, depends) {
+        this.name = name;
+        this.depends = depends || [];
+        this.dict = {};
+        if (this.name) {
+            register_module(this.name, this);
+        }
+        this.wrapper = null;
     }
-    this.wrapper = null;
-}
+});
 
 
-function PythonModule(name, code, depends) {
-    Module.call(this, name, depends);
-    this.code = code;
-    this.frame = null;
-}
-
-extend(PythonModule, Module);
-
-
-function NativeModule(name, func, depends) {
-    Module.call(this, name, depends);
-    this.func = func;
-    if (func) {
-        func.apply(null, [jaspy, this].concat(this.depends.map(get_namespace)));
+var PythonModule = Module.extend({
+    constructor: function (name, code, depends) {
+        Module.call(this, name, depends);
+        this.code = code;
+        this.frame = null;
     }
-}
+});
 
-extend(PythonModule, Module);
 
-NativeModule.prototype.$def = function (name, func, signature, options) {
-    options = options || {};
-    signature = signature || [];
-    options.module = this.name;
-    options.name = name;
-    options.qualname = name;
-    options.simple = func.length == signature.length;
-    this.dict[name] = $def(func, signature, options);
-    return this.dict[name];
-};
+var NativeModule = Module.extend({
+    constructor: function (name, func, depends) {
+        Module.call(this, name, depends);
+        this.func = func;
+        if (func) {
+            func.apply(null, [jaspy, this].concat(this.depends.map(get_namespace)));
+        }
+    },
 
-NativeModule.prototype.$set = function (name, value) {
-    this.dict[name] = value;
-    return this.dict[name];
-};
+    $def: function (name, func, signature, options) {
+        options = options || {};
+        signature = signature || [];
+        options.module = this.name;
+        options.name = name;
+        options.qualname = name;
+        options.simple = func.length == signature.length;
+        this.dict[name] = $def(func, signature, options);
+        return this.dict[name];
+    },
 
-NativeModule.prototype.$class = function (name, bases, mcs) {
-    this.dict[name] = PyType.native(name, bases, null, mcs);
-    return this.dict[name];
-};
+    $set: function (name, value) {
+        this.dict[name] = value;
+        return this.dict[name];
+    },
+
+    $class: function (name, bases, mcs) {
+        this.dict[name] = PyType.native(name, bases, null, mcs);
+        return this.dict[name];
+    }
+});
 
 function module(name, initializer, depends) {
     if (initializer instanceof PyCode) {

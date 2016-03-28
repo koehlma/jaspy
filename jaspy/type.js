@@ -51,111 +51,110 @@ function linearize(cls) {
 }
 
 
-function PyType(name, bases, attributes, mcs) {
-    var index, native;
-    PyObject.call(this, mcs || py_type, attributes || {});
-    this.name = name;
-    this.bases = bases || [py_object];
-    this.mro = linearize(this);
-    this.native = null;
-    for (index = 0; index < this.mro.length; index++) {
-        native = this.mro[index].native;
-        if (native === py_object) {
-            continue;
+var PyType = PyObject.extend({
+    constructor: function (name, bases, attributes, mcs) {
+        var index, native;
+        PyObject.call(this, mcs || py_type, attributes || {});
+        this.name = name;
+        this.bases = bases || [py_object];
+        this.mro = linearize(this);
+        this.native = null;
+        for (index = 0; index < this.mro.length; index++) {
+            native = this.mro[index].native;
+            if (native === py_object) {
+                continue;
+            }
+            if (this.native && this.native !== native && native) {
+                raise(TypeError, 'invalid native type hierarchy');
+            }
+            this.native = native;
         }
-        if (this.native && this.native !== native && native) {
-            raise(TypeError, 'invalid native type hierarchy');
+        this.native = this.native || py_object;
+    },
+
+    lookup: function (name) {
+        var index, value;
+        for (index = 0; index < this.mro.length; index++) {
+            value = this.mro[index].getattr(name);
+            if (value) {
+                return value;
+            }
         }
-        this.native = native;
-    }
-    this.native = this.native || py_object;
-}
+    },
 
-extend(PyType, PyObject);
+    define: function (name, item) {
+        return this.dict[name] = item;
+    },
 
-PyType.prototype.lookup = function (name) {
-    var index, value;
-    for (index = 0; index < this.mro.length; index++) {
-        value = this.mro[index].getattr(name);
-        if (value) {
-            return value;
+    $def: function (name, func, signature, options) {
+        options = options || {};
+        options.name = options.name || name;
+        options.qualname = options.qualname || (this.name + '.' + options.name);
+        return this.define(name, $def(func, ['self'].concat(signature || []), options));
+    },
+
+    $def_property: function (name, getter, setter) {
+        var options = {name: name, qualname: this.name + '.' + name};
+        if (getter) {
+            getter = $def(getter, ['self'], options);
         }
+        if (setter) {
+            setter = $def(setter, ['self', 'value'], options);
+        }
+        return this.define(name, new_property(getter, setter));
+    },
+
+    $def_classmethod: function (name, func, signature, options) {
+        options = options || {};
+        options.name = options.name || name;
+        options.qualname = options.qualname || (this.name + '.' + options.name);
+        return this.define(name, $def(func, ['cls'].concat(signature || []), options));
+    },
+
+    $def_alias: function (name, alias) {
+        return this.define(alias, this.lookup(name));
+    },
+
+    call_classmethod: function (name, args, kwargs) {
+        var method = this.lookup(name);
+        if (method) {
+            return call(method, [this].concat(args || []), kwargs);
+        } else {
+            vm.return_value = null;
+            vm.last_exception = METHOD_NOT_FOUND;
+            return false;
+        }
+    },
+
+    call_staticmethod: function (name, args, kwargs) {
+        var method = this.lookup(name);
+        if (method) {
+            return call(method, args, kwargs);
+        } else {
+            vm.return_value = null;
+            vm.last_exception = METHOD_NOT_FOUND;
+            return false;
+        }
+    },
+
+    check: function (object) {
+        if (!isinstance(object, this)) {
+            raise(TypeError, 'native type check failed');
+        }
+    },
+
+    check_subclass: function (cls) {
+        if (!issubclass(cls, this)) {
+            raise(TypeError, 'native subclass check failed');
+        }
+    },
+
+    make: function (dict) {
+        return new PyObject(this, dict)
     }
-};
-
-PyType.prototype.define = function (name, item) {
-    this.dict[name] = item;
-    return item;
-};
+});
 
 
-
-PyType.prototype.$def = function (name, func, signature, options) {
-    options = options || {};
-    options.name = options.name || name;
-    options.qualname = options.qualname || (this.name + '.' + options.name);
-    return this.define(name, $def(func, ['self'].concat(signature || []), options));
-};
-
-PyType.prototype.$def_property = function (name, getter, setter) {
-    var options = {name: name, qualname: this.name + '.' + name};
-    if (getter) {
-        getter = $def(getter, ['self'], options);
-    }
-    if (setter) {
-        setter = $def(setter, ['self', 'value'], options);
-    }
-    return this.define(name, new_property(getter, setter));
-};
-
-PyType.prototype.$def_classmethod = function (name, func, signature, options) {
-    options = options || {};
-    options.name = options.name || name;
-    options.qualname = options.qualname || (this.name + '.' + options.name);
-    return this.define(name, $def(func, ['cls'].concat(signature || []), options));
-};
-
-PyType.prototype.$def_alias = function (name, alias) {
-    return this.define(alias, this.lookup(name));
-};
-
-PyType.prototype.call_classmethod = function (name, args, kwargs) {
-    var method = this.lookup(name);
-    if (method) {
-        return call(method, [this].concat(args || []), kwargs);
-    } else {
-        vm.return_value = null;
-        vm.last_exception = METHOD_NOT_FOUND;
-        return false;
-    }
-};
-
-PyType.prototype.call_staticmethod = function (name, args, kwargs) {
-    var method = this.lookup(name);
-    if (method) {
-        return call(method, args, kwargs);
-    } else {
-        vm.return_value = null;
-        vm.last_exception = METHOD_NOT_FOUND;
-        return false;
-    }
-};
-
-PyType.prototype.check = function (object) {
-    if (!isinstance(object, this)) {
-        raise(TypeError, 'native type check failed');
-    }
-};
-
-PyType.prototype.check_subclass = function (cls) {
-    if (!issubclass(cls, this)) {
-        raise(TypeError, 'native subclass check failed');
-    }
-};
-
-PyType.prototype.make = function (dict) {
-    return new PyObject(this, dict)
-};
 
 PyType.native = function (name, bases, attributes, mcs) {
     var type = new PyType(name, bases, attributes, mcs);

@@ -14,37 +14,39 @@
  */
 
 
-function Future() {
-    this.result = null;
-    this.exception = null;
+var Future = Class({
+    constructor: function () {
+        this.result = null;
+        this.exception = null;
 
-    this.success = false;
-    this.error = false;
+        this.success = false;
+        this.error = false;
 
-    this.callbacks = [];
-}
+        this.callbacks = [];
+    },
 
-Future.prototype.done = function (callback) {
-    this.callbacks.push(callback);
-};
+    done: function (callback) {
+        this.callbacks.push(callback);
+    },
 
-Future.prototype.run_callbacks = function () {
-    for (var index = 0; index < this.callbacks.length; index++) {
-        this.callbacks[index](this)
+    run_callbacks: function () {
+        for (var index = 0; index < this.callbacks.length; index++) {
+            this.callbacks[index](this)
+        }
+    },
+
+    set_result: function (result) {
+        this.result = result;
+        this.success = true;
+        this.run_callbacks();
+    },
+
+    set_exception: function (exception) {
+        this.exception = exception;
+        this.error = true;
+        this.run_callbacks();
     }
-};
-
-Future.prototype.set_result = function (result) {
-    this.result = result;
-    this.success = true;
-    this.run_callbacks();
-};
-
-Future.prototype.set_exception = function (exception) {
-    this.exception = exception;
-    this.error = true;
-    this.run_callbacks();
-};
+});
 
 
 

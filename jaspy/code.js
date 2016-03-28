@@ -13,117 +13,119 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function Signature(argnames, poscount, var_args, var_kwargs) {
-    this.argnames = argnames || [];
-    this.poscount = poscount || 0;
-    this.var_args = var_args || false;
-    this.var_kwargs = var_kwargs || false;
-}
+var Signature = Class({
+    constructor: function (argnames, poscount, var_args, var_kwargs) {
+        this.argnames = argnames || [];
+        this.poscount = poscount || 0;
+        this.var_args = var_args || false;
+        this.var_kwargs = var_kwargs || false;
+    },
 
-Signature.prototype.parse_args = function (args, kwargs, defaults, namespace) {
-    args = args || [];
-    kwargs = kwargs || {};
+    parse_args: function (args, kwargs, defaults, namespace) {
+        args = args || [];
+        kwargs = kwargs || {};
 
-    var result, index, name, length;
-    if (!namespace) {
-        result = [];
-    }
+        var result, index, name, length;
+        if (!namespace) {
+            result = [];
+        }
 
-    for (index = 0; index < this.poscount; index++) {
-        name = this.argnames[index];
-        if (args[index]) {
+        for (index = 0; index < this.poscount; index++) {
+            name = this.argnames[index];
+            if (args[index]) {
+                if (name in kwargs) {
+                    raise(TypeError, 'multiple values for positional argument \'' + name + '\'');
+                }
+                if (namespace) {
+                    namespace[name] = args[index];
+                } else {
+                    result.push(args[index]);
+                }
+            } else if (name in kwargs) {
+                if (namespace) {
+                    namespace[name] = kwargs[name];
+                } else {
+                    result.push(kwargs[name]);
+                }
+                delete kwargs[name];
+            } else if (defaults && name in defaults) {
+                if (namespace) {
+                    namespace[name] = defaults[name];
+                } else {
+                    result.push(defaults[name]);
+                }
+            } else {
+                raise(TypeError, 'missing positional argument \'' + name + '\'');
+            }
+        }
+        if (this.var_args) {
+            if (namespace) {
+                namespace[this.argnames[index]] = args.slice(this.poscount);
+            } else {
+                result.push(args.slice(this.poscount));
+            }
+            index++;
+        } else if (index < args.length) {
+            raise(TypeError, 'too many positional arguments');
+        }
+
+        length = this.argnames.length;
+        if (this.var_kwargs) {
+            length--;
+        }
+        for (; index < length; index++) {
+            name = this.argnames[index];
             if (name in kwargs) {
-                raise(TypeError, 'multiple values for positional argument \'' + name + '\'');
-            }
-            if (namespace) {
-                namespace[name] = args[index];
+                if (namespace) {
+                    namespace[name] = kwargs[name];
+                } else {
+                    result.push(kwargs[name]);
+                }
+                delete kwargs[name];
+            } else if (defaults && name in defaults) {
+                if (namespace) {
+                    namespace[name] = defaults[name];
+                } else {
+                    result.push(defaults[name]);
+                }
             } else {
-                result.push(args[index]);
+                raise(TypeError, 'missing keyword argument \'' + name + '\'');
             }
-        } else if (name in kwargs) {
+        }
+        if (this.var_kwargs) {
             if (namespace) {
-                namespace[name] = kwargs[name];
+                namespace[this.argnames[index]] = kwargs;
             } else {
-                result.push(kwargs[name]);
-            }
-            delete kwargs[name];
-        } else if (defaults && name in defaults) {
-            if (namespace) {
-                namespace[name] = defaults[name];
-            } else {
-                result.push(defaults[name]);
+                result.push(kwargs);
             }
         } else {
-            raise(TypeError, 'missing positional argument \'' + name + '\'');
-        }
-    }
-    if (this.var_args) {
-        if (namespace) {
-            namespace[this.argnames[index]] = args.slice(this.poscount);
-        } else {
-            result.push(args.slice(this.poscount));
-        }
-        index++;
-    } else if (index < args.length) {
-        raise(TypeError, 'too many positional arguments');
-    }
-
-    length = this.argnames.length;
-    if (this.var_kwargs) {
-        length--;
-    }
-    for (; index < length; index++) {
-        name = this.argnames[index];
-        if (name in kwargs) {
-            if (namespace) {
-                namespace[name] = kwargs[name];
-            } else {
-                result.push(kwargs[name]);
-            }
-            delete kwargs[name];
-        } else if (defaults && name in defaults) {
-            if (namespace) {
-                namespace[name] = defaults[name];
-            } else {
-                result.push(defaults[name]);
-            }
-        } else {
-            raise(TypeError, 'missing keyword argument \'' + name + '\'');
-        }
-    }
-    if (this.var_kwargs) {
-        if (namespace) {
-            namespace[this.argnames[index]] = kwargs;
-        } else {
-            result.push(kwargs);
-        }
-    } else {
-        for (name in kwargs) {
-            if (kwargs.hasOwnProperty(name)) {
-                raise(TypeError, 'unknown keyword argument \'' + name + '\'');
+            for (name in kwargs) {
+                if (kwargs.hasOwnProperty(name)) {
+                    raise(TypeError, 'unknown keyword argument \'' + name + '\'');
+                }
             }
         }
-    }
 
-    return result;
-};
+        return result;
+    },
 
-Signature.prototype.toString = function () {
-    var argnames;
+    toString: function () {
+        var argnames;
 
-    if (!this.var_args && !this.var_kwargs) {
-        return this.argnames.join(',');
-    }
-    argnames = new Array(this.argnames);
-    if (this.var_args) {
-        argnames[this.poscount] = '*' + argnames[this.poscount];
-    }
-    if (this.var_kwargs) {
-        argnames[argnames.length - 1] = '**' + argnames[argnames.length - 1];
-    }
+        if (!this.var_args && !this.var_kwargs) {
+            return this.argnames.join(',');
+        }
+        argnames = new Array(this.argnames);
+        if (this.var_args) {
+            argnames[this.poscount] = '*' + argnames[this.poscount];
+        }
+        if (this.var_kwargs) {
+            argnames[argnames.length - 1] = '**' + argnames[argnames.length - 1];
+        }
 
-    return argnames.join(',');
-};
+        return argnames.join(',');
+    }
+});
 
 Signature.from_spec = function (spec) {
     var index, name, star_args, star_kwargs;
@@ -176,88 +178,89 @@ Signature.from_python = function (varnames, argcount, kwargcount, flags) {
 };
 
 
-function Code(signature, options) {
-    this.signature = signature;
+var Code = Class({
+    constructor: function (signature, options) {
+        this.signature = signature;
 
-    options = options || {};
+        options = options || {};
 
-    this.name = options.name || '<unknown>';
-    this.filename = options.filename || '<unknown>';
+        this.name = options.name || '<unknown>';
+        this.filename = options.filename || '<unknown>';
 
-    this.flags = options.flags || 0;
-}
+        this.flags = options.flags || 0;
+    },
 
-Code.prototype.parse_args = function (args, kwargs, defaults, namespace) {
-    return this.signature.parse_args(args, kwargs, defaults, namespace);
-};
-
-
-function PythonCode(bytecode, options) {
-    this.bytecode = bytecode;
-
-    options = options || {};
-    options.flags = (options.flags || 0) | CODE_FLAGS.PYTHON;
-    options.name = options.name || '<module>';
-    options.filename = options.filename || '<string>';
-
-    this.names = options.names || [];
-    this.varnames = options.varnames || [];
-    this.freevars = options.freevars || [];
-    this.cellvars = options.cellvars || [];
-
-    this.argcount = options.argcount || 0;
-    this.kwargcount = options.kwargcount || 0;
-
-    Code.call(this, Signature.from_python(this.varnames, this.argcount, this.kwargcount, options.flags), options);
-
-    this.constants = options.constants || [];
-
-    this.firstline = options.firstline || 1;
-    this.lnotab = options.lnotab || '';
-
-    this.instructions = disassemble(this);
-}
-
-extend(PythonCode, Code);
-
-PythonCode.prototype.get_line_number = function (position) {
-    if (position < 0) {
-        return 0;
+    parse_args: function (args, kwargs, defaults, namespace) {
+        return this.signature.parse_args(args, kwargs, defaults, namespace);
     }
+});
 
-    var index, offset_increment, line_increment;
-    var address = this.instructions[position].start;
-    var line_number = this.firstline;
-    var offset = 0;
 
-    for (index = 0; index < this.lnotab.length; index++) {
-        offset_increment = this.lnotab.charCodeAt(index++);
-        line_increment = this.lnotab.charCodeAt(index);
-        offset += offset_increment;
-        if (offset > address) {
-            break;
+var PythonCode = Code.extend({
+    constructor: function (bytecode, options) {
+        this.bytecode = bytecode;
+
+        options = options || {};
+        options.flags = (options.flags || 0) | CODE_FLAGS.PYTHON;
+        options.name = options.name || '<module>';
+        options.filename = options.filename || '<string>';
+
+        this.names = options.names || [];
+        this.varnames = options.varnames || [];
+        this.freevars = options.freevars || [];
+        this.cellvars = options.cellvars || [];
+
+        this.argcount = options.argcount || 0;
+        this.kwargcount = options.kwargcount || 0;
+
+        Code.call(this, Signature.from_python(this.varnames, this.argcount, this.kwargcount, options.flags), options);
+
+        this.constants = options.constants || [];
+
+        this.firstline = options.firstline || 1;
+        this.lnotab = options.lnotab || '';
+
+        this.instructions = disassemble(this);
+    },
+
+    get_line_number: function (position) {
+        if (position < 0) {
+            return 0;
         }
-        line_number += line_increment;
+
+        var index, offset_increment, line_increment;
+        var address = this.instructions[position].start;
+        var line_number = this.firstline;
+        var offset = 0;
+
+        for (index = 0; index < this.lnotab.length; index++) {
+            offset_increment = this.lnotab.charCodeAt(index++);
+            line_increment = this.lnotab.charCodeAt(index);
+            offset += offset_increment;
+            if (offset > address) {
+                break;
+            }
+            line_number += line_increment;
+        }
+
+        return line_number;
     }
+});
 
-    return line_number;
-};
+var NativeCode = Code.extend({
+    constructor: function (func, options, spec) {
+        this.func = func;
 
+        options = options || {};
+        options.flags = (options.flags || 0) | CODE_FLAGS.NATIVE;
+        options.name = options.name || func.name;
+        options.filename = options.filename || '<native>';
 
-function NativeCode(func, options, spec) {
-    this.func = func;
+        Code.call(this, Signature.from_spec(spec), options);
 
-    options = options || {};
-    options.flags = (options.flags || 0) | CODE_FLAGS.NATIVE;
-    options.name = options.name || func.name;
-    options.filename = options.filename || '<native>';
-
-    Code.call(this, Signature.from_spec(spec), options);
-
-    this.simple = func.length == this.signature.argnames.length;
-}
-
-extend(NativeCode, Code);
+        this.simple = func.length == this.signature.argnames.length;
+    }
+});
 
 
 $.Signature = Signature;

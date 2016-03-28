@@ -151,103 +151,112 @@ var threading = {
     }
 };
 
+var Thread = Class({
+    constructor: function Thread(frame, name) {
+        this.frame = frame;
+        this.counter = 0;
+        this.finished = false;
+        this.identifier = threading.identifier++;
+        this.name = name || ('Thread-' + this.identifier);
 
-function Thread(frame, name) {
-    this.frame = frame;
-    this.counter = 0;
-    this.finished = false;
-    this.identifier = threading.identifier++;
-    this.name = name || ('Thread-' + this.identifier);
+        this.return_value = None;
+        this.last_exception = null;
 
-    this.return_value = None;
-    this.last_exception = null;
+        // << if ENABLE_DEBUGGER
+            this.debug_internal = false;
 
-    // << if ENABLE_DEBUGGER
-        this.debug_internal = false;
+            if (debugging) {
+                debugging.trace_thread_created(this);
+            }
+        // >>
 
-        if (debugging) {
-            debugging.trace_thread_created(this);
+        threading.registry[this.identifier] = this;
+    },
+
+    toString: function () {
+        return '<Thread ' + this.identifier.toString() + '>';
+    },
+
+    enqueue: function () {
+        threading.queue.push(this);
+    },
+
+    save: function () {
+        this.frame = vm.frame;
+
+        this.return_value = vm.return_value;
+        this.last_exception = vm.last_exception;
+    },
+
+    restore: function () {
+        vm.frame = this.frame;
+
+        vm.return_value = this.return_value;
+        vm.last_exception = this.last_exception;
+    },
+
+    get_frame: function (number) {
+        var frame = this.frame;
+        while (number > 0) {
+            frame = frame.back;
+            number--;
         }
-    // >>
-
-    threading.registry[this.identifier] = this;
-}
-
-Thread.prototype.toString = function () {
-    return '<Thread ' + this.identifier.toString() + '>';
-};
-
-Thread.prototype.enqueue = function () {
-    threading.queue.push(this);
-};
-
-Thread.prototype.save = function () {
-    this.frame = vm.frame;
-
-    this.return_value = vm.return_value;
-    this.last_exception = vm.last_exception;
-};
-
-Thread.prototype.restore = function () {
-    vm.frame = this.frame;
-
-    vm.return_value = this.return_value;
-    vm.last_exception = this.last_exception;
-};
-
-Thread.prototype.get_frame = function (number) {
-    var frame = this.frame;
-    while (number > 0) {
-        frame = frame.back;
-        number--;
+        return frame;
     }
-    return frame;
-};
+});
 
 
-function Lock(reentrant) {
-    this.reentrant = reentrant;
-    this.waiting = [];
-    this.thread = null;
-}
+var Lock = Class({
+    constructor: function (reentrant) {
+        this.reentrant = reentrant;
+        this.waiting = [];
+        this.thread = null;
+        this.acquired = 0;
+    },
 
-Lock.prototype.acquire = function (thread) {
-    thread = thread || threading.thread;
-    if (!this.thread || (this.reentrant && this.thread === thread)) {
-        this.thread = thread;
-        return true;
-    }
-    this.waiting.push(thread);
-    return false;
-};
+    acquire: function (thread) {
+        thread = thread || threading.thread;
+        if (!this.thread || (this.reentrant && this.thread === thread)) {
+            this.thread = thread;
+            this.acquired++;
+            return true;
+        }
+        this.waiting.push(thread);
+        return false;
+    },
 
-Lock.prototype.release = function (thread) {
-    thread = thread || threading.thread;
-    if (this.thread === thread) {
-        if (this.waiting.length) {
-            this.thread = this.waiting.shift();
-            this.thread.enqueue();
+    release: function (thread) {
+        thread = thread || threading.thread;
+        if (this.thread === thread) {
+            this.acquired--;
+            if (this.acquired == 0) {
+                if (this.waiting.length) {
+                    this.thread = this.waiting.shift();
+                    this.thread.enqueue();
+                } else {
+                    this.thread = null;
+                }
+                return true;
+            }
+            return false;
+        }
+        raise(ValueError, 'unable to release lock, lock is not acquired by given thread');
+    },
+
+    remove: function (thread) {
+        thread = thread || threading.thread;
+        var index = this.waiting.indexOf(thread);
+        if (index > -1) {
+            this.waiting.splice(index, 1);
         } else {
-            this.thread = null;
+            raise(ValueError, 'unable to remove thread from waiting threads, thread not found');
         }
-        return true;
-    }
-    raise(ValueError, 'unable to release lock, lock is not acquired by given thread');
-};
+    },
 
-Lock.prototype.remove = function (thread) {
-    thread = thread || threading.thread;
-    var index = this.waiting.indexOf(thread);
-    if (index > -1) {
-        this.waiting.splice(index, 1);
-    } else {
-        raise(ValueError, 'unable to remove thread from waiting threads, thread not found');
+    locked: function () {
+        return this.thread != null;
     }
-};
-
-Lock.prototype.locked = function () {
-    return this.thread != null;
-};
+});
 
 
 window.addEventListener('message', threading.wakeup, true);
