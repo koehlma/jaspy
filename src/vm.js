@@ -102,7 +102,7 @@ function main(module, argv) {
         }
     // >>
 
-    get_namespace('sys')['argv'] = new PyList((argv || ['']).map(pack_str));
+    get_namespace('sys')['argv'] = new PyList((['<python>'].concat(argv || []).map(pack_str)));
     register_module('__main__', module);
 
     module.dict['__name__'] = pack_str('__main__');
