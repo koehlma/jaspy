@@ -14,10 +14,9 @@
  */
 
 
-var Future = Class.extend({
+var DebugFuture = Class.extend({
     constructor: function () {
         this.result = null;
-        this.exception = null;
 
         this.success = false;
         this.error = false;
@@ -42,7 +41,7 @@ var Future = Class.extend({
     },
 
     set_exception: function (exception) {
-        this.exception = exception;
+        this.result = exception;
         this.error = true;
         this.run_callbacks();
     }
@@ -209,7 +208,7 @@ var debugging = {
 
     call: function (native_code, args, kwargs) {
         var frame = new NativeFrame(native_code, {args: args, kwargs: kwargs});
-        frame.debug_future = new Future();
+        frame.debug_future = new DebugFuture();
         (new Thread(frame)).enqueue();
         threading.resume();
         return frame.debug_future;
