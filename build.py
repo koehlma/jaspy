@@ -20,7 +20,8 @@ from jaspy.preprocessor import process
 
 
 __path__ = os.path.dirname(__file__)
-os.chdir(__path__)
+if __path__:
+    os.chdir(__path__)
 
 
 if __name__ == '__main__':
