@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Jaspy — Hello!</title>
+
+    <!-- load the interpreter -->
+    <script src="/jaspy.js"></script>
+
+    <!-- load required native modules -->
+    <script src="/modules/time.js"></script>
+    <script src="/modules/dom.js"></script>
+    <script src="/modules/greenlet.js"></script>
+
+    <!-- load the compiled python code -->
+    <script src="/load/hello"></script>
+
+    <script>
+        function on_load() {
+            // run the hello module after DOM has been loaded
+            jaspy.debug(jaspy.get_module('hello'), ['World!'], 'ws://localhost:8080/debugger', {patch_console: true});
+        }
+    </script>
+</head>
+<body onload="on_load()">
+    <button onclick="jaspy.debugger.run()">Run</button>
+</body>
+</html>
