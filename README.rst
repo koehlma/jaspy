@@ -35,7 +35,7 @@ Install dependencies for the interactive console, if they are not installed alre
 
 .. code:: sh
 
-    pip install --user ptpython pygments
+    pip3 install --user ptpython pygments
 
 
 Switch to the example directory and start the server in interactive mode:
