@@ -24,7 +24,7 @@ Features
 
 Alternatives
 ------------
-There are already many other Python to JavaScript approaches out there:
+There are already many other Python-to-JavaScript approaches out there:
 
 - `Brython <http://www.brython.info/>`_
 - `PyPy.js <http://pypyjs.org/>`_
@@ -48,7 +48,7 @@ Todo
 ----
 If you like the ideas of Jaspy feel free to join, there are many things to do:
 
-- ☐ implement all the batteries included builtin stuff from Python
+- ☐ implement all the batteries-included-builtin stuff of Python
 - ☐ implement native JS modules for the DOM, JS objects and some Web APIs
 - ☐ improve the debugger and make it fully compatible to the PyDev protocol
 - ☐ implement a parser and bytecode compiler in JavaScript
