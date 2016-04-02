@@ -15,9 +15,8 @@
 
 import os
 
-import metadata
-
-from preprocessor import process
+from jaspy import metadata
+from jaspy.preprocessor import process
 
 
 __path__ = os.path.dirname(__file__)
