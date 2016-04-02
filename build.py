@@ -49,4 +49,4 @@ if __name__ == '__main__':
         os.mkdir('build')
 
     with open('build/jaspy.js', 'w') as output:
-        output.write(process('jaspy/__init__.js', namespace))
+        output.write(process('src/__init__.js', namespace))
