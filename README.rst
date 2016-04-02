@@ -55,7 +55,7 @@ If you like the ideas of Jaspy feel free to join, there are many things to do:
 - ☐ implement a parser and bytecode compiler in JavaScript
 - ☐ support for Apache Cordova (Jaspy for cross platform mobile applications)
 - ☐ implement a neat UI library on top of Jaspy
-- ☐ … and, yes of course, your own great ideas
+- ☐ … and, of course, your own great ideas and cool features
 
 
 Structure
