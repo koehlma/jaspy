@@ -1,0 +1,30 @@
+{
+  "name": "jaspy",
+  "version": "0.0.4",
+  "description": "a Python VM written entirely from scratch in JavaScript with some unique features",
+  "main": "jaspy.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "python build.py && cp build/jaspy.js .",
+    "publish": "rm -f jaspy.js",
+    "start": "cd example && PYTHONPATH=../ python3 -m jaspy.cli --interactive --jaspy-js ../jaspy.js",
+    "build": "python build.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koehlma/jaspy.git"
+  },
+  "keywords": [
+    "python",
+    "interpreter"
+  ],
+  "author": "Maximilian Köhl <mail@koehlma.de>",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/koehlma/jaspy/issues"
+  },
+  "homepage": "https://github.com/koehlma/jaspy#readme"
+}
