@@ -65,7 +65,7 @@ dom.get_body().append(button)
 
 
 # multiple threads
-def periodic_print():
+def button_animation():
     state = True
     while True:
         # this also works without time sleep because jaspy provides preemptive
@@ -81,4 +81,4 @@ def periodic_print():
             state = True
 
 
-thread = _thread.start_new_thread(periodic_print)
+thread = _thread.start_new_thread(button_animation)
