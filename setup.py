@@ -33,7 +33,8 @@ setup(
     author_email='mail@koehlma.de',
     url='https://github.com/koehlma/jaspy',
     license='LGPLv3',
-    scripts=['build', 'jaspy'],
+    scripts=['build'],
+    packages=['jaspy'],
     extras_require={
         'interactive remote console': ['ptpython', 'pygments']
     },
