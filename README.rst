@@ -41,6 +41,14 @@ State
 This project is still in an alpha state. The APIs are unstable, it is untested and not
 ready for productive use. Some of the features listed above aren't yet implemented.
 
-Build
------
-See `build.py`.
+Todo
+----
+If you like the ideas of Jaspy feel free to join, there are many things to do:
+
+- [ ] implement all the batteries included builtin stuff from Python
+- [ ] implement native JS modules for the DOM, JS objects and some Web APIs
+- [ ] improve the debugger and make it fully compatible to the PyDev protocol
+- [ ] implement a parser and bytecode compiler in JavaScript
+- [ ] support for Apache Cordova (Jaspy for cross platform mobile applications)
+- [ ] implement a neat UI library on top of Jaspy
+- [ ] … and, yes of course, your own great ideas
