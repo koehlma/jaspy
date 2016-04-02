@@ -31,6 +31,13 @@ First clone the repository and build the interpreter:
     git clone --recursive https://github.com/koehlma/jaspy.git; cd jaspy
     python build.py  # compile the interpreter
 
+Install dependencies for the interactive console, if they are not installed already:
+
+.. code:: sh
+
+    pip install --user ptpython pygments
+
+
 Switch to the example directory and start the server in interactive mode:
 
 .. code:: sh
@@ -71,13 +78,13 @@ Todo
 ----
 If you like the ideas of Jaspy feel free to join, there are many things to do:
 
-- ☐ implement all the batteries-included-builtin stuff of Python
-- ☐ implement native JS modules for the DOM, JS objects and some Web APIs
-- ☐ improve the debugger and make it fully compatible to the PyDev protocol
-- ☐ implement a parser and bytecode compiler in JavaScript
-- ☐ support for Apache Cordova (Jaspy for cross platform mobile applications)
-- ☐ implement a neat UI library on top of Jaspy
-- ☐ … and, of course, your own great ideas and cool features
+- implement all the batteries-included-builtin stuff of Python
+- implement native JS modules for the DOM, JS objects and some Web APIs
+- improve the debugger and make it fully compatible to the PyDev protocol
+- implement a parser and bytecode compiler in JavaScript
+- support for Apache Cordova (Jaspy for cross platform mobile applications)
+- implement a neat UI library on top of Jaspy
+- … and, of course, your own great ideas and cool features
 
 
 Structure
