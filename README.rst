@@ -20,6 +20,30 @@ Features
 .. _time: https://github.com/koehlma/jaspy/blob/master/modules/time.js
 .. _dom: https://github.com/koehlma/jaspy/blob/master/modules/dom.js
 
+Quickstart
+----------
+Jaspy comes with an integrated development server and interactive debugger!
+
+First clone the repository and build the interpreter:
+
+.. code:: sh
+
+    git clone --recursive https://github.com/koehlma/jaspy.git; cd jaspy
+    python build.py  # compile the interpreter
+
+Switch to the example directory and start the server in interactive mode:
+
+.. code:: sh
+
+    cd example
+    PYTHONPATH=../ python -m jaspy.cli --interactive
+
+Visit http://localhost:8080/hello.html in your browser and click run:
+
+.. image:: https://raw.githubusercontent.com/koehlma/jaspy/master/example/debugger.gif
+    :alt: Jaspy Screencast
+    :align: center
+
 
 Alternatives
 ------------
