@@ -14,7 +14,7 @@
  */
 
 
-var Frame = Class({
+var Frame = Class.extend({
     constructor: function (code, options) {
         this.code = code;
 

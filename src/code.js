@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var Signature = Class({
+var Signature = Class.extend({
     constructor: function (argnames, poscount, var_args, var_kwargs) {
         this.argnames = argnames || [];
         this.poscount = poscount || 0;
@@ -178,7 +178,7 @@ Signature.from_python = function (varnames, argcount, kwargcount, flags) {
 };
 
 
-var Code = Class({
+var Code = Class.extend({
     constructor: function (signature, options) {
         this.signature = signature;
 

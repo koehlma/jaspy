@@ -151,7 +151,7 @@ var threading = {
     }
 };
 
-var Thread = Class({
+var Thread = Class.extend({
     constructor: function Thread(frame, name) {
         this.frame = frame;
         this.counter = 0;
@@ -206,7 +206,7 @@ var Thread = Class({
 });
 
 
-var Lock = Class({
+var Lock = Class.extend({
     constructor: function (reentrant) {
         this.reentrant = reentrant;
         this.waiting = [];

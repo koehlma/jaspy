@@ -14,7 +14,7 @@
  */
 
 
-var Future = Class({
+var Future = Class.extend({
     constructor: function () {
         this.result = null;
         this.exception = null;

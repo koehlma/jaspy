@@ -38,7 +38,7 @@ function unregister_module(name) {
 }
 
 
-var Module = Class({
+var Module = Class.extend({
     constructor: function (name, depends) {
         this.name = name;
         this.depends = depends || [];

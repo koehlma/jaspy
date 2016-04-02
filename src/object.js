@@ -17,7 +17,7 @@
 var object_id_counter = 0;
 
 
-var PyObject = Class({
+var PyObject = Class.extend({
     constructor: function (cls, dict) {
         this.cls = cls;
         this.identity = null;
