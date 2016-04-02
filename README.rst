@@ -1,12 +1,11 @@
 Jaspy
 =====
-Jaspy is a Python virtual machine written entirely from scratch in JavaScript
-with some unique features in mind. Jaspy supports multiple threads, comes with
-an integrated debugger which offers remote debugging and provides a flexible
-preprocessor based architecture.
+Jaspy is a Python VM written entirely from scratch in JavaScript with some unique
+features. Jaspy supports multiple threads, comes with an integrated debugger which
+offers remote debugging and provides a flexible preprocessor based architecture.
 
-Speed is explicitly not a main goal of this project. Jaspy aims to illustrate how web
-programming on the client side could be done by exploring new ways.
+Speed is explicitly not a main goal of this project. Jaspy aims to illustrate how
+web programming on the client side could be done by exploring new ways.
 
 
 Features
@@ -34,9 +33,9 @@ There are already many other Python to JavaScript approaches out there:
 - `Pyjs <http://pyjs.org/>`_
 - …
 
-Most of them are faster than Jaspy but none of them offers the unique features of Jaspy
-which are a fully suspendable interpreter with threading support, the integrated debugger
-and the flexible, preprocessor based architecture.
+Most of them are faster than Jaspy but none of them offers the unique features of
+Jaspy, which are the fully suspendable interpreter with threading support, the
+integrated debugger and the flexible, preprocessor based architecture.
 
 
 State
