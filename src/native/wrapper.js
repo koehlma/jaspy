@@ -13,49 +13,50 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyJSObject(object, cls) {
-    if (!(object instanceof Object)) {
-        raise(TypeError, 'invalid type of native object initializer');
+
+var PyJSObject = PyObject.extend({
+    constructor: function (object, cls) {
+        if (!(object instanceof Object)) {
+            raise(TypeError, 'invalid type of native object initializer');
+        }
+        PyObject.call(this, cls || py_js_object);
+        this.object = object;
+    },
+
+    primitive: function () {
+        return this.object;
     }
-    PyObject.call(this, cls || py_js_object);
-    this.object = object;
-}
-
-extend(PyJSObject, PyObject);
-
-PyJSObject.prototype.primitive = function () {
-    return this.object;
-};
+});
 
 
-function PyJSArray(array, cls) {
-    if (!(array instanceof Array)) {
-        raise(TypeError, 'invalid type of native array initializer');
+var PyJSArray = PyObject.extend({
+    constructor: function (array, cls) {
+        if (!(array instanceof Array)) {
+            raise(TypeError, 'invalid type of native array initializer');
+        }
+        PyObject.call(this, cls || py_js_array);
+        this.array = array;
+    },
+
+    primitive: function () {
+        return this.array;
     }
-    PyObject.call(this, cls || py_js_array);
-    this.array = array;
-}
-
-extend(PyJSArray, PyObject);
-
-PyJSArray.prototype.primitive = function () {
-    return this.array;
-};
+});
 
 
-function PyJSFunction(func, cls) {
-    if (typeof func != 'function') {
-        raise(TypeError, 'invalid type of native function initializer');
+var PyJSFunction = PyObject.extend({
+    constructor: function (func, cls) {
+        if (typeof func != 'function') {
+            raise(TypeError, 'invalid type of native function initializer');
+        }
+        PyObject.call(this, cls || py_js_function);
+        this.func = func;
+    },
+
+    primitive: function () {
+        return this.func;
     }
-    PyObject.call(this, cls || py_js_function);
-    this.func = func;
-}
-
-extend(PyJSFunction, PyObject);
-
-PyJSFunction.prototype.primitive = function () {
-    return this.func;
-};
+});
 
 
 $.PyJSObject = PyJSObject;

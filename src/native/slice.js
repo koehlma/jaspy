@@ -13,14 +13,15 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PySlice(start, stop, step) {
-    PyObject.call(this, py_slice);
-    this.start = start;
-    this.stop = stop;
-    this.step = step || None;
-}
 
-extend(PySlice, PyObject);
+var PySlice = PyObject.extend({
+    constructor: function (start, stop, step) {
+        PyObject.call(this, py_slice);
+        this.start = start;
+        this.stop = stop;
+        this.step = step || None;
+    }
+});
 
 
 function new_slice(start, stop, step) {

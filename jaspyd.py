@@ -21,8 +21,8 @@ import jaspy
 
 
 __dir__ = os.path.dirname(__file__)
-default_jaspy_js = os.path.join(__dir__, '..', 'build', 'jaspy.js')
-default_modules_dir = os.path.join(__dir__, '..', 'modules')
+default_jaspy_js = os.path.join(__dir__, 'build', 'jaspy.js')
+default_modules_dir = os.path.join(__dir__, 'modules')
 
 
 parser = argparse.ArgumentParser()

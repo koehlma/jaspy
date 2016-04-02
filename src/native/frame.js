@@ -13,15 +13,16 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyFrame(frame) {
-    if (!(frame instanceof Frame)) {
-        raise(TypeError, 'invalid type of native frame initializer');
-    }
-    PyObject.call(this, py_frame);
-    this.frame = frame;
-}
 
-extend(PyFrame, PyObject);
+var PyFrame = PyObject.extend({
+    constructor: function (frame) {
+        if (!(frame instanceof Frame)) {
+            raise(TypeError, 'invalid type of native frame initializer');
+        }
+        PyObject.call(this, py_frame);
+        this.frame = frame;
+    }
+});
 
 
 $.PyFrame = PyFrame;

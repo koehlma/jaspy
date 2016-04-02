@@ -13,15 +13,16 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyCode(code, cls) {
-    if (!(code instanceof Code)) {
-        raise(TypeError, 'invalid type of native code initializer');
-    }
-    PyObject.call(this, cls || py_code);
-    this.code = code;
-}
 
-extend(PyCode, PyObject);
+var PyCode = PyObject.extend({
+    constructor: function (code, cls) {
+        if (!(code instanceof Code)) {
+            raise(TypeError, 'invalid type of native code initializer');
+        }
+        PyObject.call(this, cls || py_code);
+        this.code = code;
+    }
+});
 
 
 function new_code(value) {

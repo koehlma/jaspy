@@ -13,21 +13,22 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyFunction(name, code, options, cls) {
-    PyObject.call(this, cls || py_function);
 
-    this.name = name;
-    this.code = code;
+var PyFunction = PyObject.extend({
+    constructor: function (name, code, options, cls) {
+        PyObject.call(this, cls || py_function);
 
-    this.qualname = options.qualname || this.name;
-    this.doc = options.doc || '';
-    this.module = options.module || 'builtins';
-    this.defaults = options.defaults || null;
-    this.closure = options.closure || null;
-    this.globals = options.globals || null;
-}
+        this.name = name;
+        this.code = code;
 
-extend(PyFunction, PyObject);
+        this.qualname = options.qualname || this.name;
+        this.doc = options.doc || '';
+        this.module = options.module || 'builtins';
+        this.defaults = options.defaults || null;
+        this.closure = options.closure || null;
+        this.globals = options.globals || null;
+    }
+});
 
 
 function $def(func, signature, options) {
@@ -36,7 +37,6 @@ function $def(func, signature, options) {
     var code = new NativeCode(func, options, signature);
     return new PyFunction(name, code, options);
 }
-
 
 $.PyFunction = PyFunction;
 

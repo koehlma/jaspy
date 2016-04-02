@@ -27,12 +27,6 @@ function assert(condition, message) {
     }
 }
 
-function extend(subclass, superclass) {
-    subclass.prototype = Object.create(superclass.prototype);
-    subclass.prototype.constructor = subclass;
-}
-
-
 function assign(target, source) {
     var name, value;
     for (name in source) {
@@ -41,6 +35,7 @@ function assign(target, source) {
         }
     }
 }
+
 
 function Class(attributes, superclass) {
     var constructor = attributes.constructor;
@@ -59,4 +54,6 @@ function Class(attributes, superclass) {
 $.error = error;
 $.raise = raise;
 $.assert = assert;
-$.extend = extend;
+$.assign = assign;
+
+$.Class = Class;

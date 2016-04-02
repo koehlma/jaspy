@@ -13,20 +13,21 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyCell(object) {
-    PyObject.call(this, py_cell);
-    this.object = object;
-}
 
-extend(PyCell, PyObject);
+var PyCell = PyObject.extend({
+    constructor: function (object) {
+        PyObject.call(this, py_cell);
+        this.object = object;
+    },
 
-PyCell.prototype.set = function (object) {
-    this.object = object;
-};
+    set: function (object) {
+        this.object = object;
+    },
 
-PyCell.prototype.get = function () {
-    return this.object;
-};
+    get: function () {
+        return this.object;
+    }
+});
 
 
 $.PyCell = PyCell;

@@ -13,12 +13,13 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyException(args, cls) {
-    PyObject.call(this, cls);
-    this.args = args;
-}
 
-extend(PyException, PyObject);
+var PyException = PyObject.extend({
+    constructor: function (args, cls) {
+        PyObject.call(this, cls);
+        this.args = args;
+    }
+});
 
 
 function make_exception(cls, message) {

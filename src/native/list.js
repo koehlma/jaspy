@@ -13,153 +13,154 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyList(initializer, size, cls) {
-    if (!(initializer instanceof Array)) {
-        raise(TypeError, 'invalid type of list initializer');
-    }
-    PyObject.call(this, cls || py_list);
-    this.value = new Array(4);
-    if (initializer) {
-        this.size = initializer.length;
-    } else {
-        this.size = size || 0;
-    }
-    this.grow();
-    if (initializer) {
-        for (var index = 0; index < initializer.length; index++) {
-            this.value[index] = initializer[index];
+
+var PyList = PyObject.extend({
+    constructor: function (initializer, size, cls) {
+        if (!(initializer instanceof Array)) {
+            raise(TypeError, 'invalid type of list initializer');
         }
-    }
-}
-
-extend(PyList, PyObject);
-
-PyList.prototype.check = function (index) {
-    if (index < 0) {
-        index = this.size - index;
-    }
-    if (index < 0 || index > this.size - 1) {
-        raise(IndexError, 'index out of range');
-    }
-    return index;
-};
-
-PyList.prototype.grow = function () {
-    while (this.value.length <= this.size) {
-        var length = this.value.length * 2;
-        while (length <= this.size) {
-            length *= 2;
+        PyObject.call(this, cls || py_list);
+        this.value = new Array(4);
+        if (initializer) {
+            this.size = initializer.length;
+        } else {
+            this.size = size || 0;
         }
-        this.value.length = length;
-    }
-};
-
-PyList.prototype.shrink = function () {
-    if (this.value.length > 4 && this.value.length / 4 >= this.size) {
-        var length = this.value.length / 2;
-        while (length / 4 >= this.size && length > 4) {
-            length /= 2;
+        this.grow();
+        if (initializer) {
+            for (var index = 0; index < initializer.length; index++) {
+                this.value[index] = initializer[index];
+            }
         }
-        this.value.length = length;
-    }
-};
+    },
 
-PyList.prototype.get = function (index) {
-    index = this.check(index);
-    return this.value[index] || None;
-};
+    check: function (index) {
+        if (index < 0) {
+            index = this.size - index;
+        }
+        if (index < 0 || index > this.size - 1) {
+            raise(IndexError, 'index out of range');
+        }
+        return index;
+    },
 
-PyList.prototype.set = function (index, item) {
-    index = this.check(index);
-    return this.value[index] = item;
-};
+    grow: function () {
+        while (this.value.length <= this.size) {
+            var length = this.value.length * 2;
+            while (length <= this.size) {
+                length *= 2;
+            }
+            this.value.length = length;
+        }
+    },
 
-PyList.prototype.append = function (item) {
-    this.size++;
-    this.grow();
-    this.value[this.size - 1] = item;
-    return item;
-};
+    shrink: function () {
+        if (this.value.length > 4 && this.value.length / 4 >= this.size) {
+            var length = this.value.length / 2;
+            while (length / 4 >= this.size && length > 4) {
+                length /= 2;
+            }
+            this.value.length = length;
+        }
+    },
 
-PyList.prototype.pop = function (index) {
-    index = this.check(index);
-    this.size--;
-    if (index == null) {
-        index = this.size;
-    }
-    var item = this.value[index];
-    for (; index < this.size; index++) {
-        this.value[index] = this.value[index + 1];
-    }
-    this.value[index] = null;
-    this.shrink();
-    return item;
-};
+    get: function (index) {
+        index = this.check(index);
+        return this.value[index] || None;
+    },
 
-PyList.prototype.clear = function () {
-    this.value = new Array(4);
-    this.size = 0;
-};
+    set: function (index, item) {
+        index = this.check(index);
+        return this.value[index] = item;
+    },
 
-PyList.prototype.slice = function (start, stop, step) {
-    var index, list = new PyList();
-    if (start == undefined) {
-        start = 0;
-    } else if (start < 0) {
-        start = this.size + start;
-    }
-    if (stop == undefined) {
-        stop = this.size;
-    } else if (stop < 0) {
-        stop = this.size + stop;
-    }
-    step = step || 1;
-    if (step > 0) {
-        if (start < 0) {
+    append: function (item) {
+        this.size++;
+        this.grow();
+        this.value[this.size - 1] = item;
+        return item;
+    },
+
+    pop: function (index) {
+        index = this.check(index);
+        this.size--;
+        if (index == null) {
+            index = this.size;
+        }
+        var item = this.value[index];
+        for (; index < this.size; index++) {
+            this.value[index] = this.value[index + 1];
+        }
+        this.value[index] = null;
+        this.shrink();
+        return item;
+    },
+
+    clear: function () {
+        this.value = new Array(4);
+        this.size = 0;
+    },
+
+    slice: function (start, stop, step) {
+        var index, list = new PyList();
+        if (start == undefined) {
             start = 0;
+        } else if (start < 0) {
+            start = this.size + start;
         }
-        if (stop > this.size) {
+        if (stop == undefined) {
             stop = this.size;
+        } else if (stop < 0) {
+            stop = this.size + stop;
         }
-        for (index = start; index < stop; index += step) {
-            list.append(this.value[index]);
+        step = step || 1;
+        if (step > 0) {
+            if (start < 0) {
+                start = 0;
+            }
+            if (stop > this.size) {
+                stop = this.size;
+            }
+            for (index = start; index < stop; index += step) {
+                list.append(this.value[index]);
+            }
+        } else if (step < 0) {
+            if (start >= this.size) {
+                start = this.size - 1;
+            }
+            if (stop < 0) {
+                stop = 0;
+            }
+            for (index = start; index > stop; index += step) {
+                list.append(this.value[index]);
+            }
+        } else {
+            raise(ValueError, 'slice step cannot be zero')
         }
-    } else if (step < 0) {
-        if (start >= this.size) {
-            start = this.size - 1;
-        }
-        if (stop < 0) {
-            stop = 0;
-        }
-        for (index = start; index > stop; index += step) {
-            list.append(this.value[index]);
-        }
-    } else {
-        raise(ValueError, 'slice step cannot be zero')
-    }
-    return list;
-};
+        return list;
+    },
 
-PyList.prototype.concat = function (list_or_array) {
-    var list, index, size;
-    if (list_or_array instanceof PyList) {
-        size = list_or_array.size;
-        list_or_array = list_or_array.value;
-    } else if (list_or_array instanceof Array) {
-        size = list_or_array.length;
-    } else {
-        raise(TypeError, 'invalid type of concatenation object');
-    }
-    list = new PyList(null, this.size + size);
-    for (index = 0; index < this.size; index++) {
-        list.value[index] = this.value[index];
-    }
-    for (index = 0; index < size; index++) {
-        list.value[index + this.size] = list_or_array[index];
-    }
-    return list;
-};
+    concat: function (list_or_array) {
+        var list, index, size;
+        if (list_or_array instanceof PyList) {
+            size = list_or_array.size;
+            list_or_array = list_or_array.value;
+        } else if (list_or_array instanceof Array) {
+            size = list_or_array.length;
+        } else {
+            raise(TypeError, 'invalid type of concatenation object');
+        }
+        list = new PyList(null, this.size + size);
+        for (index = 0; index < this.size; index++) {
+            list.value[index] = this.value[index];
+        }
+        for (index = 0; index < size; index++) {
+            list.value[index + this.size] = list_or_array[index];
+        }
+        return list;
+    },
 
-PyList.prototype.copy = function () {
-    return this.concat([]);
-};
+    copy: function () {
+        return this.concat([]);
+    }
+});

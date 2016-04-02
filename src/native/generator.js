@@ -13,10 +13,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyGenerator(code, frame) {
-    PyObject.call(this, py_generator);
-    this.code = code;
-    this.frame = frame;
-}
 
-extend(PyGenerator, PyObject);
+var PyGenerator = PyObject.extend({
+    constructor: function (code, frame) {
+        PyObject.call(this, py_generator);
+        this.code = code;
+        this.frame = frame;
+    }
+});

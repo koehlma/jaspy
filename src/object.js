@@ -85,8 +85,17 @@ var PyObject = Class({
         return '<' + this.cls.name + ' object at 0x' + this.get_address() + '>';
     },
 
+
     bool: function () {
         return true;
+    },
+
+    number: function () {
+        raise(TypeError, 'unable to convert object to native number');
+    },
+
+    string: function () {
+        raise(TypeError, 'unable to convert object to native string');
     }
 });
 

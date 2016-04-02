@@ -14,15 +14,15 @@
  */
 
 
-function PyTraceback(frame, position, line, next) {
-    PyObject.call(this, py_traceback);
-    this.frame = frame;
-    this.position = position;
-    this.line = line;
-    this.next = next || None;
-}
-
-extend(PyTraceback, PyObject);
+var PyTraceback = PyObject.extend({
+    constructor: function (frame, position, line, next) {
+        PyObject.call(this, py_traceback);
+        this.frame = frame;
+        this.position = position;
+        this.line = line;
+        this.next = next || None;
+    }
+});
 
 
 function format_traceback(traceback) {

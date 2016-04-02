@@ -13,44 +13,45 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyStr(value, cls) {
-    PyObject.call(this, cls || py_str);
-    this.value = value;
-}
 
-extend(PyStr, PyObject);
+var PyStr = PyObject.extend({
+    constructor: function (value, cls) {
+        PyObject.call(this, cls || py_str);
+        this.value = value;
+    },
 
-PyStr.prototype.repr = function () {
-    return '\'' + this.value + '\''
-};
+    repr: function () {
+        return '\'' + this.value + '\''
+    },
 
-PyStr.prototype.split = function (sep) {
-    return this.value.split(sep);
-};
+    split: function (sep) {
+        return this.value.split(sep);
+    },
 
-PyStr.prototype.encode = function (encoding) {
-    var encoder, result;
-    if (!TextEncoder) {
-        // Polyfill: https://github.com/inexorabletash/text-encoding
-        raise(RuntimeError, 'browser does not support encoding, please use a polyfill');
+    encode: function (encoding) {
+        var encoder, result;
+        if (!TextEncoder) {
+            // Polyfill: https://github.com/inexorabletash/text-encoding
+            raise(RuntimeError, 'browser does not support encoding, please use a polyfill');
+        }
+        try {
+            encoder = new TextEncoder(encoding || 'utf-8');
+        } catch (error) {
+            raise(LookupError, 'unknown encoding: ' + encoding);
+        }
+        try {
+            result = encoder.encode(this.value);
+        } catch (error) {
+            console.log(error);
+            raise(UnicodeEncodeError, 'unable to decode bytes object, data is not valid');
+        }
+        return result;
+    },
+
+    toString: function () {
+        return this.value;
     }
-    try {
-        encoder = new TextEncoder(encoding || 'utf-8');
-    } catch (error) {
-        raise(LookupError, 'unknown encoding: ' + encoding);
-    }
-    try {
-        result = encoder.encode(this.value);
-    } catch (error) {
-        console.log(error);
-        raise(UnicodeEncodeError, 'unable to decode bytes object, data is not valid');
-    }
-    return result;
-};
-
-PyStr.prototype.toString = function () {
-    return this.value;
-};
+});
 
 
 $.PyStr = PyStr;
