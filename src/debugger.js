@@ -482,41 +482,41 @@ var debugging = {
 
 function debugger_patch_console() {
     var log, error;
+
+    function patched_log() {
+        log.apply(window.console, arguments);
+        disable_patch();
+        try {
+            debugging.trace_console_log.apply(null, arguments);
+        } finally {
+            enable_patch();
+        }
+    }
+
+    function patched_error() {
+        error.apply(window.console, arguments);
+        disable_patch();
+        try {
+            debugging.trace_console_error.apply(null, arguments);
+        } finally {
+            enable_patch();
+        }
+    }
+
+    function enable_patch() {
+        window.console.log = patched_log;
+        window.console.error = patched_error;
+    }
+
+    function disable_patch() {
+        window.console.log = log;
+        window.console.error = error;
+    }
+    
     debugging.console_patched = true;
     if (window.console) {
         log = window.console.log;
         error = window.console.error;
-
-        function patched_log() {
-            log.apply(window.console, arguments);
-            disable_patch();
-            try {
-                debugging.trace_console_log.apply(null, arguments);
-            } finally {
-                enable_patch();
-            }
-        }
-
-        function patched_error() {
-            error.apply(window.console, arguments);
-            disable_patch();
-            try {
-                debugging.trace_console_error.apply(null, arguments);
-            } finally {
-                enable_patch();
-            }
-        }
-
-        function enable_patch() {
-            window.console.log = patched_log;
-            window.console.error = patched_error;
-        }
-
-        function disable_patch() {
-            window.console.log = log;
-            window.console.error = error;
-        }
-
         enable_patch();
     } else {
         window.console = {};
