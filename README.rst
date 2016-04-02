@@ -29,7 +29,7 @@ First clone the repository and build the interpreter:
 .. code:: sh
 
     git clone --recursive https://github.com/koehlma/jaspy.git; cd jaspy
-    python build.py  # compile the interpreter
+    python3 build.py  # compile the interpreter
 
 Install dependencies for the interactive console, if they are not installed already:
 
@@ -43,7 +43,7 @@ Switch to the example directory and start the server in interactive mode:
 .. code:: sh
 
     cd example
-    PYTHONPATH=../ python -m jaspy.cli --interactive
+    PYTHONPATH=../ python3 -m jaspy.cli --interactive
 
 Visit http://localhost:8080/hello.html in your browser and click run:
 
