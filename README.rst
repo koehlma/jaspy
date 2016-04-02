@@ -8,6 +8,7 @@ preprocessor based architecture.
 Speed is explicitly not a main goal of this project. Jaspy aims to illustrate how web
 programming on the client side could be done by exploring new ways.
 
+
 Features
 --------
 - **suspendable** interpreter with support for **threading** and greenlets
@@ -20,6 +21,7 @@ Features
 .. _BigInteger.js: https://github.com/peterolson/BigInteger.js
 .. _time: https://github.com/koehlma/jaspy/blob/master/modules/time.js
 .. _dom: https://github.com/koehlma/jaspy/blob/master/modules/dom.js
+
 
 Alternatives
 ------------
@@ -36,10 +38,12 @@ Most of them are faster than Jaspy but none of them offers the unique features o
 which are a fully suspendable interpreter with threading support, the integrated debugger
 and the flexible, preprocessor based architecture.
 
+
 State
 -----
 This project is still in an alpha state. The APIs are unstable, it is untested and not
 ready for productive use. Some of the features listed above aren't yet implemented.
+
 
 Todo
 ----
@@ -52,3 +56,12 @@ If you like the ideas of Jaspy feel free to join, there are many things to do:
 - ☐ support for Apache Cordova (Jaspy for cross platform mobile applications)
 - ☐ implement a neat UI library on top of Jaspy
 - ☐ … and, yes of course, your own great ideas
+
+
+Structure
+---------
+
+:libs: third-party dependencies
+:modules: bundled native JavaScript modules
+:src: JavaScript source files (need to be preprocessed)
+:jaspy: Python server, converter and remote debugger
