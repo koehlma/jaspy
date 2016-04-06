@@ -1,0 +1,7 @@
+src_files:
+  - build/jaspy.js
+
+spec_files:
+  - "**/*[Ss]pec.js"
+
+spec_dir: spec/javascripts
