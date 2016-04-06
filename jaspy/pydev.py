@@ -76,8 +76,6 @@ class PyDevRemote:
         self.debugger.on_thread_finished += self.on_thread_finished
         self.debugger.on_thread_suspended += self.on_thread_suspended
 
-        self.debugger.on_locals += self.on_locals
-
         self.debugger.on_console_log += self.on_console_log
         self.debugger.on_console_error += self.on_console_error
 
@@ -143,13 +141,10 @@ class PyDevRemote:
         self.debugger.remove_break(filename, int(line))
 
     def cmd_get_frame(self, seq, thread_id, frame_id, *path):
-        self.locals_requests[self.debugger.get_locals(thread_id, frame_id)] = seq
+        event = self.debugger.get_locals(thread_id, frame_id)
+        event += lambda name, result: self.on_locals(seq, result[0])
 
-    def on_locals(self, session, seq, result):
-        if seq not in self.locals_requests:
-            return
-        else:
-            seq = self.locals_requests.pop(seq)
+    def on_locals(self, seq, result):
         payload = ['<xml>']
         for name in sorted(result.keys()):
             info = result[name]
@@ -158,6 +153,7 @@ class PyDevRemote:
             value = make_xml_value(info['value'])
             payload.append(XML_VAR.format(name, type_, value))
         payload.append('</xml>')
+        print('on_locals', seq)
         self.send(Commands.GET_VARIABLE, ''.join(payload), sequence_number=seq)
 
     def cmd_get_variable(self, seq, thread_id, frame_id, *path):

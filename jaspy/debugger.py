@@ -140,7 +140,7 @@ class Debugger:
             Events.CONSOLE_ERROR: self.on_console_error
         }
 
-        self.futures = {}
+        self.pending = {}
 
         self.sequence_counter = itertools.count(1, 2)
 
@@ -206,8 +206,8 @@ class Debugger:
 
     def get_locals(self, thread_id, frame_id):
         seq = self.send(Commands.GET_LOCALS, thread_id, frame_id)
-        self.futures[seq] = asyncio.Future()
-        return self.futures[seq]
+        self.pending[seq] = Event()
+        return self.pending[seq]
 
     async def debug(self):
         sessions.append(self)
@@ -217,9 +217,9 @@ class Debugger:
                 if message.tp == aiohttp.MsgType.text:
                     data = json.loads(message.data)
                     seq = int(data['seq'])
-                    if seq in self.futures:
-                        self.futures[seq].set_result((data['event'], data['args']))
-                        del self.futures[seq]
+                    if seq in self.pending:
+                        self.pending[seq].emit(data['event'], data['args'])
+                        del self.pending[seq]
                     event = self.events[Events(data['event'])]
                     event.emit(self, seq, *data['args'])
         finally:
