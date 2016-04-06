@@ -37,7 +37,7 @@ function assign(target, source) {
 }
 
 
-function make_class(attributes, superclass) {
+function Class(attributes, superclass) {
     var constructor = attributes.constructor;
     if (superclass) {
         constructor.prototype = Object.create(superclass.prototype);
@@ -45,12 +45,14 @@ function make_class(attributes, superclass) {
     assign(constructor.prototype, attributes);
     constructor.superclass = superclass;
     constructor.extend = function (attributes) {
-        return make_class(attributes, constructor);
+        return Class(attributes, constructor);
     };
     return constructor;
 }
 
-var Class = make_class({constructor: function () {}});
+Class.extend = function (attributes) {
+    return Class(attributes);
+};
 
 
 $.error = error;
