@@ -1,12 +1,11 @@
 language: python
 python:
   - "3.5"
-install:
+before_script:
   - nvm install 0.12
   - node --version
   - npm --version
   - nvm --version
-before_script:
   - npm install
 script:
   - npm build
