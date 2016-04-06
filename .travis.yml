@@ -1,15 +1,13 @@
-language: node_js
-sudo: required
-dist: trusty
-node_js:
-  - "0.12"
+language: python
+python:
+  - "3.5"
 before_install:
- - sudo rm -f /usr/bin/python3
- - sudo ln -s $(which python3.5) /usr/bin/python3
- - sudo pip3.5 install -r requirements.txt
- - python3 -V
+  - nvm install 0.12
+  - node --version
+  - npm --version
+  - nvm --version
 script:
- - npm build
- - npm test
+  - npm build
+  - npm test
 after_success:
- - cat ./coverage/lcov.info | ./node_modules/.bin/coveralls
+  - cat ./coverage/lcov.info | ./node_modules/.bin/coveralls
