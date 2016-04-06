@@ -4,9 +4,12 @@ dist: trusty
 node_js:
   - "0.11"
   - "0.10"
-script:
+before_install:
  - sudo rm -f /usr/bin/python3
  - sudo ls -s /usr/bin/python3.5 /usr/bin/python3
+ - python3 -V
+script:
  - npm build
  - npm test
+after_success:
  - cat ./coverage/lcov.info | ./node_modules/.bin/coveralls
