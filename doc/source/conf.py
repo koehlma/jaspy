@@ -14,6 +14,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
+
+__dir__ = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(__dir__, '..', '..'))
+
 from jaspy import metadata
 
 extensions = [
