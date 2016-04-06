@@ -4,4 +4,4 @@ src_files:
 spec_files:
   - "**/*[Ss]pec.js"
 
-spec_dir: spec/javascripts
+spec_dir: spec/
