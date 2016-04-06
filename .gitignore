@@ -2,3 +2,5 @@ build
 playground
 .idea
 __pycache__
+node_modules
+coverage
