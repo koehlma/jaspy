@@ -13,6 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 function error(message) {
     throw new Error('[FATAL ERROR] ' + (message || 'fatal interpreter error'));
 }
@@ -27,7 +28,7 @@ function assert(condition, message) {
     }
 }
 
-function assign(target, source) {
+function update(target, source) {
     var name, value;
     for (name in source) {
         if (source.hasOwnProperty(name)) {
@@ -42,7 +43,7 @@ function Class(attributes, superclass) {
     if (superclass) {
         constructor.prototype = Object.create(superclass.prototype);
     }
-    assign(constructor.prototype, attributes);
+    update(constructor.prototype, attributes);
     constructor.superclass = superclass;
     constructor.extend = function (attributes) {
         return Class(attributes, constructor);
@@ -58,6 +59,6 @@ Class.extend = function (attributes) {
 $.error = error;
 $.raise = raise;
 $.assert = assert;
-$.assign = assign;
+$.assign = update;
 
 $.Class = Class;
