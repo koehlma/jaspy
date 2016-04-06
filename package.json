@@ -8,10 +8,10 @@
   },
   "scripts": {
     "test": "node_modules/.bin/karma start .karma.js",
-    "prepublish": "python build.py && cp build/jaspy.js .",
+    "build": "python3 build.py",
+    "prepublish": "python3 build.py && cp build/jaspy.js .",
     "publish": "rm -f jaspy.js",
-    "start": "cd example && PYTHONPATH=../ python3 -m jaspy.cli --interactive --jaspy-js ../jaspy.js",
-    "build": "python3 build.py"
+    "start": "cd example && PYTHONPATH=../ python3 -m jaspy.cli --interactive --jaspy-js ../jaspy.js"
   },
   "repository": {
     "type": "git",
