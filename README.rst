@@ -1,5 +1,8 @@
 Jaspy
 =====
+
+|pypi| |unix_build| |coverage| |docs|
+
 Jaspy is a Python VM written entirely from scratch in JavaScript with some unique
 features. Jaspy supports multiple threads, comes with an integrated debugger which
 offers remote debugging and provides a flexible preprocessor based architecture.
@@ -94,3 +97,16 @@ Structure
 :modules: bundled native JavaScript modules
 :src: JavaScript source files (need to be preprocessed)
 :jaspy: Python server, converter and remote debugger
+
+
+.. |pypi| image:: https://img.shields.io/pypi/v/jaspy.svg?style=flat-square&label=latest%20version
+    :target: https://pypi.python.org/pypi/jaspy
+
+.. |unix_build| image:: https://img.shields.io/travis/koehlma/jaspy/master.svg?style=flat-square&label=build
+    :target: https://travis-ci.org/koehlma/jaspy
+
+.. |docs| image:: https://readthedocs.org/projects/jaspy/badge/?version=latest&style=flat-square
+    :target: https://uv.readthedocs.org/en/latest/
+
+.. |coverage| image:: https://img.shields.io/coveralls/koehlma/jaspy/master.svg?style=flat-square
+    :target: https://coveralls.io/github/koehlma/jaspy?branch=master
