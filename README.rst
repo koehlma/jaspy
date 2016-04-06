@@ -106,7 +106,7 @@ Structure
     :target: https://travis-ci.org/koehlma/jaspy
 
 .. |docs| image:: https://readthedocs.org/projects/jaspy/badge/?version=latest&style=flat-square
-    :target: https://uv.readthedocs.org/en/latest/
+    :target: https://jaspy.readthedocs.org/en/latest/
 
 .. |coverage| image:: https://img.shields.io/coveralls/koehlma/jaspy/master.svg?style=flat-square
     :target: https://coveralls.io/github/koehlma/jaspy?branch=master
