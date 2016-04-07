@@ -1,3 +1,5 @@
 describe('Jaspy', function () {
-    // TODO: write tests
+    it('test case 1', function () {
+        expect(true).toBe(true);
+    })
 });
