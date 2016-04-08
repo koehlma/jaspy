@@ -178,8 +178,10 @@ Signature.from_python = function (varnames, argcount, kwargcount, flags) {
 };
 
 
-var Code = Class.extend({
+var Code = PyObject.extend({
     constructor: function (signature, options) {
+        PyObject.call(this, py_code);
+
         this.signature = signature;
 
         options = options || {};

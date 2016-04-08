@@ -25,10 +25,7 @@
 // #include 'tuple.js'
 // #include 'list.js'
 
-// #include 'code.js'
-
 // #include 'cell.js'
-// #include 'frame.js'
 
 // #include 'wrapper.js'
 

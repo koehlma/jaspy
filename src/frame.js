@@ -14,8 +14,10 @@
  */
 
 
-var Frame = Class.extend({
+var Frame = PyObject.extend({
     constructor: function (code, options) {
+        PyObject.call(this, py_frame, null);
+
         this.code = code;
 
         options = options || {};

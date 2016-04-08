@@ -34,14 +34,13 @@ window['jaspy'] = (function () {
     // #include 'constants.js'
     // #include 'base.js'
 
-    // #include 'code.js'
-
-    // #include 'module.js'
-
     // #include 'object.js'
     // #include 'type.js'
 
     // #include 'core/__init__.js'
+
+    // #include 'code.js'
+    // #include 'module.js'
 
     // #include 'boot.js'
 

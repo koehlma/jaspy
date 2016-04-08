@@ -92,9 +92,6 @@ var NativeModule = Module.extend({
 });
 
 function module(name, initializer, depends) {
-    if (initializer instanceof PyCode) {
-        initializer = initializer.code;
-    }
     if (typeof initializer == 'function') {
         return new NativeModule(name, initializer, depends);
     } else if (initializer instanceof PythonCode) {

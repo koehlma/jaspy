@@ -1013,9 +1013,9 @@ PythonFrame.prototype.execute = function() {
                     options.defaults[this.pop().value] = value;
                 }
                 for (index = 0; index < low; index++) {
-                    options.defaults[code.code.signature.argnames[index]] = this.pop();
+                    options.defaults[code.signature.argnames[index]] = this.pop();
                 }
-                this.push(new Func(unpack_str(name), code.code, options));
+                this.push(new Func(unpack_str(name), code, options));
                 break;
 
             case OPCODES.BUILD_SLICE:

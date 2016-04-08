@@ -416,12 +416,12 @@ var debugging = {
 
         run_in_frame: function (seq, thread_id, frame_id, source) {
             var frame = threading.get_thread(thread_id).get_frame(frame_id);
-            debugging.call(debug_run_in_frame, [seq, frame, eval(source).code]);
+            debugging.call(debug_run_in_frame, [seq, frame, eval(source)]);
         },
 
         run_in_thread: function (seq, source) {
             var code = eval(source);
-            (new Thread(new PythonFrame(code.code))).enqueue();
+            (new Thread(new PythonFrame(code))).enqueue();
             threading.resume();
         },
 
@@ -459,8 +459,8 @@ var debugging = {
         },
 
         add_break: function (seq, filename, line, condition, expression) {
-            var condition_code = condition ? eval(condition).code : null;
-            var expression_code = expression ? eval(expression).code : null;
+            var condition_code = condition ? eval(condition): null;
+            var expression_code = expression ? eval(expression) : null;
             debugging.add_break(filename, line, condition_code, expression_code);
         },
 
