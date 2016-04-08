@@ -28,7 +28,7 @@ if __name__ == '__main__':
     namespace = {
         'DEBUG': False,
         'DEBUG_INSTRUCTIONS': False,
-        'DEBUG_EXCEPTIONS': False,
+        'DEBUG_EXCEPTIONS': True,
         'DEBUG_THREADING': False,
 
         'INCLUDE_BIGINT': True,

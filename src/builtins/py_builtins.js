@@ -171,9 +171,9 @@ var module_builtins = module('builtins', function ($, module) {
 });
 
 module('js', function ($, module) {
-    return {
-        'JSError': JSError
-    }
+    module.$set('JSError', JSError);
+    module.$set('window', pack(window));
+    module.$set('document', pack(document));
 });
 
 module_builtins.$def('__import__', function (name, globals, locals, fromlist, level, state, frame) {

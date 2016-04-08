@@ -39,8 +39,8 @@ var py_cell = PyType.native('cell');
 var py_frame = PyType.native('frame');
 
 var py_js_object = PyType.native('JSObject');
-var py_js_array = PyType.native('JSArray');
-var py_js_function = PyType.native('JSFunction');
+var py_js_array = PyType.native('JSArray', [py_js_object]);
+var py_js_function = PyType.native('JSFunction', [py_js_object]);
 
 var py_traceback = PyType.native('traceback');
 

@@ -50,7 +50,7 @@ function pack_function(func) {
 }
 
 function pack_error(error) {
-    return new PyException(pack_tuple([pack_str(error.name), pack_str(error.message)]), JSError);
+    return make_exception(JSError, '[' + error.name + '] ' + error.message);
 }
 
 function pack(object) {
