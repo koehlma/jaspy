@@ -42,8 +42,6 @@ window['jaspy'] = (function () {
     // #include 'code.js'
     // #include 'module.js'
 
-    // #include 'boot.js'
-
     // #include 'bridge.js'
 
     // #include 'builtins/__init__.js'

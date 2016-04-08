@@ -13,6 +13,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// #include 'boot.js'
+
 // #include 'py_object.js'
 // #include 'py_type.js'
 // #include 'py_dict.js'
