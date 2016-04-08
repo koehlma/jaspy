@@ -41,7 +41,7 @@ window['jaspy'] = (function () {
     // #include 'object.js'
     // #include 'type.js'
 
-    // #include 'native/__init__.js'
+    // #include 'core/__init__.js'
 
     // #include 'boot.js'
 
