@@ -76,7 +76,7 @@ var PythonFrame = Frame.extend({
 
         this.cells = {};
         for (index = 0; index < this.code.cellvars.length; index++) {
-            this.cells[this.code.cellvars[index]] = new PyCell();
+            this.cells[this.code.cellvars[index]] = new Cell();
         }
         for (index = 0; index < this.code.freevars.length; index++) {
             this.cells[this.code.freevars[index]] = this.closure[index];

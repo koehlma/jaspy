@@ -102,7 +102,7 @@ function main(module, argv) {
         }
     // >>
 
-    get_namespace('sys')['argv'] = new PyList((['<python>'].concat(argv || []).map(pack_str)));
+    get_namespace('sys')['argv'] = new List((['<python>'].concat(argv || []).map(pack_str)));
     register_module('__main__', module);
 
     module.dict['__name__'] = pack_str('__main__');
@@ -141,7 +141,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
             return vm.frame;
         } else if (object instanceof PythonCode) {
             if ((object.flags & CODE_FLAGS.GENERATOR) != 0) {
-                vm.return_value = new PyGenerator(object, new PythonFrame(object, {
+                vm.return_value = new Generator(object, new PythonFrame(object, {
                     back: null, defaults: defaults, args: args, kwargs: kwargs,
                     globals: globals, closure: closure, namespace: namespace
                 }));
@@ -182,7 +182,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                 // >>
                 return vm.frame;
             }
-        } else if (object instanceof PyFunction) {
+        } else if (object instanceof Func) {
             closure = object.closure;
             globals = object.globals;
             defaults = object.defaults;
@@ -228,7 +228,7 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
     if (!exc_tb) {
         frame = vm.frame;
         while (frame) {
-            exc_tb = new PyTraceback(frame, frame.position - 1, frame.get_line_number(), exc_tb);
+            exc_tb = new Traceback(frame, frame.position - 1, frame.get_line_number(), exc_tb);
             frame = frame.back;
         }
     }

@@ -19,7 +19,7 @@ py_str.$def('__new__', function (cls, initializer, state, frame) {
             if (!issubclass(cls, py_str)) {
                 raise(TypeError, 'class is not an subclass of str');
             }
-            if (initializer instanceof PyStr) {
+            if (initializer instanceof Str) {
                 if (initializer.cls == cls) {
                     return initializer;
                 } else {
@@ -68,7 +68,7 @@ py_str.$def('startswith', function (self, prefix) {
 
 py_str.$def('split', function (self, sep) {
     py_str.check(self);
-    return new PyList(self.split(unpack_str(sep)).map(pack_str));
+    return new List(self.split(unpack_str(sep)).map(pack_str));
 }, ['sep']);
 
 function str(object) {

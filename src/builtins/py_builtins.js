@@ -18,7 +18,7 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
     if (!(func.cls == py_function)) {
         raise(TypeError, 'invalid type of \'func\' argument');
     }
-    if (!(name instanceof PyStr)) {
+    if (!(name instanceof Str)) {
         raise(TypeError, 'invalid type of \'name\' argument');
     }
     if (!(bases instanceof Array)) {
@@ -109,8 +109,8 @@ var builtins = {
     False: False,
     True: True,
 
-    BaseException: BaseException,
-    Exception: Exception,
+    BaseException: py_base_exception,
+    Exception: py_exception,
     ValueError: ValueError,
     ArithmeticError: ArithmeticError,
     LookupError: LookupError,

@@ -14,7 +14,7 @@
  */
 
 function pack_int(value) {
-    return new PyInt(value);
+    return new Int(value);
 }
 
 function pack_bool(boolean) {
@@ -22,19 +22,19 @@ function pack_bool(boolean) {
 }
 
 function pack_float(value) {
-    return new PyFloat(value);
+    return new Float(value);
 }
 
 function pack_str(value) {
-    return new PyStr(value);
+    return new Str(value);
 }
 
 function pack_bytes(array) {
-    return new PyBytes(array);
+    return new Bytes(array);
 }
 
 function pack_tuple(array) {
-    return new PyTuple(array);
+    return new Tuple(array);
 }
 
 function pack_object(object) {
@@ -84,7 +84,7 @@ function unpack_int(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
-    if (!(object instanceof PyInt)) {
+    if (!(object instanceof Int)) {
         raise(TypeError, 'unable to unpack integer from object');
     }
     return object.number();
@@ -104,7 +104,7 @@ function unpack_number(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
-    if (!(object instanceof PyInt) && !(object instanceof PyFloat)) {
+    if (!(object instanceof Int) && !(object instanceof Float)) {
         raise(TypeError, 'unable to unpack number from object');
     }
     return object.number();
@@ -114,7 +114,7 @@ function unpack_str(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
-    if (!(object instanceof PyStr)) {
+    if (!(object instanceof Str)) {
         raise(TypeError, 'unable to unpack string from object');
     }
     return object.value;
@@ -124,7 +124,7 @@ function unpack_bytes(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
-    if (!(object instanceof PyBytes)) {
+    if (!(object instanceof Bytes)) {
         raise(TypeError, 'unable to unpack bytes from object');
     }
     return object.array;
@@ -134,7 +134,7 @@ function unpack_tuple(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
-    if (!(object instanceof PyTuple)) {
+    if (!(object instanceof Tuple)) {
         raise(TypeError, 'unable to unpack tuple from object');
     }
     return object.array;
@@ -181,15 +181,15 @@ function unpack(object, fallback) {
         return unpack_bool(object);
     } else if (object === None) {
         return null;
-    } else if (object instanceof PyInt) {
+    } else if (object instanceof Int) {
         return unpack_int(object);
-    } else if (object instanceof PyFloat) {
+    } else if (object instanceof Float) {
         return unpack_float(object);
-    } else if (object instanceof PyStr) {
+    } else if (object instanceof Str) {
         return unpack_str(object);
-    } else if (object instanceof PyBytes) {
+    } else if (object instanceof Bytes) {
         return unpack_bytes(object);
-    } else if (object instanceof PyTuple) {
+    } else if (object instanceof Tuple) {
         return unpack_tuple(object);
     } else if (object instanceof PyJSObject) {
         return unpack_object(object);

@@ -18,7 +18,7 @@ jaspy.module('sys', function ($, module, builtins) {
 
     VersionInfo.$def('__new__', function (cls, major, minor, micro, releaselevel, serial) {
         VersionInfo.check_subclass(cls);
-        return new $.PyTuple([major, minor, micro, releaselevel, serial], cls);
+        return new $.Tuple([major, minor, micro, releaselevel, serial], cls);
     }, ['major', 'minor', 'patch', 'releaselevel', 'serial']);
 
     VersionInfo.$def('__str__', function (self) {
@@ -47,10 +47,10 @@ jaspy.module('sys', function ($, module, builtins) {
     module.$set('maxunicode', $.pack_int(0xFFFF));
 
     module.$set('version', $.pack_str('3.5.1'));
-    module.$set('version_info', new $.PyTuple([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)], VersionInfo));
+    module.$set('version_info', new $.Tuple([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)], VersionInfo));
 
     module.$set('jaspy_version', $.pack_str('/* {{metadata.__version__}} */'));
-    module.$set('jaspy_version_info', new $.PyTuple([
+    module.$set('jaspy_version_info', new $.Tuple([
         $.pack_int(/* {{metadata.__version_info__[0]}} */),
         $.pack_int(/* {{metadata.__version_info__[1]}} */),
         $.pack_int(/* {{metadata.__version_info__[2]}} */),
@@ -58,5 +58,5 @@ jaspy.module('sys', function ($, module, builtins) {
         $.pack_int(/* {{metadata.__version_info__[4]}} */)], VersionInfo)
     );
 
-    module.$set('modules', new $.PyDict($.modules));
+    module.$set('modules', new $.Dict($.modules));
 }, ['builtins']);

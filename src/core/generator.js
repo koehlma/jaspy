@@ -14,10 +14,13 @@
  */
 
 
-var PyGenerator = PyObject.extend({
+var Generator = PyObject.extend({
     constructor: function (code, frame) {
         PyObject.call(this, py_generator);
         this.code = code;
         this.frame = frame;
     }
 });
+
+
+$.Generator = Generator;

@@ -18,7 +18,7 @@ var SINGLE_QUOTES_CODE = 39;
 var DOUBLE_QUOTES_CODE = 34;
 
 
-var PyBytes = PyObject.extend({
+var Bytes = PyObject.extend({
     constructor: function (value, cls) {
         if (!(value instanceof Uint8Array)) {
             raise(TypeError, 'invalid type of native bytes initializer');
@@ -71,7 +71,7 @@ var PyBytes = PyObject.extend({
     }
 });
 
-PyBytes.prototype.toString = PyBytes.prototype.repr;
+Bytes.prototype.toString = Bytes.prototype.repr;
 
 
-$.PyBytes = PyBytes;
+$.Bytes = Bytes;

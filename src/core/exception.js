@@ -14,7 +14,7 @@
  */
 
 
-var PyException = PyObject.extend({
+var Exception = PyObject.extend({
     constructor: function (args, cls) {
         PyObject.call(this, cls);
         this.args = args;
@@ -36,7 +36,7 @@ function format_exception(exc_value) {
     if (exc_value.traceback) {
         string.push(format_traceback(exc_value.traceback));
     }
-    if (exc_value.getattr('args') instanceof PyTuple && exc_value.getattr('args').array[0] instanceof PyStr) {
+    if (exc_value.getattr('args') instanceof Tuple && exc_value.getattr('args').array[0] instanceof Str) {
         string.push(exc_value.cls.name + ': ' + exc_value.getattr('args').array[0]);
     } else {
         string.push(exc_value.cls.name);
@@ -47,3 +47,5 @@ function format_exception(exc_value) {
 function print_exception(exc_value) {
     console.error(format_exception(exc_value));
 }
+
+$.Exception = Exception;

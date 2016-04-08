@@ -14,7 +14,7 @@
  */
 
 
-var PyTuple = PyObject.extend({
+var Tuple = PyObject.extend({
     constructor: function (array, cls) {
         if (!(array instanceof Array)) {
             raise(TypeError, 'invalid type of native tuple initializer');
@@ -33,4 +33,4 @@ var PyTuple = PyObject.extend({
 });
 
 
-$.PyTuple = PyTuple;
+$.Tuple = Tuple;

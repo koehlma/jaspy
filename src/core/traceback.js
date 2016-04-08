@@ -14,7 +14,7 @@
  */
 
 
-var PyTraceback = PyObject.extend({
+var Traceback = PyObject.extend({
     constructor: function (frame, position, line, next) {
         PyObject.call(this, py_traceback);
         this.frame = frame;
@@ -39,4 +39,4 @@ function print_traceback(traceback) {
 }
 
 
-$.PyTraceback = PyTraceback;
+$.Traceback = Traceback;

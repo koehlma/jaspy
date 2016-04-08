@@ -581,7 +581,7 @@ PythonFrame.prototype.execute = function() {
                             for (index = vm.return_value.len() - 1; index >= temp; index--) {
                                 this.push(vm.return_value.get(index));
                             }
-                            this.push(new PyList(vm.return_value.array.slice(low, temp)));
+                            this.push(new List(vm.return_value.array.slice(low, temp)));
                             for (index = low - 1; index >= 0; index--) {
                                 this.push(vm.return_value.get(index));
                             }
@@ -594,7 +594,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.BUILD_LIST:
-                this.push(new PyList(this.popn(instruction.argument)));
+                this.push(new List(this.popn(instruction.argument)));
                 break;
 
             case OPCODES.BUILD_SET:
@@ -602,7 +602,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.BUILD_MAP:
-                this.push(new PyDict());
+                this.push(new Dict());
                 break;
 
             case OPCODES.IMPORT_NAME:
@@ -612,7 +612,7 @@ PythonFrame.prototype.execute = function() {
                         if (!('__import__' in this.builtins)) {
                             raise(ImportError, '__import__ not found');
                             break;
-                        } else if (call(this.builtins['__import__'], [pack_str(name), new PyDict(this.globals), new PyDict(this.locals)].concat(this.popn(2).reverse()))) {
+                        } else if (call(this.builtins['__import__'], [pack_str(name), new Dict(this.globals), new Dict(this.locals)].concat(this.popn(2).reverse()))) {
                             return 1;
                         }
                     case 1:
@@ -720,7 +720,7 @@ PythonFrame.prototype.execute = function() {
                             this.position = instruction.target;
                             break;
                         } else if (vm.return_value) {
-                            if (vm.return_value instanceof PyInt) {
+                            if (vm.return_value instanceof Int) {
                                 if (vm.return_value.bool()) {
                                     this.position = instruction.target;
                                     break;
@@ -757,7 +757,7 @@ PythonFrame.prototype.execute = function() {
                     case 2:
                         this.pop();
                         if (!except(MethodNotFoundError)) {
-                            if (vm.return_value instanceof PyInt) {
+                            if (vm.return_value instanceof Int) {
                                 if (!vm.return_value.bool()) {
                                     this.position = instruction.target;
                                     break;
@@ -797,7 +797,7 @@ PythonFrame.prototype.execute = function() {
                         if (except(MethodNotFoundError)) {
                             this.position = instruction.target;
                         } else if (vm.return_value) {
-                            if (vm.return_value instanceof PyInt) {
+                            if (vm.return_value instanceof Int) {
                                 if (vm.return_value.bool()) {
                                     this.position = instruction.target;
                                 } else {
@@ -840,7 +840,7 @@ PythonFrame.prototype.execute = function() {
                         }
                     case 2:
                         if (!except(MethodNotFoundError)) {
-                            if (vm.return_value instanceof PyInt) {
+                            if (vm.return_value instanceof Int) {
                                 if (!vm.return_value.bool()) {
                                     this.position = instruction.target;
                                 } else {
@@ -1015,7 +1015,7 @@ PythonFrame.prototype.execute = function() {
                 for (index = 0; index < low; index++) {
                     options.defaults[code.code.signature.argnames[index]] = this.pop();
                 }
-                this.push(new PyFunction(unpack_str(name), code.code, options));
+                this.push(new Func(unpack_str(name), code.code, options));
                 break;
 
             case OPCODES.BUILD_SLICE:

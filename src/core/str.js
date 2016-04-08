@@ -14,7 +14,7 @@
  */
 
 
-var PyStr = PyObject.extend({
+var Str = PyObject.extend({
     constructor: function (value, cls) {
         PyObject.call(this, cls || py_str);
         this.value = value;
@@ -54,4 +54,4 @@ var PyStr = PyObject.extend({
 });
 
 
-$.PyStr = PyStr;
+$.Str = Str;

@@ -72,7 +72,7 @@ py_object.$def('__setattr__', function (self, name, item, state, frame) {
 
 py_object.$def('__repr__', function (self) {
     var module = self.cls.getattr('__module__');
-    if (module instanceof PyStr) {
+    if (module instanceof Str) {
         return pack_str('<' + module.value + '.' + self.cls.name + ' object at 0x' + self.get_address() + '>');
     } else {
         return pack_str('<' + self.cls.name + ' object at 0x' + self.get_address() + '>');

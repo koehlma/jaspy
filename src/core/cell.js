@@ -14,7 +14,7 @@
  */
 
 
-var PyCell = PyObject.extend({
+var Cell = PyObject.extend({
     constructor: function (object) {
         PyObject.call(this, py_cell);
         this.object = object;
@@ -30,4 +30,4 @@ var PyCell = PyObject.extend({
 });
 
 
-$.PyCell = PyCell;
+$.Cell = Cell;

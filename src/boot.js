@@ -64,8 +64,8 @@ var None = new PyObject(PyType.native('NoneType'));
 var NotImplemented = new PyObject(PyType.native('NotImplemented'));
 var Ellipsis = new PyObject(PyType.native('Ellipsis'));
 
-var False = new PyInt(0, py_bool);
-var True = new PyInt(1, py_bool);
+var False = new Int(0, py_bool);
+var True = new Int(1, py_bool);
 
 var py_base_exception = PyType.native('BaseException');
 var py_exception = new PyType('Exception', [py_base_exception]);
@@ -134,7 +134,7 @@ var PackError = new PyType('PackError', [TypeError]);
 
 var JSError = new PyType('JSError', [py_exception]);
 
-var ZERO = new PyInt(0);
-var ONE = new PyInt(1);
+var ZERO = new Int(0);
+var ONE = new Int(1);
 
-var EMPTY_TUPLE = new PyTuple([]);
+var EMPTY_TUPLE = new Tuple([]);

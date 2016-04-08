@@ -14,7 +14,7 @@
  */
 
 
-var PyDict = PyObject.extend({
+var Dict = PyObject.extend({
     constructor: function (namespace, cls) {
         PyObject.call(this, cls || py_dict);
         this.table = namespace || {};
@@ -24,7 +24,7 @@ var PyDict = PyObject.extend({
     },
 
     get: function (str_key, fallback) {
-        if (str_key instanceof PyStr) {
+        if (str_key instanceof Str) {
             str_key = str_key.value;
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
@@ -35,7 +35,7 @@ var PyDict = PyObject.extend({
     set: function (str_key, value) {
         if (typeof str_key == 'string') {
             str_key = pack_str(str_key);
-        } else if (!(str_key instanceof PyStr)) {
+        } else if (!(str_key instanceof Str)) {
             raise(TypeError, 'invalid native dict key type');
         }
         this.table[str_key] = value;
@@ -43,7 +43,7 @@ var PyDict = PyObject.extend({
 
     pop: function (str_key) {
         var value;
-        if (str_key instanceof PyStr) {
+        if (str_key instanceof Str) {
             str_key = str_key.value;
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
@@ -55,4 +55,4 @@ var PyDict = PyObject.extend({
 });
 
 
-$.PyDict = PyDict;
+$.Dict = Dict;

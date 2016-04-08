@@ -57,7 +57,7 @@ var PyObject = Class.extend({
         if (!this.dict) {
             raise(TypeError, 'object does not support attribute access');
         }
-        if (name instanceof PyStr) {
+        if (name instanceof Str) {
             name = name.value;
         } else if (typeof name != 'string') {
             raise(TypeError, 'native attribute name must be a string');
@@ -69,7 +69,7 @@ var PyObject = Class.extend({
         if (!this.dict) {
             raise(TypeError, 'object does not support attribute access');
         }
-        if (name instanceof PyStr) {
+        if (name instanceof Str) {
             name = name.value;
         } else if (typeof name != 'string') {
             raise(TypeError, 'native attribute name must be a string');

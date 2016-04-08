@@ -14,7 +14,7 @@
  */
 
 
-var PyFunction = PyObject.extend({
+var Func = PyObject.extend({
     constructor: function (name, code, options, cls) {
         PyObject.call(this, cls || py_function);
 
@@ -35,9 +35,9 @@ function $def(func, signature, options) {
     options = options || {};
     var name = options.name || '<unknown>';
     var code = new NativeCode(func, options, signature);
-    return new PyFunction(name, code, options);
+    return new Func(name, code, options);
 }
 
-$.PyFunction = PyFunction;
+$.Func = Func;
 
 $.$def = $def;

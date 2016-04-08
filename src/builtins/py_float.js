@@ -19,14 +19,14 @@ py_float.$def('__new__', function (cls, initializer, state, frame) {
             if (!(subclass(cls, py_float))) {
                 raise(TypeError, 'class is not an subclass of float');
             }
-            if (initializer instanceof PyInt || initializer instanceof PyFloat) {
+            if (initializer instanceof Int || initializer instanceof Float) {
                 if (initializer.cls == cls) {
                     return initializer;
                 } else {
                     return pack_int(initializer.value, cls);
                 }
             }
-            if (initializer instanceof PyStr) {
+            if (initializer instanceof Str) {
                 return pack_float(parseFloat(initializer.value));
             }
             if (initializer.call('__float__')) {

@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var PyInt = PyObject.extend({
+var Int = PyObject.extend({
     constructor: function (value, cls) {
         PyObject.call(this, cls || py_int);
         try {
@@ -36,7 +36,7 @@ var PyInt = PyObject.extend({
     },
 
     is: function (other) {
-        if (other instanceof PyInt) {
+        if (other instanceof Int) {
             return this.value.eq(other.value);
         }
         return false;
@@ -51,11 +51,11 @@ var PyInt = PyObject.extend({
     },
 
     float: function () {
-        return new PyFloat(this.number());
+        return new Float(this.number());
     },
 
     abs: function () {
-        return new PyInt(this.value.abs());
+        return new Int(this.value.abs());
     },
 
     pos: function () {
@@ -63,34 +63,34 @@ var PyInt = PyObject.extend({
     },
 
     neg: function () {
-        return new PyInt(this.value.negate());
+        return new Int(this.value.negate());
     },
 
     invert: function () {
-        return new PyInt(this.value.not());
+        return new Int(this.value.not());
     },
 
     add: function (other) {
-        return new PyInt(this.value.add(other.value));
+        return new Int(this.value.add(other.value));
     },
 
     sub: function (other) {
-        return new PyInt(this.value.subtract(other.value));
+        return new Int(this.value.subtract(other.value));
     },
 
     pow: function (other) {
         if (other < 0) {
             return pack_float(Math.pow(this.number(), other.number()));
         }
-        return new PyInt(this.value.pow(other.value));
+        return new Int(this.value.pow(other.value));
     },
 
     mul: function (other) {
-        return new PyInt(this.value.multiply(other.value));
+        return new Int(this.value.multiply(other.value));
     },
 
     floordiv: function (other) {
-        return new PyInt(this.value.divide(other.value));
+        return new Int(this.value.divide(other.value));
     },
 
     truediv: function (other) {
@@ -99,32 +99,32 @@ var PyInt = PyObject.extend({
 
     mod: function (other) {
         if (!this.value.sign && other.value.sign) {
-            return new PyInt(this.value.mod(other.value).substract(other.value));
+            return new Int(this.value.mod(other.value).substract(other.value));
         } else if (this.value.sign && !other.value.sign) {
-            return new PyInt(other.value.substract(this.value.mod(other.value)));
+            return new Int(other.value.substract(this.value.mod(other.value)));
         }
-        return new PyInt(this.value.mod(other.value));
+        return new Int(this.value.mod(other.value));
     },
 
     lshift: function (other) {
-        return new PyInt(this.value.shiftLeft(other.value));
+        return new Int(this.value.shiftLeft(other.value));
     },
 
 
     rshift: function (other) {
-        return new PyInt(this.value.shiftRight(other.value));
+        return new Int(this.value.shiftRight(other.value));
     },
 
     and: function (other) {
-        return new PyInt(this.value.and(other.value));
+        return new Int(this.value.and(other.value));
     },
 
     xor: function (other) {
-        return new PyInt(this.value.xor(other.value));
+        return new Int(this.value.xor(other.value));
     },
 
     or: function (other) {
-        return new PyInt(this.value.or(other.value));
+        return new Int(this.value.or(other.value));
     },
 
     lt: function (other) {
@@ -153,12 +153,12 @@ var PyInt = PyObject.extend({
 });
 
 
-PyInt.parse = function (string, base) {
-    if (base instanceof PyInt) {
-        return new PyInt(bigInt(string, base.value));
+Int.parse = function (string, base) {
+    if (base instanceof Int) {
+        return new Int(bigInt(string, base.value));
     }
     raise(TypeError, 'invalid type of integer base');
 };
 
 
-$.PyInt = PyInt;
+$.Int = Int;

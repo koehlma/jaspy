@@ -14,7 +14,7 @@
  */
 
 
-var PyList = PyObject.extend({
+var List = PyObject.extend({
     constructor: function (initializer, size, cls) {
         if (!(initializer instanceof Array)) {
             raise(TypeError, 'invalid type of list initializer');
@@ -102,7 +102,7 @@ var PyList = PyObject.extend({
     },
 
     slice: function (start, stop, step) {
-        var index, list = new PyList();
+        var index, list = new List();
         if (start == undefined) {
             start = 0;
         } else if (start < 0) {
@@ -142,7 +142,7 @@ var PyList = PyObject.extend({
 
     concat: function (list_or_array) {
         var list, index, size;
-        if (list_or_array instanceof PyList) {
+        if (list_or_array instanceof List) {
             size = list_or_array.size;
             list_or_array = list_or_array.value;
         } else if (list_or_array instanceof Array) {
@@ -150,7 +150,7 @@ var PyList = PyObject.extend({
         } else {
             raise(TypeError, 'invalid type of concatenation object');
         }
-        list = new PyList(null, this.size + size);
+        list = new List(null, this.size + size);
         for (index = 0; index < this.size; index++) {
             list.value[index] = this.value[index];
         }
@@ -164,3 +164,6 @@ var PyList = PyObject.extend({
         return this.concat([]);
     }
 });
+
+
+$.List = List;

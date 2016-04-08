@@ -14,7 +14,7 @@
  */
 
 
-var PyFloat = PyObject.extend({
+var Float = PyObject.extend({
     constructor: function (value, cls) {
         if (!(typeof value == 'number')) {
             raise(TypeError, 'invalid type of native float initializer');
@@ -29,4 +29,4 @@ var PyFloat = PyObject.extend({
 });
 
 
-$.PyFloat = PyFloat;
+$.Float = Float;

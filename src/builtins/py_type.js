@@ -14,14 +14,14 @@
  */
 
 py_type.$def_classmethod('__prepare__', function (mcs, bases) {
-    return new PyDict();
+    return new Dict();
 }, ['bases']);
 
 py_type.$def('__new__', function (mcs, name, bases, attributes) {
     if (!(mcs instanceof PyType)) {
         raise(TypeError, 'invalid type of \'mcs\' argument');
     }
-    if (!(attributes instanceof PyDict)) {
+    if (!(attributes instanceof Dict)) {
         raise(TypeError, 'invalid type of \'attributes\' argument');
     }
     return new PyType(unpack_str(name), unpack_tuple(bases), attributes.table, mcs);
@@ -55,7 +55,7 @@ py_type.$def('__str__', function (cls) {
     if (!(cls instanceof PyType)) {
         raise(TypeError, 'invalid type of \'cls\' argument');
     }
-    if (module instanceof PyStr) {
+    if (module instanceof Str) {
         return pack_str('<class \'' + unpack_str(module) + '.' + cls.name + '\'>');
     } else {
         return pack_str('<class \'' + cls.name + '\'>');
