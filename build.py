@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
 import os
 
 from jaspy import metadata
@@ -25,22 +26,42 @@ if __path__:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--debug', action='store_true', default=False)
+    parser.add_argument('--debug-instructions', action='store_true', default=False)
+    # TODO: disable DEBUG_EXCEPTIONS when production ready
+    parser.add_argument('--debug-exceptions', action='store_true', default=True)
+    parser.add_argument('--debug-threading', action='store_true', default=False)
+
+    parser.add_argument('--exclude-bigint', action='store_true', default=False)
+
+    parser.add_argument('--include-encoding', action='store_true', default=False)
+
+    parser.add_argument('--disable-debugger', action='store_true', default=False)
+    parser.add_argument('--disable-threading', action='store_true', default=False)
+
+    parser.add_argument('--threading-limit', type=int, default=5000)
+
+    parser.add_argument('--modules', nargs='*')
+
+    arguments = parser.parse_args()
+
     namespace = {
-        'DEBUG': False,
-        'DEBUG_INSTRUCTIONS': False,
-        'DEBUG_EXCEPTIONS': True,
-        'DEBUG_THREADING': False,
+        'DEBUG': arguments.debug,
+        'DEBUG_INSTRUCTIONS': arguments.debug_instructions,
+        'DEBUG_EXCEPTIONS': arguments.debug_exceptions,
+        'DEBUG_THREADING': arguments.debug_threading,
 
-        'INCLUDE_BIGINT': True,
-        'INCLUDE_ENCODING': False,
+        'INCLUDE_BIGINT': not arguments.exclude_bigint,
+        'INCLUDE_ENCODING': arguments.include_encoding,
 
-        'ENABLE_DEBUGGER': True,
-        'ENABLE_THREADING': True,
+        'ENABLE_DEBUGGER': not arguments.disable_debugger,
+        'ENABLE_THREADING': not arguments.debug_threading,
 
-        'THREADING_LIMIT': 5000,
+        'THREADING_LIMIT': arguments.threading_limit,
 
-
-        'modules': [],
+        'modules': arguments.modules or [],
 
         'metadata': metadata
     }
