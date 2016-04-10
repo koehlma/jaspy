@@ -114,5 +114,5 @@ Structure
 
 Credits
 -------
-Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration
-for many parts of code of the builtin-classes.
+Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration for
+many parts of code of the builtin-classes.
