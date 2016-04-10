@@ -21,6 +21,7 @@ var Tuple = PyObject.extend({
         }
         PyObject.call(this, cls || py_tuple);
         this.array = array;
+        Object.freeze(this.array);
     },
 
     get: function (index) {
