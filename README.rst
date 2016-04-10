@@ -110,3 +110,9 @@ Structure
 
 .. |coverage| image:: https://img.shields.io/coveralls/koehlma/jaspy/master.svg?style=flat-square
     :target: https://coveralls.io/github/koehlma/jaspy?branch=master
+
+
+Credits
+-------
+Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration
+for many parts of code of the builtin-classes.
