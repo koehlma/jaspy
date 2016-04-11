@@ -56,6 +56,28 @@ Class.extend = function (attributes) {
 };
 
 
+function $Class(name, attributes, bases) {
+    var constructor = Class(attributes, PyObject);
+    constructor.cls = $class(name, bases);
+    constructor.check = function (object) {
+        if (!(object instanceof constructor)) {
+            raise(TypeError, 'expected ' + name);
+        }
+    };
+    constructor.$def = constructor.cls.$def.bind(constructor.cls);
+
+    constructor.$map = function (name, target, spec, options) {
+        constructor.cls.$def(name, function (self) {
+            if (!(self instanceof constructor)) {
+                raise(TypeError, 'invalid type of self in native method call');
+            }
+            return target.apply(self, arguments);
+        }, spec, options);
+    };
+    return constructor;
+}
+
+
 $.error = error;
 $.raise = raise;
 $.assert = assert;

@@ -13,9 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function pack_int(value) {
-    return new Int(value);
-}
+var pack_int = Int.pack;
 
 function pack_bool(boolean) {
     return boolean ? True : False;
@@ -80,15 +78,7 @@ function pack(object) {
     }
 }
 
-function unpack_int(object, fallback) {
-    if ((object === None || !object) && fallback) {
-        return fallback;
-    }
-    if (!(object instanceof Int)) {
-        raise(TypeError, 'unable to unpack integer from object');
-    }
-    return object.number();
-}
+var unpack_int = Int.unpack;
 
 function unpack_bool(object, fallback) {
     if ((object === None || !object) && fallback) {
@@ -227,3 +217,8 @@ $.unpack_function = unpack_function;
 
 $.pack = pack;
 $.unpack = unpack;
+
+var Bool = {
+    pack: pack_bool,
+    unpack: unpack_bool
+};

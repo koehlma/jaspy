@@ -14,16 +14,40 @@
  */
 
 
-var PySlice = PyObject.extend({
+var Slice = PyObject.extend({
     constructor: function (start, stop, step) {
+        // TODO: check step
+
         PyObject.call(this, py_slice);
+        
         this.start = start;
         this.stop = stop;
         this.step = step || None;
+    },
+    
+    normalize: function (length) {
+        var start, stop, step;
+        length = Int.unpack(length);
+        step = Int.unpack(this.step, 1);
+        if (step == 0) {
+            raise(ValueError, 'slice step must not be zero');
+        }
+        start = Int.unpack(this.start, 0);
+        stop = Int.unpack(this.stop, length);
+        if (start < 0) {
+            start += length;
+        }
+        if (stop < 0) {
+            stop += length;
+        }
+        return new Slice(Math.max(0, start), Math.min(stop, length), step);
     }
+    
 });
 
 
 function new_slice(start, stop, step) {
-    return new PySlice(start, stop, step);
+    return new Slice(start, stop, step);
 }
+
+$.Slice = Slice;

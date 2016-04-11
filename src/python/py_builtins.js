@@ -14,7 +14,7 @@
  */
 
 var build_class = $def(function (func, name, bases, metaclass, keywords, state, frame) {
-    var possible_meta_classes, index, good, bases;
+    var possible_meta_classes, index, good;
     if (!(func.cls == py_function)) {
         raise(TypeError, 'invalid type of \'func\' argument');
     }
@@ -99,7 +99,7 @@ var builtins = {
     dict: py_dict,
     int: py_int,
     float: py_float,
-    str: py_str,
+    str: Str.cls,
     bytes: py_bytes,
     tuple: py_tuple,
 
@@ -213,7 +213,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 frame.index = 0;
                 if (objects.length) {
                     object = objects[0];
-                    if (object.cls === py_str) {
+                    if (object.cls === Str.cls) {
                         vm.return_value = object;
                     } else if (object.call('__str__')) {
                         return 1;
@@ -231,7 +231,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 frame.index++;
                 if (frame.index < objects.length) {
                     object = objects[frame.index];
-                    if (object.cls == py_str) {
+                    if (object.cls == Str.cls) {
                         vm.return_value = object;
                     } else if (object.call('__str__')) {
                         return 1;
@@ -239,7 +239,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                     break;
                 }
             case 2:
-                if (sep.cls == py_str) {
+                if (sep.cls == Str.cls) {
                     vm.return_value = sep;
                 } else if (sep.call('__str__')) {
                     return 3;

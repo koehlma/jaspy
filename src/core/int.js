@@ -160,5 +160,24 @@ Int.parse = function (string, base) {
     raise(TypeError, 'invalid type of integer base');
 };
 
+Int.unpack = function (object, fallback) {
+    if ((object === None || object == undefined) && fallback != undefined) {
+        return fallback;
+    }
+    if (object instanceof Int) {
+        return object.number();
+    } else if (typeof object == 'number') {
+        return object | 0;
+    } else {
+        raise(TypeError, 'unable to unpack integer from object');
+    }
+};
+
+Int.pack = function (value) {
+    return new Int(value);
+};
+
+Int.ZERO = new Int(0);
+Int.ONE = new Int(1);
 
 $.Int = Int;

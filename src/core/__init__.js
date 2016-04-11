@@ -13,6 +13,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+var py_object = PyType.native('object', []);
+var py_type = PyType.native('type', [py_object]);
+
+py_object.cls = py_type;
+py_type.cls = py_type;
+
+
 // #include 'dict.js'
 
 // #include 'int.js'

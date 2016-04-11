@@ -13,10 +13,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_str.$def('__new__', function (cls, initializer, state, frame) {
+
+Str.$def('__new__', function (cls, initializer, state, frame) {
     switch (state) {
         case 0:
-            if (!issubclass(cls, py_str)) {
+            if (!issubclass(cls, Str.cls)) {
                 raise(TypeError, 'class is not an subclass of str');
             }
             if (initializer instanceof Str) {
@@ -39,38 +40,41 @@ py_str.$def('__new__', function (cls, initializer, state, frame) {
     }
 }, ['initializer']);
 
-py_str.$def('__str__', function (self) {
+Str.$def('__str__', function (self) {
     return self;
 });
 
-py_str.$def('__repr__', function (self) {
-    return self.repr();
-});
+Str.$map('__repr__', Str.prototype.repr);
 
-py_str.$def('__len__', function (self)  {
-    py_str.check(self);
+Str.$def('__len__', function (self)  {
+    Str.cls.check(self);
     return pack_int(self.value.length);
 });
 
-py_str.$def('__add__', function (self, other) {
-    return pack_str(unpack_str(self) + unpack_str(other));
-}, ['other']);
-py_str.$def_alias('__add__', '__iadd__');
-py_str.$def_alias('__add__', '__radd__');
+Str.$map('__add__', Str.prototype.concat, ['other']);
 
-py_str.$def('__hash__', function (self) {
+
+
+Str.cls.$def_alias('__add__', '__iadd__');
+Str.cls.$def_alias('__add__', '__radd__');
+
+Str.$def('__hash__', function (self) {
     return self;
 });
 
-py_str.$def('startswith', function (self, prefix) {
+
+
+Str.cls.$def('startswith', function (self, prefix) {
     return unpack_str(self).indexOf(unpack_str(prefix)) == 0 ? True : False;
 }, ['prefix']);
 
-py_str.$def('split', function (self, sep) {
-    py_str.check(self);
+Str.cls.$def('split', function (self, sep) {
+    Str.cls.check(self);
     return new List(self.split(unpack_str(sep)).map(pack_str));
 }, ['sep']);
 
+
+
 function str(object) {
-    return py_str.call_classmethod('__new__', [object]);
+    return Str.cls.call_classmethod('__new__', [object]);
 }

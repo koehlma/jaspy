@@ -19,7 +19,7 @@ py_dict.$def('__setitem__', function (self, key, value, state, frame) {
     }
     switch (state) {
         case 0:
-            if (key.cls === py_str) {
+            if (key.cls === Str.cls) {
                 vm.return_value = key;
             } else if (key.call('__hash__')) {
                 return 1;

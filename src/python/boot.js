@@ -13,11 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var py_object = PyType.native('object', []);
-var py_type = PyType.native('type', [py_object]);
 
-py_object.cls = py_type;
-py_type.cls = py_type;
 
 var py_dict = PyType.native('dict');
 
@@ -26,7 +22,6 @@ var py_bool = PyType.native('bool', [py_int]);
 
 var py_float = PyType.native('float');
 
-var py_str = PyType.native('str');
 var py_bytes = PyType.native('bytes');
 
 var py_tuple = PyType.native('tuple');
