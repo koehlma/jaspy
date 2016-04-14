@@ -15,7 +15,7 @@
 
 var build_class = $def(function (func, name, bases, metaclass, keywords, state, frame) {
     var possible_meta_classes, index, good;
-    if (!(func.cls == py_function)) {
+    if (!(func.cls == Func.cls)) {
         raise(TypeError, 'invalid type of \'func\' argument');
     }
     if (!(name instanceof Str)) {
@@ -96,12 +96,12 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
 var builtins = {
     object: py_object,
     type: py_type,
-    dict: py_dict,
-    int: py_int,
-    float: py_float,
+    dict: Dict.cls,
+    int: Int.cls,
+    float: Float.cls,
     str: Str.cls,
-    bytes: py_bytes,
-    tuple: py_tuple,
+    bytes: Bytes.cls,
+    tuple: Tuple.cls,
 
     None: None,
     NotImplemented: NotImplemented,

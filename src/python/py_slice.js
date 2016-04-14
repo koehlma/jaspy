@@ -13,10 +13,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_slice.$def('__repr__', function (self, state, frame) {
+Slice.cls.$def('__repr__', function (self, state, frame) {
     switch (state) {
         case 0:
-            py_slice.check(self);
+            Slice.cls.check(self);
             frame.result = 'slice(';
             if (self.start.call('__repr__')) {
                 return 1;

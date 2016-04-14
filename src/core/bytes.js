@@ -18,12 +18,12 @@ var SINGLE_QUOTES_CODE = 39;
 var DOUBLE_QUOTES_CODE = 34;
 
 
-var Bytes = PyObject.extend({
+var Bytes = $Class('bytes', {
     constructor: function (value, cls) {
         if (!(value instanceof Uint8Array)) {
             raise(TypeError, 'invalid type of native bytes initializer');
         }
-        PyObject.call(this, cls || py_bytes);
+        PyObject.call(this, cls || Bytes.cls);
         this.array = value;
     },
 

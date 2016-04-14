@@ -14,9 +14,9 @@
  */
 
 
-var Func = PyObject.extend({
+var Func = $Class('function', {
     constructor: function (name, code, options, cls) {
-        PyObject.call(this, cls || py_function);
+        PyObject.call(this, cls || Func.cls);
 
         this.name = name;
         this.code = code;

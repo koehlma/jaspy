@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_property.$def('__get__', function (self, instance, owner, state, frame) {
+Property.cls.$def('__get__', function (self, instance, owner, state, frame) {
     switch (state) {
         case 0:
             if (call(self.getattr('fget'), [instance])) {
@@ -24,7 +24,7 @@ py_property.$def('__get__', function (self, instance, owner, state, frame) {
     }
 }, ['instance', 'owner']);
 
-py_property.$def('__set__', function (self, instance, value, state, frame) {
+Property.cls.$def('__set__', function (self, instance, value, state, frame) {
     switch (state) {
         case 0:
             if (call(self.getattr('fset'), [instance, value])) {

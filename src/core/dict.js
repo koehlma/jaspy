@@ -14,9 +14,9 @@
  */
 
 
-var Dict = PyObject.extend({
+var Dict = $Class('dict', {
     constructor: function (namespace, cls) {
-        PyObject.call(this, cls || py_dict);
+        PyObject.call(this, cls || Dict.cls);
         this.table = namespace || {};
         if (!(this.table instanceof Object)) {
             raise(TypeError, 'invalid type of native dict initializer');

@@ -14,24 +14,7 @@
  */
 
 
-
-var py_dict = PyType.native('dict');
-
-var py_int = PyType.native('int');
-var py_bool = PyType.native('bool', [py_int]);
-
-var py_float = PyType.native('float');
-
-var py_bytes = PyType.native('bytes');
-
-var py_tuple = PyType.native('tuple');
-
-var py_code = PyType.native('code');
-
-var py_list = PyType.native('list');
-
-var py_cell = PyType.native('cell');
-var py_frame = PyType.native('frame');
+var py_bool = PyType.native('bool', [Int.cls]);
 
 var py_js_object = PyType.native('JSObject');
 var py_js_array = PyType.native('JSArray', [py_js_object]);
@@ -39,7 +22,6 @@ var py_js_function = PyType.native('JSFunction', [py_js_object]);
 
 var py_traceback = PyType.native('traceback');
 
-var py_function = PyType.native('function');
 var py_method = PyType.native('method');
 var py_generator = PyType.native('generator');
 
@@ -50,10 +32,6 @@ var py_classmethod = PyType.native('classmethod');
 var py_staticmethod = PyType.native('staticmethod');
 
 var py_module = PyType.native('ModuleType');
-
-var py_property = PyType.native('property');
-
-var py_slice = PyType.native('slice');
 
 var None = new PyObject(PyType.native('NoneType'));
 var NotImplemented = new PyObject(PyType.native('NotImplemented'));

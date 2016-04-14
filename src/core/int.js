@@ -13,9 +13,9 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var Int = PyObject.extend({
+var Int = $Class('int', {
     constructor: function (value, cls) {
-        PyObject.call(this, cls || py_int);
+        PyObject.call(this, cls || Int.cls);
         try {
             this.value = bigInt(value);
         } catch (error) {

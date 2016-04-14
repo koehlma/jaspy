@@ -13,9 +13,18 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+var Property = $Class('property', {
+    constructor: function (getter, setter) {
+        PyObject.call(this, Property.cls, {
+            'fget': getter || None,
+            'fset': setter || None
+        });
+        this.getter = getter;
+        this.setter = setter;
+    }
+});
+
 function new_property(getter, setter) {
-    return new PyObject(py_property, {
-        'fget': getter || None,
-        'fset': setter || None
-    });
+    return new Property(getter, setter);
 }

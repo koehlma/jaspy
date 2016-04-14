@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_bytes.$def('decode', function (self, encoding) {
-    py_bytes.check(self);
+Bytes.cls.$def('decode', function (self, encoding) {
+    Bytes.cls.check(self);
     return pack_str(self.decode(unpack_str(encoding)));
 }, ['encoding'], {defaults: {'encoding': None}});

@@ -14,12 +14,12 @@
  */
 
 
-var List = PyObject.extend({
+var List = $Class('list', {
     constructor: function (initializer, size, cls) {
         if (!(initializer instanceof Array)) {
             raise(TypeError, 'invalid type of list initializer');
         }
-        PyObject.call(this, cls || py_list);
+        PyObject.call(this, cls || List.cls);
         this.value = new Array(4);
         if (initializer) {
             this.size = initializer.length;

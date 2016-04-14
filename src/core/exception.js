@@ -14,9 +14,9 @@
  */
 
 
-var Exception = PyObject.extend({
+var Exception = $Class('BaseException', {
     constructor: function (args, cls) {
-        PyObject.call(this, cls);
+        PyObject.call(this, cls || Exception.cls);
         this.args = args;
     }
 });

@@ -14,9 +14,9 @@
  */
 
 
-var Generator = PyObject.extend({
+var Generator = $Class('generator', {
     constructor: function (code, frame) {
-        PyObject.call(this, py_generator);
+        PyObject.call(this, Generator.cls);
         this.code = code;
         this.frame = frame;
     }

@@ -14,12 +14,12 @@
  */
 
 
-var Tuple = PyObject.extend({
+var Tuple = $Class('tuple', {
     constructor: function (array, cls) {
         if (!(array instanceof Array)) {
             raise(TypeError, 'invalid type of native tuple initializer');
         }
-        PyObject.call(this, cls || py_tuple);
+        PyObject.call(this, cls || Tuple.cls);
         this.array = array;
         Object.freeze(this.array);
     },

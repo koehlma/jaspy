@@ -14,12 +14,12 @@
  */
 
 
-var Float = PyObject.extend({
+var Float = $Class('float', {
     constructor: function (value, cls) {
         if (!(typeof value == 'number')) {
             raise(TypeError, 'invalid type of native float initializer');
         }
-        PyObject.call(this, cls || py_float);
+        PyObject.call(this, cls || Float.cls);
         this.value = value;
     },
 

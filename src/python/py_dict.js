@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_dict.$def('__setitem__', function (self, key, value, state, frame) {
+Dict.cls.$def('__setitem__', function (self, key, value, state, frame) {
     if (!(self instanceof Dict)) {
         raise(TypeError, 'invalid type of \'self\' argument');
     }

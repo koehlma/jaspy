@@ -14,9 +14,9 @@
  */
 
 
-var Cell = PyObject.extend({
+var Cell = $Class('cell', {
     constructor: function (object) {
-        PyObject.call(this, py_cell);
+        PyObject.call(this, Cell.cls);
         this.object = object;
     },
 

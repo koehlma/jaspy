@@ -178,9 +178,9 @@ Signature.from_python = function (varnames, argcount, kwargcount, flags) {
 };
 
 
-var Code = PyObject.extend({
+var Code = $Class('code', {
     constructor: function (signature, options) {
-        PyObject.call(this, py_code);
+        PyObject.call(this, Code.cls);
 
         this.signature = signature;
 

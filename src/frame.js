@@ -14,9 +14,9 @@
  */
 
 
-var Frame = PyObject.extend({
+var Frame = $Class('frame', {
     constructor: function (code, options) {
-        PyObject.call(this, py_frame, null);
+        PyObject.call(this, Frame.cls, null);
 
         this.code = code;
 

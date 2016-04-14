@@ -14,11 +14,11 @@
  */
 
 
-var Slice = PyObject.extend({
+var Slice = $Class('slice', {
     constructor: function (start, stop, step) {
         // TODO: check step
 
-        PyObject.call(this, py_slice);
+        PyObject.call(this, Slice.cls);
         
         this.start = start;
         this.stop = stop;

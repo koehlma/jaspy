@@ -695,7 +695,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.POP_JUMP_IF_TRUE:
-                if (this.top0().cls === py_int) {
+                if (this.top0().cls === Int.cls) {
                     if (this.pop().bool()) {
                         this.position = instruction.target;
                     }
@@ -734,7 +734,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.POP_JUMP_IF_FALSE:
-                if (this.top0().cls === py_bool || this.top0().cls === py_int) {
+                if (this.top0().cls === py_bool || this.top0().cls === Int.cls) {
                     if (!this.pop().bool()) {
                         this.position = instruction.target;
                     }
@@ -771,7 +771,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.JUMP_IF_TRUE_OR_POP:
-                if (this.top0().cls === py_int) {
+                if (this.top0().cls === Int.cls) {
                     if (this.top0().bool()) {
                         this.position = instruction.target;
                     } else {
@@ -815,7 +815,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.JUMP_IF_FALSE_OR_POP:
-                if (this.top0().cls === py_int) {
+                if (this.top0().cls === Int.cls) {
                     if (!this.top0().bool()) {
                         this.position = instruction.target;
                     } else {

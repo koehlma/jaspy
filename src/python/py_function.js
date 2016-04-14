@@ -13,6 +13,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_function.$def('__get__', function (self, instance, owner) {
+Func.cls.$def('__get__', function (self, instance, owner) {
     return new PyMethod(instance, self);
 }, ['instance', 'owner']);
