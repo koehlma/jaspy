@@ -18,6 +18,7 @@ var STR_REPR_REGEX = /[\\\n\r\t\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\xa0\xad]/g;
 
 var STR_CASE = {LOWER: -1, UPPER: 1, NONE: 0};
 
+var STR_C_REGEX = /%(\([^)]+\))?([#0\- +]+)?([0-9]*|\*)?(\.[0-9]*|\*)?([a-zA-Z%])/g;
 
 function str_repr_replace(char) {
     char = char.charCodeAt(0);
@@ -33,7 +34,7 @@ function str_repr_replace(char) {
         default:
             return '\\x' + ('0' + char.toString(16)).substr(-2);
     }
-}
+};
 
 function char_get_case(char) {
     if (char.toLowerCase() === char.toUpperCase()) {
@@ -148,7 +149,11 @@ var Str = $Class('str', {
     },
 
     mod: function () {
-        // TODO: implement C string format
+        var match;
+        while (match = STR_C_REGEX.exec(this.value)) {
+            console.log(match);
+        }
+        // TODO: implement
         raise(NotImplemented);
     },
 
@@ -190,7 +195,7 @@ var Str = $Class('str', {
     },
 
     casefold: function () {
-        // TODO: complicated unicode case folding
+        // UNICODE: complicated unicode case folding
         raise(NotImplemented);
     },
 
@@ -242,7 +247,7 @@ var Str = $Class('str', {
         encoding = Str.unpack(encoding, 'utf-8');
         errors = Str.unpack(errors, 'strict');
         if (errors != 'strict') {
-            // TODO: implement other error modes
+            // UNICODE: implement other error modes
             raise(NotImplemented, 'unicode error handlers are not supported');
         }
         if (!TextEncoder) {
@@ -336,17 +341,17 @@ var Str = $Class('str', {
     },
 
     isdecimal: function () {
-        // TODO: this is not correct in case of unicode characters
+        // UNICODE: this is not correct in case of unicode characters
         return /^\d+$/.test(this.value) ? True : False;
     },
 
     isdigit: function () {
-        // TODO: this is not correct in case of unicode characters
+        // UNICODE: this is not correct in case of unicode characters
         return /^\d+$/.test(this.value) ? True : False;
     },
 
     isidentifier: function () {
-        // TODO: implement this together with the parser
+        // UNICODE: implement this together with the parser
         raise(NotImplemented);
     },
 
@@ -355,17 +360,17 @@ var Str = $Class('str', {
     },
 
     isnumeric: function () {
-        // TODO: this is not correct in case of unicode characters
+        // UNICODE: this is not correct in case of unicode characters
         return /^\d+$/.test(this.value) ? True : False;
     },
 
     isprintable: function () {
-        // TODO: this is not correct in case of unicode characters
+        // UNICODE: this is not correct in case of unicode characters
         return this.value.search(STR_REPR_REGEX) < 0 ? True : False;
     },
 
     isspace: function () {
-        // TODO: this is not correct in case of unicode characters
+        // UNICODE: this is not correct in case of unicode characters
         return /^\s+$/.test(this.value) ? True : False;
     },
 
@@ -425,6 +430,124 @@ var Str = $Class('str', {
         }
         return new Tuple([new Str(this.value.substring(0, index)), new Str(sep),
                           new Str(this.value.substring(index + sep.length))]);
+    },
+
+    replace: function (old_str, new_str, count) {
+        count = Int.unpack(count, -1);
+        // TODO: implement
+        raise(NotImplemented);
+    },
+
+    rfind: function (sub, start, stop) {
+        sub = Str.unpack(sub);
+        return new Int(this.slice(new Slice(start, stop)).value.lastIndexOf(sub));
+    },
+
+    rindex: function (sub, start, stop) {
+        var result = this.rfind(sub, start, stop);
+        if (result < 0) {
+            raise(ValueError, 'substring not found')
+        }
+        return result;
+    },
+
+    rjust: function (width, fillchar) {
+        var result;
+        width = Int.unpack(width);
+        if (width <= this.value.length) {
+            return this;
+        }
+        fillchar = Str.ensure(fillchar, ' ');
+        return new Str(fillchar.repeat(width - this.value.length).value + this.value);
+    },
+
+    rsplit: function (sep, maxsplit) {
+        sep = Str.unpack(sep);
+        maxsplit = Int.unpack(maxsplit, -1);
+        // TODO: implement
+        raise(NotImplemented);
+    },
+
+    rstrip: function (chars) {
+        if (!chars || chars === None) {
+            return new Str(this.value.replace(/\s+$/, ''))
+        }
+        chars = Str.unpack(chars).replace(/\\/g, '\\\\').replace(/]/g, '\\]');
+        return new Str(this.value.replace(new RegExp('[' + chars + ']*$'), ''));
+    },
+
+    // TODO: implement
+    // split: function (sep, maxsplit) {
+    //
+    // },
+
+    splitlines: function (keepends) {
+        // TODO: implement
+        raise(NotImplemented);
+    },
+
+    startswith: function (prefixes, start, stop) {
+        var index, prefix;
+        var substring = this.slice(new Slice(start, stop)).value;
+        if (prefixes instanceof Tuple) {
+            prefixes = prefixes.array;
+        } else if (!(prefixes instanceof Array)) {
+            prefixes = [prefixes];
+        }
+        for (index = 0; index < prefixes.length; index++) {
+            prefix = Str.unpack(prefixes[index]);
+            if (prefix.length <= substring.length && substring.substr(0, prefix.length) === prefix) {
+                return True;
+            }
+        }
+        return False;
+    },
+
+    strip: function (chars) {
+        return this.lstrip(chars).rstrip(chars);
+    },
+
+    swapcase: function () {
+        var index, char;
+        var result = [];
+        for (index = 0; index < this.value.length; index++) {
+            char = this.value.charAt(index);
+            switch (char_get_case(char)) {
+                case STR_CASE.UPPER:
+                    result.push(char.toLowerCase());
+                    break;
+                default:
+                    result.push(char.toUpperCase());
+            }
+        }
+        return new Str(result.join(''));
+    },
+
+    title: function () {
+        // TODO: implement
+        raise(NotImplemented);
+    },
+
+    translate: function (table) {
+        // TODO: implement
+        raise(NotImplemented);
+    },
+
+    upper: function () {
+        return new Str(this.value.toUpperCase());
+    },
+
+    zfill: function (width) {
+        var prefix;
+        width = Int.unpack(width);
+        prefix =  Str.ZERO.repeat(width - this.value.length);
+        switch (this.value.charAt(0)) {
+            case '+':
+            case '-':
+                return new Str(this.value.charAt(0) + prefix + this.value.substring(1));
+            default:
+                return new Str(prefix + this.value);
+        }
     }
 });
 
@@ -457,6 +580,7 @@ Str.ensure = function (string, fallback) {
 };
 
 Str.EMPTY = new Str('');
+Str.ZERO = new Str('0');
 
 
 function is_string(object) {
