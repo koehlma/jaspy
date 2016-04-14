@@ -1,7 +1,7 @@
 Jaspy
 =====
 
-|pypi| |unix_build| |coverage| |docs|
+|pypi| |build| |coverage| |docs|
 
 Jaspy is a Python VM written entirely from scratch in JavaScript with some unique
 features. Jaspy supports multiple threads, comes with an integrated debugger which
@@ -103,7 +103,7 @@ Structure
 .. |pypi| image:: https://img.shields.io/pypi/v/jaspy.svg?style=flat-square&label=latest%20version
     :target: https://pypi.python.org/pypi/jaspy
 
-.. |unix_build| image:: https://img.shields.io/travis/koehlma/jaspy/master.svg?style=flat-square&label=build
+.. |build| image:: https://img.shields.io/travis/koehlma/jaspy/master.svg?style=flat-square&label=build
     :target: https://travis-ci.org/koehlma/jaspy
 
 .. |docs| image:: https://readthedocs.org/projects/jaspy/badge/?version=latest&style=flat-square
