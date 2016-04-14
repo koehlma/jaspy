@@ -38,6 +38,7 @@ Install dependencies for the interactive console, if they are not installed alre
 
 .. code:: sh
 
+    pip3 install --user -r requirements.txt
     pip3 install --user ptpython pygments
 
 
