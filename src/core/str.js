@@ -387,9 +387,45 @@ var Str = $Class('str', {
 
     isupper: function () {
         return char_get_case(this.value) === STR_CASE.UPPER && !/^\s*$/.test(this.value) ? True : False;
-    }
+    },
 
     // join: not supported in native mode
+
+    ljust: function (width, fillchar) {
+        var result;
+        width = Int.unpack(width);
+        if (width <= this.value.length) {
+            return this;
+        }
+        fillchar = Str.ensure(fillchar, ' ');
+        return new Str(this.value + fillchar.repeat(width - this.value.length).value);
+    },
+
+    lower: function () {
+        return new Str(this.value.toLowerCase());
+    },
+
+    lstrip: function(chars) {
+        if (!chars || chars === None) {
+            return new Str(this.value.replace(/^\s+/, ''))
+        }
+        chars = Str.unpack(chars).replace(/\\/g, '\\\\').replace(/]/g, '\\]');
+        return new Str(this.value.replace(new RegExp('^[' + chars + ']*'), ''));
+    },
+
+    partition: function (sep) {
+        var index;
+        sep = Str.unpack(sep);
+        if (sep == '') {
+            raise(ValueError, 'empty separator')
+        }
+        index = this.value.indexOf(sep);
+        if (index < 0) {
+            return new Tuple([this, Str.EMPTY, Str.EMPTY]);
+        }
+        return new Tuple([new Str(this.value.substring(0, index)), new Str(sep),
+                          new Str(this.value.substring(index + sep.length))]);
+    }
 });
 
 
