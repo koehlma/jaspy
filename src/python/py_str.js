@@ -44,14 +44,14 @@ Str.$def('__str__', function (self) {
     return self;
 });
 
-Str.$map('__repr__', Str.prototype.repr);
+
 
 Str.$def('__len__', function (self)  {
     Str.cls.check(self);
     return pack_int(self.value.length);
 });
 
-Str.$map('__add__', Str.prototype.concat, ['other']);
+
 
 
 
@@ -64,43 +64,47 @@ Str.$def('__hash__', function (self) {
 
 
 
-Str.$map('capitalize', Str.prototype.capitalize);
-Str.$map('casefold', Str.prototype.casefold);
-Str.$map('center', Str.prototype.center, ['width', 'fillchar'], {defaults: {'fillchar': None}});
-Str.$map('count', Str.prototype.count, ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('encode', Str.prototype.encode);
-Str.$map('endswith', Str.prototype.endswith, ['suffix', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('expandtabs', Str.prototype.expandtabs, ['tabsize'], {defaults: {'tabsize': new Int(8)}});
-Str.$map('find', Str.prototype.find, ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('index', Str.prototype.index, ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('isalnum', Str.prototype.isalnum);
-Str.$map('isalpha', Str.prototype.isalpha);
-Str.$map('isdecimal', Str.prototype.isdecimal);
-Str.$map('isdigit', Str.prototype.isdigit);
-Str.$map('isidentifier', Str.prototype.isidentifier);
-Str.$map('islower', Str.prototype.islower);
-Str.$map('isnumeric', Str.prototype.isnumeric);
-Str.$map('isprintable', Str.prototype.isprintable);
-Str.$map('isspace', Str.prototype.isspace);
-Str.$map('istitle', Str.prototype.istitle);
-Str.$map('isupper', Str.prototype.isupper);
-Str.$map('ljust', Str.prototype.ljust, ['width', 'fillchar'], {defaults: {'fillchar': None}});
-Str.$map('lower', Str.prototype.lower);
-Str.$map('lstrip', Str.prototype.lstrip, ['chars'], {defaults: {'chars': None}});
-Str.$map('partition', Str.prototype.partition, ['sep']);
-Str.$map('replace', Str.prototype.replace, ['old', 'new', 'count'], {defaults: {'count': new Int(-1)}});
-Str.$map('rfind', Str.prototype.rfind, ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('rindex', Str.prototype.rindex, ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('rjust', Str.prototype.rjust, ['width', 'fillchar'], {defaults: {'fillchar': None}});
-Str.$map('rpartition', Str.prototype.rpartition, ['sep']);
-Str.$map('rsplit', Str.prototype.rsplit, ['sep', 'maxsplit'], {defaults: {'sep': None, 'maxsplit': new Int(-1)}});
-Str.$map('rstrip', Str.prototype.rstrip, ['chars'], {defaults: {'chars': None}});
-Str.$map('split', Str.prototype.split, ['sep', 'maxsplit'], {defaults: {'sep': None, 'maxsplit': new Int(-1)}});
-Str.$map('splitlines', Str.prototype.splitlines, ['keepends'], {defaults: {'keepends': False}});
-Str.$map('startswith', Str.prototype.startswith, ['prefix', 'start', 'end'], {defaults: {'start': None, 'end': None}});
-Str.$map('strip', Str.prototype.strip, ['chars'], {defaults: {'chars': None}});
-Str.$map('swapcase', Str.prototype.swapcase);
-Str.$map('title', Str.prototype.title);
-Str.$map('translate', Str.prototype.translate, ['table']);
-Str.$map('upper', Str.prototype.upper);
-Str.$map('zfill', Str.prototype.zfill);
+Str.$map('__repr__');
+
+Str.$map('__add__', ['other']);
+
+Str.$map('capitalize');
+Str.$map('casefold');
+Str.$map('center', ['width', 'fillchar'], {defaults: {'fillchar': None}});
+Str.$map('count', ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('encode');
+Str.$map('endswith', ['suffix', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('expandtabs', ['tabsize'], {defaults: {'tabsize': new Int(8)}});
+Str.$map('find', ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('index', ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('isalnum');
+Str.$map('isalpha');
+Str.$map('isdecimal');
+Str.$map('isdigit');
+Str.$map('isidentifier');
+Str.$map('islower');
+Str.$map('isnumeric');
+Str.$map('isprintable');
+Str.$map('isspace');
+Str.$map('istitle');
+Str.$map('isupper');
+Str.$map('ljust', ['width', 'fillchar'], {defaults: {'fillchar': None}});
+Str.$map('lower');
+Str.$map('lstrip', ['chars'], {defaults: {'chars': None}});
+Str.$map('partition', ['sep']);
+Str.$map('replace', ['old', 'new', 'count'], {defaults: {'count': new Int(-1)}});
+Str.$map('rfind', ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('rindex', ['sub', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('rjust', ['width', 'fillchar'], {defaults: {'fillchar': None}});
+Str.$map('rpartition', ['sep']);
+Str.$map('rsplit', ['sep', 'maxsplit'], {defaults: {'sep': None, 'maxsplit': new Int(-1)}});
+Str.$map('rstrip', ['chars'], {defaults: {'chars': None}});
+Str.$map('split', ['sep', 'maxsplit'], {defaults: {'sep': None, 'maxsplit': new Int(-1)}});
+Str.$map('splitlines', ['keepends'], {defaults: {'keepends': False}});
+Str.$map('startswith', ['prefix', 'start', 'end'], {defaults: {'start': None, 'end': None}});
+Str.$map('strip', ['chars'], {defaults: {'chars': None}});
+Str.$map('swapcase');
+Str.$map('title');
+Str.$map('translate', ['table']);
+Str.$map('upper');
+Str.$map('zfill');

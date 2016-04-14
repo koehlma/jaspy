@@ -590,6 +590,8 @@ var Str = $Class('str', {
 
 Str.prototype.valueOf = Str.prototype.toString;
 
+Str.prototype.__add__ = Str.prototype.concat;
+
 
 Str.pack = function (value) {
     return new Str(value);

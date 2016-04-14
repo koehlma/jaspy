@@ -66,15 +66,23 @@ function $Class(name, attributes, bases) {
     };
     constructor.$def = constructor.cls.$def.bind(constructor.cls);
 
-    constructor.$map = function (name, target, spec, options) {
+    constructor.$map = function (name, spec, options) {
+        var args, index;
         options = options || {};
         options.simple = true;
-        constructor.cls.$def(name, function (self) {
-            if (!(self instanceof constructor)) {
-                raise(TypeError, 'invalid type of self in native method call');
-            }
-            return target.apply(self, Array.prototype.slice.call(arguments, 1));
-        }, spec, options);
+        spec = spec || [];
+        args = new Array(spec.length);
+        for (index = 0; index < spec.length; index++) {
+            args[index] = ('arg' + index);
+        }
+        var source = "" +
+            "(function (" + (['self'].concat(args)).join(', ') + ") {" +
+            "   if (!(self instanceof constructor)) {" +
+            "       raise(TypeError, 'invalid type of self in native method call');" +
+            "   }" +
+            "   return self." + name + "(" + args.join(', ') + ");" +
+            "})";
+        constructor.cls.$def(name, eval(source), spec, options);
     };
     return constructor;
 }

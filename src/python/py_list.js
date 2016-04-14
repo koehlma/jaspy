@@ -43,10 +43,8 @@ List.cls.$def('__repr__', function (self, state, frame) {
     }
 });
 
-List.cls.$def('append', function (self, item) {
-    List.cls.check(self);
-    self.append(item);
-}, ['item']);
+
+List.$map('append', ['item']);
 
 
 List.cls.$def('__getitem__', function (self, index_or_slice) {
