@@ -461,6 +461,20 @@ var Str = $Class('str', {
         return new Str(fillchar.repeat(width - this.value.length).value + this.value);
     },
 
+    rpartition: function (sep) {
+        var index;
+        sep = Str.unpack(sep);
+        if (sep == '') {
+            raise(ValueError, 'empty separator')
+        }
+        index = this.value.lastIndexOf(sep);
+        if (index < 0) {
+            return new Tuple([this, Str.EMPTY, Str.EMPTY]);
+        }
+        return new Tuple([new Str(this.value.substring(0, index)), new Str(sep),
+                          new Str(this.value.substring(index + sep.length))]);
+    },
+
     rsplit: function (sep, maxsplit) {
         sep = Str.unpack(sep);
         maxsplit = Int.unpack(maxsplit, -1);

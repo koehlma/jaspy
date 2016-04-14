@@ -260,7 +260,7 @@ var NativeCode = Code.extend({
 
         Code.call(this, Signature.from_spec(spec), options);
 
-        this.simple = func.length == this.signature.argnames.length;
+        this.simple = options.simple || func.length == this.signature.argnames.length;
     }
 });
 
