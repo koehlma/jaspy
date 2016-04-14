@@ -3,13 +3,14 @@ module.exports = function (config) {
         basePath: '',
         frameworks: ['jasmine'],
         files: [
+            'spec/javascripts/support/function-bind.js',
             'build/jaspy.js',
             'spec/*.js'
         ],
         browsers: ['PhantomJS'],
         singleRun: true,
         reporters: ['progress', 'coverage'],
-        preprocessors: {'build/jaspy.js': ['coverage']},
+        preprocessors: {'buiald/jaspy.js': ['coverage']},
         coverageReporter: {
             type: 'lcov',
             dir: 'coverage/',
