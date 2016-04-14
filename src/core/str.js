@@ -19,6 +19,7 @@ var STR_REPR_REGEX = /[\\\n\r\t\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\xa0\xad]/g;
 var STR_CASE = {LOWER: -1, UPPER: 1, NONE: 0};
 
 var STR_C_REGEX = /%(\([^)]+\))?([#0\- +]+)?([0-9]*|\*)?(\.[0-9]*|\*)?([a-zA-Z%])/g;
+var STR_SPLIT_REGEX = /[^\s]/g;
 
 function str_repr_replace(char) {
     char = char.charCodeAt(0);
@@ -173,11 +174,6 @@ var Str = $Class('str', {
             extension += extension;
         }
         return new Str(result + extension);
-    },
-
-    split: function (sep, maxsplit) {
-        // TODO: implement
-        return this.value.split(sep);
     },
 
     toString: function () {
@@ -490,10 +486,36 @@ var Str = $Class('str', {
         return new Str(this.value.replace(new RegExp('[' + chars + ']*$'), ''));
     },
 
-    // TODO: implement
-    // split: function (sep, maxsplit) {
-    //
-    // },
+    split: function (sep, maxsplit) {
+        var match, previous, next;
+        var result = new List();
+        maxsplit = Int.unpack(maxsplit, -1);
+        if (maxsplit < 0) {
+            maxsplit = Infinity;
+        }
+        if (!sep || sep === None) {
+            while (match = STR_SPLIT_REGEX.exec(this.value)) {
+                if (maxsplit > 0) {
+                    result.append(new Str(match[0]));
+                } else if (maxsplit == 0) {
+                    result.append(new Str(this.value.substring(match.index)));
+                }
+                maxsplit--;
+            }
+        } else {
+            sep = Str.unpack(sep);
+            if (sep == '') {
+                raise(ValueError, 'empty separator');
+            }
+            previous = 0;
+            while ((next = this.value.indexOf(sep, previous)) >= 0 && maxsplit-- > 0) {
+                result.append(new Str(this.value.substring(previous, next)));
+                previous = next + sep.length;
+            }
+            result.append(new Str(this.value.substring(previous)));
+        }
+        return result;
+    },
 
     splitlines: function (keepends) {
         // TODO: implement
