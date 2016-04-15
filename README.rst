@@ -86,6 +86,7 @@ If you like the ideas of Jaspy feel free to join, there are many things to do:
 - implement native JS modules for the DOM, JS objects and some Web APIs
 - improve the debugger and make it fully compatible to the PyDev protocol
 - implement a parser and bytecode compiler in JavaScript
+- complete and adjust the implementation of the Python bytecode VM
 - support for Apache Cordova (Jaspy for cross platform mobile applications)
 - implement a neat UI library on top of Jaspy (using a flexbox based grid)
 - … and, of course, your own great ideas and cool features
