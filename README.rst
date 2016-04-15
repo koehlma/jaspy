@@ -1,7 +1,7 @@
 Jaspy
 =====
 
-|pypi| |build| |coverage| |docs|
+|pypi| |build| |coverage| |docs| |gitter|
 
 Jaspy is a Python VM written entirely from scratch in JavaScript with some unique
 features. Jaspy supports multiple threads, comes with an integrated debugger which
@@ -100,6 +100,15 @@ Structure
 :jaspy: Python server, converter and remote debugger
 
 
+Credits
+-------
+Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration for
+many parts of code of the builtin-classes. Many thanks also to the book `“500 Lines or
+Less”`_ which is a good starting point if you want to know how the interpreter works.
+
+.. _`“500 Lines or Less”`: http://aosabook.org/en/500L/a-python-interpreter-written-in-python.html
+
+
 .. |pypi| image:: https://img.shields.io/pypi/v/jaspy.svg?style=flat-square&label=latest%20version
     :target: https://pypi.python.org/pypi/jaspy
 
@@ -112,11 +121,5 @@ Structure
 .. |coverage| image:: https://img.shields.io/coveralls/koehlma/jaspy/master.svg?style=flat-square
     :target: https://coveralls.io/github/koehlma/jaspy?branch=master
 
-
-Credits
--------
-Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration for
-many parts of code of the builtin-classes. Many thanks also to the book `“500 Lines or
-Less”`_ which is a good starting point if you want to know how the interpreter works.
-
-.. _`“500 Lines or Less”`: http://aosabook.org/en/500L/a-python-interpreter-written-in-python.html
+.. |gitter| image:: https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat-square
+    :target: https://gitter.im/koehlma/jaspy
