@@ -19,12 +19,12 @@ var DOUBLE_QUOTES_CODE = 34;
 
 
 var Bytes = $Class('bytes', {
-    constructor: function (value, cls) {
-        if (!(value instanceof Uint8Array)) {
+    constructor: function (array, cls) {
+        if (!(array instanceof Uint8Array)) {
             raise(TypeError, 'invalid type of native bytes initializer');
         }
         PyObject.call(this, cls || Bytes.cls);
-        this.array = value;
+        this.array = array;
     },
 
     bool: function () {
@@ -35,20 +35,18 @@ var Bytes = $Class('bytes', {
         return this.array[offset];
     },
 
-    repr: function () {
-        var offset, char;
-        var chars = new Array(this.array.length);
-        for (offset = 0; offset < chars.length; offset++) {
-            char = this.array[offset];
-            if (char == SINGLE_QUOTES_CODE) {
-                chars[offset] = '\\\'';
-            } else if (char >= 32 && char <= 126) {
-                chars[offset] = String.fromCharCode(char);
-            } else {
-                chars[offset] = '\\x' + ('0' + char.toString(16)).substr(-2);
-            }
+    str: function () {
+        var index;
+        var result = [];
+        // TODO: improve performance
+        for (index = 0; index < this.array.length; index++) {
+            result.push(String.fromCharCode(this.array[index]));
         }
-        return 'b\'' + chars.join('') + '\'';
+        return new Str(result.join(''));
+    },
+
+    repr: function () {
+        return new Str('b' + this.str().repr().value);
     },
 
     decode: function (encoding) {

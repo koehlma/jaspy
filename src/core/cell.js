@@ -17,10 +17,13 @@
 var Cell = $Class('cell', {
     constructor: function (object) {
         PyObject.call(this, Cell.cls);
-        this.object = object;
+        this.set(object);
     },
 
     set: function (object) {
+        if (!(object instanceof PyObject)) {
+            raise(TypeError, 'only python objects can be stored in a cell');
+        }
         this.object = object;
     },
 

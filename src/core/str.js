@@ -35,7 +35,7 @@ function str_repr_replace(char) {
         default:
             return '\\x' + ('0' + char.toString(16)).substr(-2);
     }
-};
+}
 
 function char_get_case(char) {
     if (char.toLowerCase() === char.toUpperCase()) {
