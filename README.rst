@@ -116,4 +116,7 @@ Structure
 Credits
 -------
 Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration for
-many parts of code of the builtin-classes.
+many parts of code of the builtin-classes. Many thanks also to the book `“500 Lines or
+Less”`_ which is a good starting point if you want to know how the interpreter works.
+
+.. _`“500 Lines or Less”`: http://aosabook.org/en/500L/a-python-interpreter-written-in-python.html
