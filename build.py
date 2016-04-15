@@ -57,7 +57,7 @@ if __name__ == '__main__':
         'INCLUDE_ENCODING': arguments.include_encoding,
 
         'ENABLE_DEBUGGER': not arguments.disable_debugger,
-        'ENABLE_THREADING': not arguments.debug_threading,
+        'ENABLE_THREADING': not arguments.disable_threading,
 
         'THREADING_LIMIT': arguments.threading_limit,
 
