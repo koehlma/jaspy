@@ -1,6 +1,10 @@
 Jaspy
 =====
 
+.. image:: https://badges.gitter.im/koehlma/jaspy.svg
+   :alt: Join the chat at https://gitter.im/koehlma/jaspy
+   :target: https://gitter.im/koehlma/jaspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 |pypi| |build| |coverage| |docs|
 
 Jaspy is a Python VM written entirely from scratch in JavaScript with some unique
