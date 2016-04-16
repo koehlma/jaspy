@@ -214,7 +214,7 @@ function raise(exc_type, exc_value, exc_tb, suppress) {
     var frame, next_tb;
 
     if (!vm.frame) {
-        error(exc_value);
+        error('[' + exc_type.name + '] ' + exc_value);
     }
 
     if (typeof exc_value == 'string') {
