@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016, Maximilian Koehl <mail@koehlma.de>
+ * Copyright (C) 2016, Matthias Heerde <mail@m-heerde.de>
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3 as published by
@@ -27,9 +28,28 @@ var Float = $Class('float', {
         return this.value;
     },
 
-    add: function(other) {
+    equals: function(other) {
+        other = Float.unpack(other);
+        return this.value == other ? True : False;
+    },
 
-        return this.value + other.value;
+    add: function(other) {
+        other = Float.unpack(other);
+        return new Float(this.value + other);
+    },
+
+    is_integer: function() {
+        return Math.floor(this.value) == this.value ? True : False;
+    },
+
+    as_integer_ratio: function() {
+        if (this.value == Number.POSITIVE_INFINITY || this.value == Number.NEGATIVE_INFINITY) {
+            raise(OverflowError, 'Cannot pass infinity to float.as_integer_ratio.');
+        }
+        if (!Number.isFinite(this.value)) {
+            raise(ValueError, 'Cannot pass NaN to float.as_integer_ratio.');
+        }
+        raise(NotImplemented);
     }
 });
 
@@ -39,8 +59,11 @@ Float.pack = function (value) {
 
 
 Float.unpack = function (object, fallback) {
-    if ((object === None || !object) && fallback) {
+    if ((object === None || !object) && fallback != undefined) {
         return fallback;
+    }
+    if (typeof object == 'number') {
+        return object;
     }
     if (!(object instanceof Int) && !(object instanceof Float)) {
         raise(TypeError, 'unable to unpack number from object');
