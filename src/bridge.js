@@ -14,13 +14,10 @@
  */
 
 var pack_int = Int.pack;
+var pack_float = Float.pack;
 
 function pack_bool(boolean) {
     return boolean ? True : False;
-}
-
-function pack_float(value) {
-    return new Float(value);
 }
 
 function pack_str(value) {
@@ -79,6 +76,7 @@ function pack(object) {
 }
 
 var unpack_int = Int.unpack;
+var unpack_number = Float.unpack;
 
 function unpack_bool(object, fallback) {
     if ((object === None || !object) && fallback) {
@@ -88,16 +86,6 @@ function unpack_bool(object, fallback) {
         raise(TypeError, 'unable to unpack bool from object');
     }
     return object === True;
-}
-
-function unpack_number(object, fallback) {
-    if ((object === None || !object) && fallback) {
-        return fallback;
-    }
-    if (!(object instanceof Int) && !(object instanceof Float)) {
-        raise(TypeError, 'unable to unpack number from object');
-    }
-    return object.number();
 }
 
 function unpack_str(object, fallback) {
