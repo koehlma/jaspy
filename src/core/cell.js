@@ -17,7 +17,7 @@
 var Cell = $Class('cell', {
     constructor: function (object) {
         PyObject.call(this, Cell.cls);
-        this.set(object);
+        this.set(object || None);
     },
 
     set: function (object) {
