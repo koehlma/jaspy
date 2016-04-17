@@ -28,6 +28,6 @@ jaspy.module('time', function ($, module, builtins) {
     }, ['seconds']);
 
     module.$def('time', function () {
-        return $.pack_float((new Date()).getTime() / 1000);
+        return $.Float.pack((new Date()).getTime() / 1000);
     });
 }, ['builtins']);

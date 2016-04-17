@@ -80,7 +80,7 @@ var Int = $Class('int', {
 
     pow: function (other) {
         if (other < 0) {
-            return pack_float(Math.pow(this.number(), other.number()));
+            return Float.pack(Math.pow(this.number(), other.number()));
         }
         return new Int(this.value.pow(other.value));
     },
@@ -94,7 +94,7 @@ var Int = $Class('int', {
     },
 
     truediv: function (other) {
-        return pack_float(this.number() / other.number());
+        return Float.pack(this.number() / other.number());
     },
 
     mod: function (other) {

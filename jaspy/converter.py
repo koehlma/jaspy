@@ -26,7 +26,7 @@ def convert(const):
     elif isinstance(const, int):
         js.append('jaspy.Int.pack(%r)' % const)
     elif isinstance(const, float):
-        js.append('jaspy.pack_float(%r)' % const)
+        js.append('jaspy.Float.pack(%r)' % const)
     elif isinstance(const, str):
         js.append('jaspy.Str.pack(%r)' % const)
     elif isinstance(const, bytes):
