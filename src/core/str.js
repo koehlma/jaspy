@@ -58,6 +58,10 @@ var Str = $Class('str', {
         return this.value === '' ? False : True;
     },
 
+    string: function () {
+        return this.value;
+    },
+
     repr: function () {
         var result = this.value.replace(STR_REPR_REGEX, str_repr_replace);
         if (result.indexOf('"') < 0) {

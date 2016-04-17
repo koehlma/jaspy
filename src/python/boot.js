@@ -22,8 +22,6 @@ var py_js_function = PyType.native('JSFunction', [py_js_object]);
 
 var py_traceback = PyType.native('traceback');
 
-var py_method = PyType.native('method');
-
 var py_set = PyType.native('set');
 var py_frozenset = PyType.native('frozenset');
 

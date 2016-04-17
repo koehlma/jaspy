@@ -13,19 +13,18 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function PyMethod(self, func) {
-    PyObject.call(this, py_method);
-    this.self = self;
-    this.func = func;
-}
-PyMethod.prototype = new PyObject;
 
-function new_method(func, instance) {
-    return None;
-}
-
-py_method.$def('__str__', function (self) {
-    return Str.pack('<bound-method');
+Method.$def('__repr__', function (self, state, frame) {
+    switch (state) {
+        case 0:
+            if (self.self.call('__repr__')) {
+                return 1;
+            }
+        case 1:
+            if (vm.return_value) {
+                return new Str('<bound method ' + self.self.cls.name + '.' + self.func.name + ' of ' + vm.return_value.string() + '>');
+            }
+    }
 });
 
 py_classmethod.$def('__init__', function (self, func) {
@@ -33,5 +32,5 @@ py_classmethod.$def('__init__', function (self, func) {
 }, ['func']);
 
 py_classmethod.$def('__get__', function (self, instance, owner) {
-    return new_method(self.getattr('__func__'), owner);
+    return new Method(self.getattr('__func__'), owner);
 }, ['instance', 'owner']);

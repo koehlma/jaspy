@@ -191,7 +191,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
             globals = object.globals;
             defaults = object.defaults;
             object = object.code;
-        } else if (object instanceof PyMethod) {
+        } else if (object instanceof Method) {
             args = [object.self].concat(args);
             object = object.func;
         } else if (object instanceof PyObject) {

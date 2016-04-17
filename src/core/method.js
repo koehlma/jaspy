@@ -14,36 +14,11 @@
  */
 
 
-var py_object = PyType.native('object', []);
-var py_type = PyType.native('type', [py_object]);
+var Method = $Class('method', {
+    constructor: function (self, func) {
+        PyObject.call(this, Method.cls);
+        this.self = self;
+        this.func = func;
+    }
+});
 
-py_object.cls = py_type;
-py_type.cls = py_type;
-
-
-// #include 'dict.js'
-
-// #include 'int.js'
-
-// #include 'float.js'
-
-// #include 'str.js'
-// #include 'bytes.js'
-
-// #include 'tuple.js'
-// #include 'list.js'
-
-// #include 'cell.js'
-
-// #include 'wrapper.js'
-
-// #include 'func.js'
-// #include 'generator.js'
-// #include 'method.js'
-
-// #include 'property.js'
-
-// #include 'slice.js'
-
-// #include 'exception.js'
-// #include 'traceback.js'

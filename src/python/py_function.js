@@ -14,5 +14,5 @@
  */
 
 Func.cls.$def('__get__', function (self, instance, owner) {
-    return new PyMethod(instance, self);
+    return new Method(instance, self);
 }, ['instance', 'owner']);
