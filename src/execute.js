@@ -312,7 +312,7 @@ PythonFrame.prototype.execute = function() {
             case OPCODES.SETUP_WITH:
                 switch (this.state) {
                     case 0:
-                        if (call(getattr, [this.top0(), pack_str('__exit__')])) {
+                        if (call(getattr, [this.top0(), Str.pack('__exit__')])) {
                             return 1;
                         }
                     case 1:
@@ -396,10 +396,10 @@ PythonFrame.prototype.execute = function() {
                         case 0:
                             if (instruction.opcode === OPCODES.STORE_NAME) {
                                 slot = '__setitem__';
-                                args = [pack_str(name), this.pop()];
+                                args = [Str.pack(name), this.pop()];
                             } else {
                                 slot = '__delitem__';
-                                args = [pack_str(name)];
+                                args = [Str.pack(name)];
                             }
                             if (this.namespace.call(slot, args)) {
                                 return 1;
@@ -431,7 +431,7 @@ PythonFrame.prototype.execute = function() {
                 if (this.namespace) {
                     switch (this.state) {
                         case 0:
-                            if (this.namespace.call('__getitem__', [pack_str(name)])) {
+                            if (this.namespace.call('__getitem__', [Str.pack(name)])) {
                                 return 1;
                             }
                         case 1:
@@ -494,10 +494,10 @@ PythonFrame.prototype.execute = function() {
                         temp = this.pop();
                         if (instruction.opcode === OPCODES.STORE_ATTR) {
                             slot = '__setattr__';
-                            args = [pack_str(name), this.pop()];
+                            args = [Str.pack(name), this.pop()];
                         } else {
                             slot = '__delattr__';
-                            args = [pack_str(name)];
+                            args = [Str.pack(name)];
                         }
                         if (temp.call(slot, args)) {
                             return 1;
@@ -518,7 +518,7 @@ PythonFrame.prototype.execute = function() {
                 name = this.code.names[instruction.argument];
                 switch (this.state) {
                     case 0:
-                        if (this.top0().call('__getattribute__', [pack_str(name)])) {
+                        if (this.top0().call('__getattribute__', [Str.pack(name)])) {
                             return 1;
                         }
                     case 1:
@@ -528,7 +528,7 @@ PythonFrame.prototype.execute = function() {
                             break;
                         }
                         if (except(AttributeError) || except(MethodNotFoundError)) {
-                            if (this.pop().call('__getattr__', [pack_str(name)])) {
+                            if (this.pop().call('__getattr__', [Str.pack(name)])) {
                                 return 2;
                             }
                         } else {
@@ -612,7 +612,7 @@ PythonFrame.prototype.execute = function() {
                         if (!('__import__' in this.builtins)) {
                             raise(ImportError, '__import__ not found');
                             break;
-                        } else if (call(this.builtins['__import__'], [pack_str(name), new Dict(this.globals), new Dict(this.locals)].concat(this.popn(2).reverse()))) {
+                        } else if (call(this.builtins['__import__'], [Str.pack(name), new Dict(this.globals), new Dict(this.locals)].concat(this.popn(2).reverse()))) {
                             return 1;
                         }
                     case 1:
@@ -1005,7 +1005,7 @@ PythonFrame.prototype.execute = function() {
                 if (high) {
                     temp = this.pop();
                     for (index = 0; index < high - 1; index++) {
-                        options.annotations[unpack_str(temp.get(index))] = this.pop();
+                        options.annotations[Str.unpack(temp.get(index))] = this.pop();
                     }
                 }
                 for (index = 0; index < mid; index++) {
@@ -1015,7 +1015,7 @@ PythonFrame.prototype.execute = function() {
                 for (index = 0; index < low; index++) {
                     options.defaults[code.signature.argnames[index]] = this.pop();
                 }
-                this.push(new Func(unpack_str(name), code, options));
+                this.push(new Func(Str.unpack(name), code, options));
                 break;
 
             case OPCODES.BUILD_SLICE:

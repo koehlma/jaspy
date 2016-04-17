@@ -102,10 +102,10 @@ function main(module, argv) {
         }
     // >>
 
-    get_namespace('sys')['argv'] = new List((['<python>'].concat(argv || []).map(pack_str)));
+    get_namespace('sys')['argv'] = new List((['<python>'].concat(argv || []).map(Str.pack)));
     register_module('__main__', module);
 
-    module.dict['__name__'] = pack_str('__main__');
+    module.dict['__name__'] = Str.pack('__main__');
 
     vm.frame = new PythonFrame(module.code, {
         builtins: builtins,

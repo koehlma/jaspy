@@ -30,7 +30,7 @@ function get_namespace(name) {
 
 function register_module(name, module) {
     modules[name] = module;
-    module.dict['__name__'] = pack_str(name);
+    module.dict['__name__'] = Str.pack(name);
 }
 
 function unregister_module(name) {

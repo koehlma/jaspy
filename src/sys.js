@@ -23,7 +23,7 @@ jaspy.module('sys', function ($, module, builtins) {
 
     VersionInfo.$def('__str__', function (self) {
         VersionInfo.check(self);
-        return $.pack_str('version_info(' +
+        return $.Str.pack('version_info(' +
             'major=' + self.array[0] + ', ' +
             'minor=' + self.array[1] + ', ' +
             'micro=' + self.array[2] + ', ' +
@@ -36,25 +36,25 @@ jaspy.module('sys', function ($, module, builtins) {
         return self.array[0];
     });
 
-    module.$set('byteorder', $.pack_str('big'));
+    module.$set('byteorder', $.Str.pack('big'));
 
-    module.$set('copyright', $.pack_str('Copyright (C) 2016, Maximilian Koehl'));
+    module.$set('copyright', $.Str.pack('Copyright (C) 2016, Maximilian Koehl'));
 
-    module.$set('platform', $.pack_str('web'));
+    module.$set('platform', $.Str.pack('web'));
 
-    module.$set('implementation', $.pack_str('jaspy'));
+    module.$set('implementation', $.Str.pack('jaspy'));
 
     module.$set('maxunicode', $.pack_int(0xFFFF));
 
-    module.$set('version', $.pack_str('3.5.1'));
-    module.$set('version_info', new $.Tuple([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.pack_str('dev'), $.pack_str(0)], VersionInfo));
+    module.$set('version', $.Str.pack('3.5.1'));
+    module.$set('version_info', new $.Tuple([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.Str.pack('dev'), $.Str.pack(0)], VersionInfo));
 
-    module.$set('jaspy_version', $.pack_str('/* {{metadata.__version__}} */'));
+    module.$set('jaspy_version', $.Str.pack('/* {{metadata.__version__}} */'));
     module.$set('jaspy_version_info', new $.Tuple([
         $.pack_int(/* {{metadata.__version_info__[0]}} */),
         $.pack_int(/* {{metadata.__version_info__[1]}} */),
         $.pack_int(/* {{metadata.__version_info__[2]}} */),
-        $.pack_str('/* {{metadata.__version_info__[3]}} */'),
+        $.Str.pack('/* {{metadata.__version_info__[3]}} */'),
         $.pack_int(/* {{metadata.__version_info__[4]}} */)], VersionInfo)
     );
 

@@ -17,7 +17,7 @@
 py_js_object.$def('__getattr__', function (self, name) {
     var value;
     py_js_object.check(self);
-    name = unpack_str(name);
+    name = Str.unpack(name);
     if (name in self.object) {
         value = self.object[name];
         if (typeof value == 'function') {
@@ -30,7 +30,7 @@ py_js_object.$def('__getattr__', function (self, name) {
 
 py_js_object.$def('__setattr__', function (self, name, value) {
     py_js_object.check(self);
-    self.object[unpack_str(name)] = unpack(value);
+    self.object[Str.unpack(name)] = unpack(value);
 }, ['name', 'value']);
 
 

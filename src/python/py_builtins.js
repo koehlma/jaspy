@@ -177,7 +177,7 @@ module('js', function ($, module) {
 });
 
 module_builtins.$def('__import__', function (name, globals, locals, fromlist, level, state, frame) {
-    name = unpack_str(name);
+    name = Str.unpack(name);
     switch (state) {
         case 0:
             if (level.gt(ZERO)) {
@@ -227,7 +227,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 if (!vm.return_value) {
                     return null;
                 }
-                frame.strings.push(unpack_str(vm.return_value));
+                frame.strings.push(Str.unpack(vm.return_value));
                 frame.index++;
                 if (frame.index < objects.length) {
                     object = objects[frame.index];
@@ -248,12 +248,12 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 if (!vm.return_value) {
                     return null;
                 }
-                console.log(frame.strings.join(unpack_str(vm.return_value)));
+                console.log(frame.strings.join(Str.unpack(vm.return_value)));
                 return null;
         }
     }
 }, ['*objects', 'sep', 'end', 'file', 'flush'], {
-    defaults: {sep: pack_str(' '), end: pack_str('\n'), file: None, flush: False}
+    defaults: {sep: Str.pack(' '), end: Str.pack('\n'), file: None, flush: False}
 });
 
 module_builtins.$def('len', function (object, state, frame) {

@@ -13,8 +13,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var TRUE_STR = pack_str('True');
-var FALSE_STR = pack_str('False');
+var TRUE_STR = Str.pack('True');
+var FALSE_STR = Str.pack('False');
 
 py_bool.$def('__new__', function (cls, initializer, state, frame) {
     switch (state) {

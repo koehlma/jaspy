@@ -43,7 +43,7 @@ Float.cls.$def('__new__', function (cls, initializer, state, frame) {
 }, ['initializer'], {defaults: {initializer: pack_float(0)}});
 
 Float.cls.$def('__str__', function (self) {
-    return pack_str(unpack_number(self).toString());
+    return Str.pack(unpack_number(self).toString());
 });
 
 Float.cls.$def('__neg__', function (self) {

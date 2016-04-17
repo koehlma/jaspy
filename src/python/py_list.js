@@ -38,7 +38,7 @@ List.cls.$def('__repr__', function (self, state, frame) {
                 state = 1;
                 break;
             case 3:
-                return pack_str('[' + frame.parts.join(', ') + ']');
+                return Str.pack('[' + frame.parts.join(', ') + ']');
         }
     }
 });

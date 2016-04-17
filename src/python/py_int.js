@@ -46,7 +46,7 @@ Int.cls.$def('__new__', function (cls, initializer, base, state, frame) {
 }, ['initializer', 'base'], {defaults: {initializer: pack_int(0), base: pack_int(10)}});
 
 Int.cls.$def('__str__', function (self) {
-    return pack_str(self.toString());
+    return Str.pack(self.toString());
 });
 
 Int.cls.$def_alias('__str__', '__repr__');

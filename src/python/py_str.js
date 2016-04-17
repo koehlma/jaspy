@@ -24,7 +24,7 @@ Str.$def('__new__', function (cls, initializer, state, frame) {
                 if (initializer.cls == cls) {
                     return initializer;
                 } else {
-                    return pack_str(initializer.value, cls);
+                    return Str.pack(initializer.value, cls);
                 }
             }
             if (initializer.call('__str__')) {

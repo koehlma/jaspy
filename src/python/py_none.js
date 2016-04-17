@@ -13,7 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var NONE_STR = pack_str('None');
+var NONE_STR = Str.pack('None');
 
 None.cls.$def('__new__', function (cls) {
     return None;

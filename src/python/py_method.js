@@ -25,7 +25,7 @@ function new_method(func, instance) {
 }
 
 py_method.$def('__str__', function (self) {
-    return pack_str('<bound-method');
+    return Str.pack('<bound-method');
 });
 
 py_classmethod.$def('__init__', function (self, func) {

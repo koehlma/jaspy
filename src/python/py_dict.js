@@ -31,7 +31,7 @@ Dict.cls.$def('__setitem__', function (self, key, value, state, frame) {
             if (vm.return_value instanceof Str) {
                 self.set(vm.return_value, value);
             } else if (vm.return_value instanceof Int) {
-                self.set(pack_str(vm.return_value.value.toString()), value);
+                self.set(Str.pack(vm.return_value.value.toString()), value);
             } else {
                 raise(TypeError, 'invalid result type of key hash');
             }

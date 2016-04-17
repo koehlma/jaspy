@@ -24,7 +24,7 @@ py_type.$def('__new__', function (mcs, name, bases, attributes) {
     if (!(attributes instanceof Dict)) {
         raise(TypeError, 'invalid type of \'attributes\' argument');
     }
-    return new PyType(unpack_str(name), unpack_tuple(bases), attributes.table, mcs);
+    return new PyType(Str.unpack(name), unpack_tuple(bases), attributes.table, mcs);
 }, ['name', 'bases', 'attributes']);
 
 py_type.$def('__call__', function (cls, args, kwargs, state, frame) {
@@ -56,18 +56,18 @@ py_type.$def('__str__', function (cls) {
         raise(TypeError, 'invalid type of \'cls\' argument');
     }
     if (module instanceof Str) {
-        return pack_str('<class \'' + unpack_str(module) + '.' + cls.name + '\'>');
+        return Str.pack('<class \'' + Str.unpack(module) + '.' + cls.name + '\'>');
     } else {
-        return pack_str('<class \'' + cls.name + '\'>');
+        return Str.pack('<class \'' + cls.name + '\'>');
     }
 });
 
 py_type.$def_property('__name__', function (cls) {
     py_type.check(cls);
-    return pack_str(cls.name);
+    return Str.pack(cls.name);
 }, function (cls, value) {
     py_type.check(cls);
-    cls.name = unpack_str(value);
+    cls.name = Str.unpack(value);
 });
 
 py_type.$def_property('__mro__', function (cls) {

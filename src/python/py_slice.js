@@ -25,7 +25,7 @@ Slice.cls.$def('__repr__', function (self, state, frame) {
             if (!vm.return_value) {
                 return;
             }
-            frame.result += unpack_str(vm.return_value) + ', ';
+            frame.result += Str.unpack(vm.return_value) + ', ';
             if (self.stop.call('__repr__')) {
                 return 2;
             }
@@ -33,7 +33,7 @@ Slice.cls.$def('__repr__', function (self, state, frame) {
             if (!vm.return_value) {
                 return;
             }
-            frame.result += unpack_str(vm.return_value) + ', ';
+            frame.result += Str.unpack(vm.return_value) + ', ';
             if (self.step.call('__repr__')) {
                 return 3;
             }
@@ -41,7 +41,7 @@ Slice.cls.$def('__repr__', function (self, state, frame) {
             if (!vm.return_value) {
                 return;
             }
-            frame.result += unpack_str(vm.return_value) + ')';
-            return pack_str(frame.result);
+            frame.result += Str.unpack(vm.return_value) + ')';
+            return Str.pack(frame.result);
     }
 });

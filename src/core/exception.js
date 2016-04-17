@@ -24,7 +24,7 @@ var Exception = $Class('BaseException', {
 
 function make_exception(cls, message) {
     var exc_value = new PyObject(cls, {});
-    exc_value.dict['args'] = pack_tuple([pack_str(message)]);
+    exc_value.dict['args'] = pack_tuple([Str.pack(message)]);
     return exc_value;
 }
 

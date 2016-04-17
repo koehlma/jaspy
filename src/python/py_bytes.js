@@ -15,5 +15,5 @@
 
 Bytes.cls.$def('decode', function (self, encoding) {
     Bytes.cls.check(self);
-    return pack_str(self.decode(unpack_str(encoding)));
+    return Str.pack(self.decode(Str.unpack(encoding)));
 }, ['encoding'], {defaults: {'encoding': None}});

@@ -20,10 +20,6 @@ function pack_bool(boolean) {
     return boolean ? True : False;
 }
 
-function pack_str(value) {
-    return new Str(value);
-}
-
 function pack_bytes(array) {
     return new Bytes(array);
 }
@@ -55,7 +51,7 @@ function pack(object) {
     if (object instanceof PyObject) {
         return object;
     } else if (typeof object == 'string') {
-        return pack_str(object);
+        return Str.pack(object);
     } else if (typeof object == 'number') {
         if (Number.isInteger(object)) {
             return pack_int(object);
@@ -86,16 +82,6 @@ function unpack_bool(object, fallback) {
         raise(TypeError, 'unable to unpack bool from object');
     }
     return object === True;
-}
-
-function unpack_str(object, fallback) {
-    if ((object === None || !object) && fallback) {
-        return fallback;
-    }
-    if (!(object instanceof Str)) {
-        raise(TypeError, 'unable to unpack string from object');
-    }
-    return object.value;
 }
 
 function unpack_bytes(object, fallback) {
@@ -164,7 +150,7 @@ function unpack(object, fallback) {
     } else if (object instanceof Float) {
         return unpack_float(object);
     } else if (object instanceof Str) {
-        return unpack_str(object);
+        return Str.unpack(object);
     } else if (object instanceof Bytes) {
         return unpack_bytes(object);
     } else if (object instanceof Tuple) {
@@ -185,7 +171,6 @@ function unpack(object, fallback) {
 $.pack_int = pack_int;
 $.pack_bool = pack_bool;
 $.pack_float = pack_float;
-$.pack_str = pack_str;
 $.pack_bytes = pack_bytes;
 $.pack_tuple = pack_tuple;
 $.pack_object = pack_object;
@@ -196,7 +181,6 @@ $.pack_error = pack_error;
 $.unpack_int = unpack_int;
 $.unpack_bool = unpack_bool;
 $.unpack_number = unpack_number;
-$.unpack_str = unpack_str;
 $.unpack_bytes = unpack_bytes;
 $.unpack_tuple = unpack_tuple;
 $.unpack_object = unpack_object;

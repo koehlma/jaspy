@@ -21,30 +21,30 @@ jaspy.module('dom', function ($, module, builtins) {
     Element.$def('__new__', function (cls, tag) {
         Element.check_subclass(cls);
         var self = new $.PyObject(cls);
-        self.element = document.createElement($.unpack_str(tag, 'div'));
+        self.element = document.createElement($.Str.unpack(tag, 'div'));
         self.element.__element__ = self;
         return self;
     }, ['tag'], {defaults: {'tag': builtins.None}});
 
     Element.$def('__str__', function (self) {
         Element.check(self);
-        return $.pack_str('<' + self.element.nodeName.toLowerCase() + ' element at 0x' + self.get_address() + '>');
+        return $.Str.pack('<' + self.element.nodeName.toLowerCase() + ' element at 0x' + self.get_address() + '>');
     });
 
     Element.$def('__getitem__', function (self, name) {
         Element.check(self);
-        return $.pack_str(self.element.getAttribute($.unpack_str(name)));
+        return $.Str.pack(self.element.getAttribute($.Str.unpack(name)));
     }, ['name']);
 
     Element.$def('__setitem__', function (self, name, value) {
         Element.check(self);
-        self.element.setAttribute($.unpack_str(name), $.unpack_str(value));
+        self.element.setAttribute($.Str.unpack(name), $.Str.unpack(value));
     }, ['name', 'value']);
 
     Element.$def('__getattr__', function (self, name) {
         Element.check(self);
         var child = new $.PyObject(Element);
-        child.element = document.createElement($.unpack_str(name, 'div'));
+        child.element = document.createElement($.Str.unpack(name, 'div'));
         child.element.__element__ = self;
         self.element.appendChild(child.element);
         return child;
@@ -52,26 +52,26 @@ jaspy.module('dom', function ($, module, builtins) {
 
     Element.$def_property('text', function (self) {
         Element.check(self);
-        return $.pack_str(self.element.textContent);
+        return $.Str.pack(self.element.textContent);
     }, function (self, value) {
         Element.check(self);
-        self.element.textContent = $.unpack_str(value);
+        self.element.textContent = $.Str.unpack(value);
     });
 
     Element.$def_property('html', function (self) {
         Element.check(self);
-        return $.pack_str(self.element.innerHTML);
+        return $.Str.pack(self.element.innerHTML);
     }, function (self, value) {
         Element.check(self);
-        self.element.innerHTML = $.unpack_str(value);
+        self.element.innerHTML = $.Str.unpack(value);
     });
 
     Element.$def('css', function (self, name, value) {
         Element.check(self);
         if (value === builtins.NotImplemented) {
-            return $.pack_str(self.element.style[$.unpack_str(name)]);
+            return $.Str.pack(self.element.style[$.Str.unpack(name)]);
         } else {
-            self.element.style[$.unpack_str(name)] = $.unpack_str(value, '');
+            self.element.style[$.Str.unpack(name)] = $.Str.unpack(value, '');
         }
     }, ['name', 'value'], {defaults: {'value': builtins.NotImplemented}});
 
@@ -100,7 +100,7 @@ jaspy.module('dom', function ($, module, builtins) {
     Element.$def('register_listener', function (self, name, callback) {
         Element.check(self);
         var element = self.element;
-        element.addEventListener($.unpack_str(name), function (event) {
+        element.addEventListener($.Str.unpack(name), function (event) {
             $.resume(callback, [self], {});
         });
     }, ['name', 'resume']);

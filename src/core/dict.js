@@ -34,7 +34,7 @@ var Dict = $Class('dict', {
 
     set: function (str_key, value) {
         if (typeof str_key == 'string') {
-            str_key = pack_str(str_key);
+            str_key = Str.pack(str_key);
         } else if (!(str_key instanceof Str)) {
             raise(TypeError, 'invalid native dict key type');
         }
