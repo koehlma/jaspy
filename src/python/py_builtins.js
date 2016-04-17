@@ -256,6 +256,22 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
     defaults: {sep: Str.pack(' '), end: Str.pack('\n'), file: None, flush: False}
 });
 
+
+module_builtins.$def('abs', function (object, state, frame) {
+    switch (state) {
+         case 0:
+             if (object.call('__abs__')) {
+                 return 1;
+             }
+         case 1:
+             if (except(MethodNotFoundError)) {
+                 raise(TypeError, 'Bad operand type for abs(): \'' + object.cls.name + '\'');
+             }
+             return vm.return_value;
+     }
+}, ['object']);
+
+
 module_builtins.$def('len', function (object, state, frame) {
     switch (state) {
         case 0:
@@ -263,6 +279,9 @@ module_builtins.$def('len', function (object, state, frame) {
                 return 1;
             }
         case 1:
+            if (except(MethodNotFoundError)) {
+                raise(TypeError, 'Object of type \'' + object.cls.name + '\' has no len().');
+            }
             return vm.return_value;
     }
 
@@ -293,6 +312,17 @@ var getattr = module_builtins.$def('getattr', function (object, name, state, fra
     }
 }, ['object', 'name']);
 
+
+var iter = module_builtins.$def('iter', function (object, state, frame) {
+    switch (state) {
+        case 0:
+            if (object.call('__iter__')) {
+                return 1;
+            }
+        case 1:
+            return vm.return_value;
+    }
+}, ['object']);
 
 
 $.builtins = builtins;

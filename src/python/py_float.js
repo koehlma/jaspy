@@ -119,3 +119,6 @@ Float.cls.$def('__sub__', function (self, other) {
 }, ['other']);
 Float.cls.$def_alias('__sub__', '__isub__');
 Float.cls.$def_alias('__sub__', '__rsub__');
+
+
+Float.$map('__abs__');

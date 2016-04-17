@@ -149,6 +149,10 @@ var Int = $Class('int', {
 
     ge: function (other) {
         return this.value.geq(other.value);
+    },
+
+    __abs__: function () {
+        return new Int(this.value.abs());
     }
 });
 

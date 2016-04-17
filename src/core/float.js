@@ -24,6 +24,10 @@ var Float = $Class('float', {
         this.value = value;
     },
 
+    __abs__: function () {
+        return new Float(Math.abs(this.value));
+    },
+
     number: function () {
         return this.value;
     },

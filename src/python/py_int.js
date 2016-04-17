@@ -158,3 +158,6 @@ Int.cls.$def('__or__', function (self, other) {
 }, ['other']);
 Int.cls.$def_alias('__or__', '__ior__');
 Int.cls.$def_alias('__or__', '__ror__');
+
+
+Int.$map('__abs__');
