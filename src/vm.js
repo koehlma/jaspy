@@ -161,7 +161,11 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                 vm.simple_depth++;
                 try {
                     result = object.func.apply(null, object.parse_args(args, kwargs, defaults));
-                    vm.return_value = result || None;
+                    if (result instanceof Frame) {
+                        return result;
+                    } else {
+                        vm.return_value = result || None;
+                    }
                 } catch (error) {
                     if (error instanceof PyObject) {
                         raise(error.cls, error, null, true);
