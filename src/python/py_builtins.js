@@ -324,6 +324,10 @@ var iter = module_builtins.$def('iter', function (object, state, frame) {
     }
 }, ['object']);
 
+var repr = module_builtins.$def('repr', function (object) {
+    return object.call('__repr__') || vm.return_value;
+}, ['object']);
+
 
 $.builtins = builtins;
 
