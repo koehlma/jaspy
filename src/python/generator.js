@@ -13,14 +13,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-py_generator.$def('__iter__', function (self) {
+Generator.cls.$def('__iter__', function (self) {
     return self;
 });
 
-py_generator.$def('__next__', function (self, state, frame) {
+Generator.cls.$def('__next__', function (self, state, frame) {
     switch (state) {
         case 0:
-            py_generator.check(self);
+            Generator.cls.check(self);
             self.running = true;
             self.frame.back = frame;
             vm.frame = self.frame;

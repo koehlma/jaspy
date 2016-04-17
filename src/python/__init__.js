@@ -25,7 +25,7 @@
 // #include 'py_bytes.js'
 // #include 'py_list.js'
 // #include 'py_function.js'
-// #include 'py_generator.js'
+// #include 'generator.js'
 // #include 'py_method.js'
 // #include 'py_property.js'
 // #include 'py_slice.js'
