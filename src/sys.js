@@ -44,18 +44,18 @@ jaspy.module('sys', function ($, module, builtins) {
 
     module.$set('implementation', $.Str.pack('jaspy'));
 
-    module.$set('maxunicode', $.pack_int(0xFFFF));
+    module.$set('maxunicode', $.Int.pack(0xFFFF));
 
     module.$set('version', $.Str.pack('3.5.1'));
-    module.$set('version_info', new $.Tuple([$.pack_int(3), $.pack_int(5), $.pack_int(0), $.Str.pack('dev'), $.Str.pack(0)], VersionInfo));
+    module.$set('version_info', new $.Tuple([$.Int.pack(3), $.Int.pack(5), $.Int.pack(0), $.Str.pack('dev'), $.Str.pack(0)], VersionInfo));
 
     module.$set('jaspy_version', $.Str.pack('/* {{metadata.__version__}} */'));
     module.$set('jaspy_version_info', new $.Tuple([
-        $.pack_int(/* {{metadata.__version_info__[0]}} */),
-        $.pack_int(/* {{metadata.__version_info__[1]}} */),
-        $.pack_int(/* {{metadata.__version_info__[2]}} */),
+        $.Int.pack(/* {{metadata.__version_info__[0]}} */),
+        $.Int.pack(/* {{metadata.__version_info__[1]}} */),
+        $.Int.pack(/* {{metadata.__version_info__[2]}} */),
         $.Str.pack('/* {{metadata.__version_info__[3]}} */'),
-        $.pack_int(/* {{metadata.__version_info__[4]}} */)], VersionInfo)
+        $.Int.pack(/* {{metadata.__version_info__[4]}} */)], VersionInfo)
     );
 
     module.$set('modules', new $.Dict($.modules));

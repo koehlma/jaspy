@@ -24,7 +24,7 @@ def convert(const):
     if const is None or isinstance(const, bool):
         js.append('jaspy.%r' % const)
     elif isinstance(const, int):
-        js.append('jaspy.pack_int(%r)' % const)
+        js.append('jaspy.Int.pack(%r)' % const)
     elif isinstance(const, float):
         js.append('jaspy.pack_float(%r)' % const)
     elif isinstance(const, str):

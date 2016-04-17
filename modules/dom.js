@@ -109,9 +109,9 @@ jaspy.module('dom', function ($, module, builtins) {
 
 
     module.$def('set_interval', function (interval, callback) {
-        var handle = $.pack_int(setInterval(function () {
+        var handle = $.Int.pack(setInterval(function () {
             $.resume(callback, [handle], {});
-        }, $.unpack_int(interval)));
+        }, $.Int.unpack(interval)));
         return handle;
     }, ['interval', 'resume']);
 

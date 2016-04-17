@@ -13,7 +13,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var pack_int = Int.pack;
 var pack_float = Float.pack;
 
 function pack_bool(boolean) {
@@ -54,7 +53,7 @@ function pack(object) {
         return Str.pack(object);
     } else if (typeof object == 'number') {
         if (Number.isInteger(object)) {
-            return pack_int(object);
+            return Int.pack(object);
         } else {
             return pack_float(object);
         }
@@ -71,7 +70,6 @@ function pack(object) {
     }
 }
 
-var unpack_int = Int.unpack;
 var unpack_number = Float.unpack;
 
 function unpack_bool(object, fallback) {
@@ -146,7 +144,7 @@ function unpack(object, fallback) {
     } else if (object === None) {
         return null;
     } else if (object instanceof Int) {
-        return unpack_int(object);
+        return Int.unpack(object);
     } else if (object instanceof Float) {
         return unpack_float(object);
     } else if (object instanceof Str) {
@@ -168,7 +166,6 @@ function unpack(object, fallback) {
 
 
 
-$.pack_int = pack_int;
 $.pack_bool = pack_bool;
 $.pack_float = pack_float;
 $.pack_bytes = pack_bytes;
@@ -178,7 +175,7 @@ $.pack_array = pack_array;
 $.pack_function = pack_function;
 $.pack_error = pack_error;
 
-$.unpack_int = unpack_int;
+
 $.unpack_bool = unpack_bool;
 $.unpack_number = unpack_number;
 $.unpack_bytes = unpack_bytes;

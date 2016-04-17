@@ -20,13 +20,13 @@ Int.cls.$def('__new__', function (cls, initializer, base, state, frame) {
                 raise(TypeError, 'class is not an subclass of int');
             }
             if (initializer instanceof Float) {
-                return pack_int(Math.floor(initializer.value), cls);
+                return Int.pack(Math.floor(initializer.value), cls);
             }
             if (initializer instanceof Int) {
                 if (initializer.cls == cls) {
                     return initializer;
                 } else {
-                    return pack_int(initializer.value, cls);
+                    return Int.pack(initializer.value, cls);
                 }
             }
             if (initializer instanceof Str) {
@@ -43,7 +43,7 @@ Int.cls.$def('__new__', function (cls, initializer, base, state, frame) {
             }
             break;
     }
-}, ['initializer', 'base'], {defaults: {initializer: pack_int(0), base: pack_int(10)}});
+}, ['initializer', 'base'], {defaults: {initializer: Int.pack(0), base: Int.pack(10)}});
 
 Int.cls.$def('__str__', function (self) {
     return Str.pack(self.toString());

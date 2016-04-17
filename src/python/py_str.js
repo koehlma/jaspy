@@ -48,7 +48,7 @@ Str.$def('__str__', function (self) {
 
 Str.$def('__len__', function (self)  {
     Str.cls.check(self);
-    return pack_int(self.value.length);
+    return Int.pack(self.value.length);
 });
 
 

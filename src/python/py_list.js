@@ -50,5 +50,5 @@ List.$map('append', ['item']);
 List.cls.$def('__getitem__', function (self, index_or_slice) {
     List.cls.check(self);
     // TODO: do conversion with __index__ and support slice
-    return self.get(unpack_int(index_or_slice));
+    return self.get(Int.unpack(index_or_slice));
 }, ['index_or_slice']);

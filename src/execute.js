@@ -548,7 +548,7 @@ PythonFrame.prototype.execute = function() {
             case OPCODES.UNPACK_SEQUENCE:
                 switch (this.state) {
                     case 0:
-                        if (call(unpack_sequence, [this.pop(), pack_int(instruction.argument)])) {
+                        if (call(unpack_sequence, [this.pop(), Int.pack(instruction.argument)])) {
                             return 1;
                         }
                     case 1:

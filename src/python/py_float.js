@@ -23,7 +23,7 @@ Float.cls.$def('__new__', function (cls, initializer, state, frame) {
                 if (initializer.cls == cls) {
                     return initializer;
                 } else {
-                    return pack_int(initializer.value, cls);
+                    return Int.pack(initializer.value, cls);
                 }
             }
             if (initializer instanceof Str) {
@@ -91,7 +91,7 @@ Float.cls.$def_alias('__mul__', '__imul__');
 Float.cls.$def_alias('__mul__', '__rmul__');
 
 Float.cls.$def('__floordiv__', function (self, other) {
-    return pack_int(Math.floor(unpack_number(self) / unpack_number(other)));
+    return Int.pack(Math.floor(unpack_number(self) / unpack_number(other)));
 }, ['other']);
 Float.cls.$def_alias('__floordiv__', '__ifloordiv__');
 Float.cls.$def_alias('__floordiv__', '__rfloordiv__');
