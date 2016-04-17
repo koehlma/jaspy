@@ -68,8 +68,6 @@ function pack(object) {
     }
 }
 
-var unpack_number = Float.unpack;
-
 function unpack_bool(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
@@ -174,7 +172,6 @@ $.pack_error = pack_error;
 
 
 $.unpack_bool = unpack_bool;
-$.unpack_number = unpack_number;
 $.unpack_bytes = unpack_bytes;
 $.unpack_tuple = unpack_tuple;
 $.unpack_object = unpack_object;

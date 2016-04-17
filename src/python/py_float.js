@@ -43,11 +43,11 @@ Float.cls.$def('__new__', function (cls, initializer, state, frame) {
 }, ['initializer'], {defaults: {initializer: Float.pack(0)}});
 
 Float.cls.$def('__str__', function (self) {
-    return Str.pack(unpack_number(self).toString());
+    return Str.pack(Float.unpack(self).toString());
 });
 
 Float.cls.$def('__neg__', function (self) {
-    return Float.pack(-unpack_number(self));
+    return Float.pack(-Float.unpack(self));
 });
 
 Float.cls.$def('__pos__', function (self) {
@@ -55,67 +55,67 @@ Float.cls.$def('__pos__', function (self) {
 });
 
 Float.cls.$def('__lt__', function (self, other) {
-    return unpack_number(self) < unpack_number(other) ? True : False;
+    return Float.unpack(self) < Float.unpack(other) ? True : False;
 }, ['other']);
 
 Float.cls.$def('__le__', function (self, other) {
-    return unpack_number(self) <= unpack_number(other) ? True : False;
+    return Float.unpack(self) <= Float.unpack(other) ? True : False;
 }, ['other']);
 
 Float.cls.$def('__eq__', function (self, other) {
-    return unpack_number(self) == unpack_number(other) ? True : False;
+    return Float.unpack(self) == Float.unpack(other) ? True : False;
 }, ['other']);
 
 Float.cls.$def('__ne__', function (self, other) {
-    return unpack_number(self) != unpack_number(other) ? True : False;
+    return Float.unpack(self) != Float.unpack(other) ? True : False;
 }, ['other']);
 
 Float.cls.$def('__gt__', function (self, other) {
-    return unpack_number(self) > unpack_number(other) ? True : False;
+    return Float.unpack(self) > Float.unpack(other) ? True : False;
 }, ['other']);
 
 Float.cls.$def('__ge__', function (self, other) {
-    return unpack_number(self) <= unpack_number(other) ? True : False;
+    return Float.unpack(self) <= Float.unpack(other) ? True : False;
 }, ['other']);
 
 Float.cls.$def('__pow__', function (self, other) {
-    return Float.pack(Math.pow(unpack_number(self), unpack_number(other)));
+    return Float.pack(Math.pow(Float.unpack(self), Float.unpack(other)));
 }, ['other']);
 Float.cls.$def_alias('__pow__', '__ipow__');
 Float.cls.$def_alias('__pow__', '__rpow__');
 
 Float.cls.$def('__mul__', function (self, other) {
-    return Float.pack(unpack_number(self) * unpack_number(other));
+    return Float.pack(Float.unpack(self) * Float.unpack(other));
 }, ['other']);
 Float.cls.$def_alias('__mul__', '__imul__');
 Float.cls.$def_alias('__mul__', '__rmul__');
 
 Float.cls.$def('__floordiv__', function (self, other) {
-    return Int.pack(Math.floor(unpack_number(self) / unpack_number(other)));
+    return Int.pack(Math.floor(Float.unpack(self) / Float.unpack(other)));
 }, ['other']);
 Float.cls.$def_alias('__floordiv__', '__ifloordiv__');
 Float.cls.$def_alias('__floordiv__', '__rfloordiv__');
 
 Float.cls.$def('__truediv__', function (self, other) {
-    return Float.pack(unpack_number(self) / unpack_number(other));
+    return Float.pack(Float.unpack(self) / Float.unpack(other));
 }, ['other']);
 Float.cls.$def_alias('__truediv__', '__itruediv__');
 Float.cls.$def_alias('__truediv__', '__rtruediv__');
 
 Float.cls.$def('__mod__', function (self, other) {
-    return Float.pack(unpack_number(self) % unpack_number(other));
+    return Float.pack(Float.unpack(self) % Float.unpack(other));
 }, ['other']);
 Float.cls.$def_alias('__mod__', '__imod__');
 Float.cls.$def_alias('__mod__', '__rmod__');
 
 Float.cls.$def('__add__', function (self, other) {
-    return Float.pack(unpack_number(self) + unpack_number(other));
+    return Float.pack(Float.unpack(self) + Float.unpack(other));
 }, ['other']);
 Float.cls.$def_alias('__add__', '__iadd__');
 Float.cls.$def_alias('__add__', '__radd__');
 
 Float.cls.$def('__sub__', function (self, other) {
-    return Float.pack(unpack_number(self) - unpack_number(other));
+    return Float.pack(Float.unpack(self) - Float.unpack(other));
 }, ['other']);
 Float.cls.$def_alias('__sub__', '__isub__');
 Float.cls.$def_alias('__sub__', '__rsub__');
