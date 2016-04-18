@@ -217,6 +217,8 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
 function raise(exc_type, exc_value, exc_tb, suppress) {
     var frame, next_tb;
 
+    exc_value = exc_value || '';
+
     if (!vm.frame) {
         error('[' + exc_type.name + '] ' + exc_value);
     }
