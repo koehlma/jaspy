@@ -35,7 +35,7 @@ var Dict = $Class('dict', {
         }
         var entry = this.table[str_key];
         while (entry) {
-            if (Str.unpack(entry.key, None) == str_key) {
+            if (entry.key instanceof Str && entry.key.value == str_key) {
                 return entry.value;
             }
             entry = entry.next;
@@ -51,7 +51,7 @@ var Dict = $Class('dict', {
         }
         var entry = this.table[str_key];
         while (entry) {
-            if (Str.unpack(entry.key, None) == str_key) {
+            if (entry.key instanceof Str && entry.key.value == str_key) {
                 entry.value = value;
                 return;
             }
@@ -70,7 +70,7 @@ var Dict = $Class('dict', {
         }
         entry = this.table[str_key];
         while (entry) {
-            if (Str.unpack(entry.key, None) == str_key) {
+            if (entry.key instanceof Str && entry.key.value == str_key) {
                 if (previous) {
                     previous.next = entry.next;
                 } else if (entry.next) {

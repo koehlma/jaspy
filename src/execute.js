@@ -602,7 +602,23 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.BUILD_MAP:
-                this.push(new Dict());
+                switch (this.state) {
+                    case 0:
+                        this.build_map_dict = new Dict();
+                        this.build_map_items = this.popn(instruction.argument * 2);
+                        this.build_map_index = 0;
+                    case 1:
+                        if (vm.return_value) {
+                            if (this.build_map_index < this.build_map_items.length) {
+                                this.build_map_dict.call('__setitem__', [this.build_map_items[this.build_map_index++], this.build_map_items[this.build_map_index++]])
+                                return 1;
+                            }
+                            this.push(this.build_map_dict);
+                        }
+                        this.build_map_dict = null;
+                        this.build_map_items = null;
+                        this.build_map_index = null;
+                }
                 break;
 
             case OPCODES.IMPORT_NAME:

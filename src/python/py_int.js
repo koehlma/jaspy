@@ -51,6 +51,7 @@ Int.cls.$def('__str__', function (self) {
 
 Int.cls.$def_alias('__str__', '__repr__');
 
+
 Int.cls.$def('__bool__', function (self) {
     return pack_bool(self.ne(False));
 });
@@ -161,3 +162,4 @@ Int.cls.$def_alias('__or__', '__ror__');
 
 
 Int.$map('__abs__');
+Int.$map('__hash__');

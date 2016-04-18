@@ -64,6 +64,19 @@ button.css('color', 'black')
 dom.get_body().append(button)
 
 
+example_dict = {
+    '123': 'abc',
+    123: 'xyz'
+}
+
+if example_dict['123'] == 'abc' and example_dict[123] == 'xyz':
+    del example_dict['123']
+    try:
+        print('Error:', example_dict['123'])
+    except KeyError:
+        print('Dictionaries are working!')
+
+
 # multiple threads
 def button_animation():
     state = True

@@ -35,6 +35,10 @@ var Int = $Class('int', {
         return this.value.neq(0);
     },
 
+    string: function () {
+        return this.value.toString();
+    },
+
     is: function (other) {
         if (other instanceof Int) {
             return this.value.eq(other.value);
@@ -136,6 +140,9 @@ var Int = $Class('int', {
     },
 
     eq: function (other) {
+        if (!(other instanceof Int)) {
+            return false;
+        }
         return this.value.eq(other.value);
     },
 
@@ -153,6 +160,10 @@ var Int = $Class('int', {
 
     __abs__: function () {
         return new Int(this.value.abs());
+    },
+
+    __hash__: function () {
+        return this;
     }
 });
 

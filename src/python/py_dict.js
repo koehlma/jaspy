@@ -13,28 +13,166 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-Dict.cls.$def('__setitem__', function (self, key, value, state, frame) {
-    if (!(self instanceof Dict)) {
-        raise(TypeError, 'invalid type of \'self\' argument');
+
+Dict.$def('__new__', function (cls) {
+    return new Dict({}, cls);
+});
+
+Dict.$def('__getitem__', function (self, key, state, frame) {
+    var value;
+    while (true) {
+        switch (state) {
+                case 0:
+                    Dict.check(self);
+
+                    if (key instanceof Str) {
+                        value = self.get(key);
+                        if (value) {
+                            return value;
+                        } else {
+                            raise(KeyError, new Exception([key], KeyError));
+                        }
+                    }
+
+                    if (key.call('__hash__')) {
+                        return 1;
+                    }
+                case 1:
+                    if (!vm.return_value) {
+                        return;
+                    }
+                    frame.locals.entry = self.table[vm.return_value.string()];
+                case 2:
+                    if (!frame.locals.entry) {
+                        state = 4;
+                        break;
+                    }
+                    if (key.call('__eq__', [frame.locals.entry.key])) {
+                        return 3;
+                    }
+                case 3:
+                    if (!vm.return_value) {
+                        return;
+                    }
+                    if (vm.return_value.bool()) {
+                        return frame.locals.entry.value;
+                    } else {
+                        state = 2;
+                        frame.locals.entry = frame.locals.entry.next;
+                        break;
+                    }
+                case 4:
+                    raise(KeyError, new Exception([key], KeyError));
+            }
     }
-    switch (state) {
-        case 0:
-            if (key.cls === Str.cls) {
-                vm.return_value = key;
-            } else if (key.call('__hash__')) {
-                return 1;
+}, ['key']);
+
+Dict.$def('__setitem__', function (self, key, value, state, frame) {
+    while (true) {
+        switch (state) {
+                case 0:
+                    Dict.check(self);
+
+                    if (key instanceof Str) {
+                        self.set(key, value);
+                        return;
+                    }
+
+                    if (key.call('__hash__')) {
+                        return 1;
+                    }
+                case 1:
+                    if (!vm.return_value) {
+                        return;
+                    }
+                    frame.locals.hash = vm.return_value.string();
+                    frame.locals.entry = self.table[frame.locals.hash];
+                case 2:
+                    if (!frame.locals.entry) {
+                        state = 4;
+                        break;
+                    }
+                    if (key.call('__eq__', [frame.locals.entry.key])) {
+                        return 3;
+                    }
+                case 3:
+                    if (!vm.return_value) {
+                        return;
+                    }
+                    if (vm.return_value.bool()) {
+                        frame.locals.entry.value = value;
+                        return;
+                    } else {
+                        state = 2;
+                        frame.locals.entry = frame.locals.entry.next;
+                        break;
+                    }
+                case 4:
+                    self.table[frame.locals.hash] = new Dict.Entry(key, value, self.table[frame.locals.hash]);
+                    self.size++;
+                    return;
             }
-        case 1:
-            if (!vm.return_value) {
-                return null;
-            }
-            if (vm.return_value instanceof Str) {
-                self.set(vm.return_value, value);
-            } else if (vm.return_value instanceof Int) {
-                self.set(Str.pack(vm.return_value.value.toString()), value);
-            } else {
-                raise(TypeError, 'invalid result type of key hash');
-            }
-            return None;
     }
 }, ['key', 'value']);
+
+
+Dict.$def('pop', function (self, key, state, frame) {
+    while (true) {
+        switch (state) {
+                case 0:
+                    Dict.check(self);
+
+                    if (key instanceof Str) {
+                        if (!self.pop(key)) {
+                            raise(KeyError, new Exception([key], KeyError));
+                        }
+                        return;
+                    }
+
+                    if (key.call('__hash__')) {
+                        return 1;
+                    }
+                case 1:
+                    if (!vm.return_value) {
+                        return;
+                    }
+                    frame.locals.hash = vm.return_value.string();
+                    frame.locals.entry = self.table[frame.locals.hash];
+                    frame.locals.previous = null;
+                case 2:
+                    if (!frame.locals.entry) {
+                        state = 4;
+                        break;
+                    }
+                    if (key.call('__eq__', [frame.locals.entry.key])) {
+                        return 3;
+                    }
+                case 3:
+                    if (!vm.return_value) {
+                        return;
+                    }
+                    if (vm.return_value.bool()) {
+                        if (frame.locals.previous) {
+                            frame.locals.previous.next = frame.locals.entry.next;
+                        } else if (frame.locals.entry.next) {
+                            self.table[frame.locals.hash] = frame.locals.entry.next;
+                        } else {
+                            delete self.table[frame.locals.hash];
+                        }
+                        self.size--;
+                        return frame.locals.entry.value;
+                    } else {
+                        state = 2;
+                        frame.locals.previous = frame.locals.entry;
+                        frame.locals.entry = frame.locals.entry.next;
+                        break;
+                    }
+                case 4:
+                    raise(KeyError, new Exception([key], KeyError));
+            }
+    }
+}, ['key']);
+
+Dict.$def('__delitem__', function (self, key) {
+    return self.call('pop', [key]);
+}, ['key']);
