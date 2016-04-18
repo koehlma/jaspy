@@ -24,7 +24,7 @@ var Exception = $Class('BaseException', {
 
 function make_exception(cls, message) {
     var exc_value = new PyObject(cls, {});
-    exc_value.dict['args'] = pack_tuple([Str.pack(message)]);
+    exc_value.__dict__['args'] = pack_tuple([Str.pack(message)]);
     return exc_value;
 }
 
@@ -37,9 +37,9 @@ function format_exception(exc_value) {
         string.push(format_traceback(exc_value.traceback));
     }
     if (exc_value.getattr('args') instanceof Tuple && exc_value.getattr('args').array[0] instanceof Str) {
-        string.push(exc_value.cls.name + ': ' + exc_value.getattr('args').array[0]);
+        string.push(exc_value.__class__.name + ': ' + exc_value.getattr('args').array[0]);
     } else {
-        string.push(exc_value.cls.name);
+        string.push(exc_value.__class__.name);
     }
     return string.join('\n');
 }

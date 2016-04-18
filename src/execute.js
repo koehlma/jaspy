@@ -640,17 +640,17 @@ PythonFrame.prototype.execute = function() {
 
             case OPCODES.IMPORT_STAR:
                 temp = this.pop();
-                for (name in temp.dict) {
-                    if (name.indexOf('_') != 0 && temp.dict.hasOwnProperty(name)) {
-                        this.locals[name] = temp.dict[name];
+                for (name in temp.__dict__) {
+                    if (name.indexOf('_') != 0 && temp.__dict__.hasOwnProperty(name)) {
+                        this.locals[name] = temp.__dict__[name];
                     }
                 }
                 break;
 
             case OPCODES.IMPORT_FROM:
                 name = this.code.names[instruction.argument];
-                if (name in this.top0().dict) {
-                    this.push(this.top0().dict[name])
+                if (name in this.top0().__dict__) {
+                    this.push(this.top0().__dict__[name])
                 } else {
                     raise(ImportError, 'cannot import name \'' + name + '\'');
                 }
@@ -731,7 +731,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.POP_JUMP_IF_TRUE:
-                if (this.top0().cls === Int.cls) {
+                if (this.top0().__class__ === Int.__class__) {
                     if (this.pop().bool()) {
                         this.position = instruction.target;
                     }
@@ -770,7 +770,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.POP_JUMP_IF_FALSE:
-                if (this.top0().cls === py_bool || this.top0().cls === Int.cls) {
+                if (this.top0().__class__ === py_bool || this.top0().__class__ === Int.__class__) {
                     if (!this.pop().bool()) {
                         this.position = instruction.target;
                     }
@@ -807,7 +807,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.JUMP_IF_TRUE_OR_POP:
-                if (this.top0().cls === Int.cls) {
+                if (this.top0().__class__ === Int.__class__) {
                     if (this.top0().bool()) {
                         this.position = instruction.target;
                     } else {
@@ -851,7 +851,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.JUMP_IF_FALSE_OR_POP:
-                if (this.top0().cls === Int.cls) {
+                if (this.top0().__class__ === Int.__class__) {
                     if (!this.top0().bool()) {
                         this.position = instruction.target;
                     } else {
@@ -961,7 +961,7 @@ PythonFrame.prototype.execute = function() {
                     error('unsupported raise format');
                 }
                 exc_value = this.pop();
-                raise(exc_value.cls, exc_value);
+                raise(exc_value.__class__, exc_value);
                 break;
 
             case OPCODES.LOAD_CONST:
@@ -1088,7 +1088,7 @@ NativeFrame.prototype.execute = function () {
         if (!(error instanceof PyObject)) {
             error = pack_error(error);
         }
-        raise(error.cls, error, undefined, true);
+        raise(error.__class__, error, undefined, true);
         vm.frame = this.back;
         // << if ENABLE_DEBUGGER
             debugging.trace_return(this);

@@ -19,7 +19,7 @@ var unpack_sequence = $def(function (sequence, limit, state, frame) {
             case 0:
                 frame.result = [];
                 frame.limit = Int.unpack(limit, Infinity);
-                if (sequence.cls.lookup('__next__')) {
+                if (sequence.__class__.lookup('__next__')) {
                     frame.iterator = sequence;
                     state = 2;
                     break;

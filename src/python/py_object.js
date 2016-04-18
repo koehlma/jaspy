@@ -28,15 +28,15 @@ py_object.$def('__getattribute__', function (self, name, state, frame) {
     switch (state) {
         case 0:
             name = Str.unpack(name);
-            value = self.dict ? self.getattr(name) : null;
+            value = self.__dict__ ? self.getattr(name) : null;
             if (!value) {
-                value = self.cls.lookup(name);
+                value = self.__class__.lookup(name);
                 if (value) {
-                    if (value.call('__get__', [self, self.cls])) {
+                    if (value.call('__get__', [self, self.__class__])) {
                         return 1;
                     }
                 } else {
-                    raise(AttributeError, '\'' + self.cls.name + '\' object has no attribute \'' + name + '\'');
+                    raise(AttributeError, '\'' + self.__class__.name + '\' object has no attribute \'' + name + '\'');
                 }
             } else {
                 return value;
@@ -56,8 +56,8 @@ py_object.$def('__setattr__', function (self, name, item, state, frame) {
     var descriptor;
     switch (state) {
         case 0:
-            descriptor = self.cls.lookup(name);
-            if (descriptor && descriptor.cls.lookup('__set__')) {
+            descriptor = self.__class__.lookup(name);
+            if (descriptor && descriptor.__class__.lookup('__set__')) {
                 if (descriptor.call('__set__', [self, item])) {
                     return 1;
                 }
@@ -71,11 +71,11 @@ py_object.$def('__setattr__', function (self, name, item, state, frame) {
 }, ['name', 'item']);
 
 py_object.$def('__repr__', function (self) {
-    var module = self.cls.getattr('__module__');
+    var module = self.__class__.getattr('__module__');
     if (module instanceof Str) {
-        return Str.pack('<' + module.value + '.' + self.cls.name + ' object at 0x' + self.get_address() + '>');
+        return Str.pack('<' + module.value + '.' + self.__class__.name + ' object at 0x' + self.get_address() + '>');
     } else {
-        return Str.pack('<' + self.cls.name + ' object at 0x' + self.get_address() + '>');
+        return Str.pack('<' + self.__class__.name + ' object at 0x' + self.get_address() + '>');
     }
 });
 
@@ -99,13 +99,13 @@ py_object.$def('__eq__', function (self, other) {
 }, ['other']);
 
 py_object.$def_property('__class__', function (self) {
-    return self.cls;
+    return self.__class__;
 }, function (self, value) {
     if (!(value instanceof PyType) || value.native != py_object) {
         raise(TypeError, 'invalid type of \'value\' argument');
     }
-    if (self instanceof PyType || self.cls.native != py_object) {
+    if (self instanceof PyType || self.__class__.native != py_object) {
         raise(TypeError, 'object does not support class assignment');
     }
-    self.cls = value;
+    self.__class__ = value;
 });

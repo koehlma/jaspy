@@ -20,7 +20,7 @@ Float.cls.$def('__new__', function (cls, initializer, state, frame) {
                 raise(TypeError, 'class is not an subclass of float');
             }
             if (initializer instanceof Int || initializer instanceof Float) {
-                if (initializer.cls == cls) {
+                if (initializer.__class__ == cls) {
                     return initializer;
                 } else {
                     return Int.pack(initializer.value, cls);

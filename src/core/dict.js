@@ -17,7 +17,7 @@
 var Dict = $Class('dict', {
     constructor: function (table, cls) {
         PyObject.call(this, cls || Dict.cls);
-        if (!issubclass(this.cls, Dict.cls)) {
+        if (!issubclass(this.__class__, Dict.cls)) {
             raise(TypeError, 'unable to create dict with non dict subclass');
         }
         this.table = table || {};
@@ -135,6 +135,22 @@ Dict.Entry = Class({
         this.next = next;
     }
 });
+
+
+Dict.Values = $Class('dict_values', {
+    constructor: function (dict) {
+        PyObject.call(this, Dict.Values.cls);
+    }
+});
+
+
+Dict.Keys = $Class('dict_keys', {
+    constructor: function (dict) {
+        PyObject.call(this, Dict.Values.cls);
+    }
+
+});
+
 
 
 $.Dict = Dict;

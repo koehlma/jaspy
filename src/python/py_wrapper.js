@@ -25,7 +25,7 @@ py_js_object.$def('__getattr__', function (self, name) {
         }
         return pack(value);
     }
-    raise(AttributeError, '\'' + self.cls.name + '\' object has no attribute \'' + name + '\'');
+    raise(AttributeError, '\'' + self.__class__.name + '\' object has no attribute \'' + name + '\'');
 }, ['name']);
 
 py_js_object.$def('__setattr__', function (self, name, value) {

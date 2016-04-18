@@ -105,12 +105,12 @@ function main(module, argv) {
     get_namespace('sys')['argv'] = new List((['<python>'].concat(argv || []).map(Str.pack)));
     register_module('__main__', module);
 
-    module.dict['__name__'] = Str.pack('__main__');
+    module.__dict__['__name__'] = Str.pack('__main__');
 
     vm.frame = new PythonFrame(module.code, {
         builtins: builtins,
-        locals: module.dict,
-        globals: module.dict
+        locals: module.__dict__,
+        globals: module.__dict__
     });
 
     // << if ENABLE_THREADING
@@ -168,7 +168,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
                     }
                 } catch (error) {
                     if (error instanceof PyObject) {
-                        raise(error.cls, error, null, true);
+                        raise(error.__class__, error, null, true);
                     } else {
                         raise(JSError, pack_error(error), null, true);
                     }
@@ -197,14 +197,14 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
         } else if (object instanceof PyObject) {
             result = object.call('__call__', args, kwargs);
             if (except(MethodNotFoundError)) {
-                raise(TypeError, object.cls.name + ' object is not callable', null, true);
+                raise(TypeError, object.__class__.name + ' object is not callable', null, true);
                 return null;
             } else {
                 return result;
             }
         } else if (object instanceof PythonModule) {
             vm.frame = new PythonFrame(object.code, {
-                back: vm.frame, locals: object.dict, globals: object.dict
+                back: vm.frame, locals: object.__dict__, globals: object.__dict__
             });
             return vm.frame;
         } else {

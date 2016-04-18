@@ -17,8 +17,8 @@
 var py_object = PyType.native('object', []);
 var py_type = PyType.native('type', [py_object]);
 
-py_object.cls = py_type;
-py_type.cls = py_type;
+py_object.__class__ = py_type;
+py_type.__class__ = py_type;
 
 
 // #include 'dict.js'

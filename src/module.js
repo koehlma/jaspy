@@ -25,12 +25,12 @@ function get_module(name) {
 }
 
 function get_namespace(name) {
-    return get_module(name).dict;
+    return get_module(name).__dict__;
 }
 
 function register_module(name, module) {
     modules[name] = module;
-    module.dict['__name__'] = Str.pack(name);
+    module.__dict__['__name__'] = Str.pack(name);
 }
 
 function unregister_module(name) {
@@ -42,7 +42,7 @@ var Module = Class.extend({
     constructor: function (name, depends) {
         this.name = name;
         this.depends = depends || [];
-        this.dict = {};
+        this.__dict__ = {};
         if (this.name) {
             register_module(this.name, this);
         }
@@ -76,18 +76,18 @@ var NativeModule = Module.extend({
         options.name = name;
         options.qualname = name;
         options.simple = func.length == signature.length;
-        this.dict[name] = $def(func, signature, options);
-        return this.dict[name];
+        this.__dict__[name] = $def(func, signature, options);
+        return this.__dict__[name];
     },
 
     $set: function (name, value) {
-        this.dict[name] = value;
-        return this.dict[name];
+        this.__dict__[name] = value;
+        return this.__dict__[name];
     },
 
     $class: function (name, bases, mcs) {
-        this.dict[name] = PyType.native(name, bases, null, mcs);
-        return this.dict[name];
+        this.__dict__[name] = PyType.native(name, bases, null, mcs);
+        return this.__dict__[name];
     }
 });
 

@@ -83,7 +83,7 @@ var PyType = PyObject.extend({
     },
 
     define: function (name, item) {
-        return this.dict[name] = item;
+        return this.__dict__[name] = item;
     },
 
     $def: function (name, func, signature, options) {

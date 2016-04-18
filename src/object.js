@@ -19,16 +19,16 @@ var object_id_counter = 0;
 
 var PyObject = Class.extend({
     constructor: function (cls, dict) {
-        this.cls = cls;
-        this.identity = null;
-        this.dict = dict === undefined ? {} : dict;
+        this.__class__ = cls;
+        this.__addr__ = null;
+        this.__dict__ = dict === undefined ? {} : dict;
     },
 
     get_id: function () {
-        if (this.identity === null) {
-            this.identity = object_id_counter++;
+        if (this.__addr__ === null) {
+            this.__addr__ = object_id_counter++;
         }
-        return this.identity;
+        return this.__addr__;
     },
 
     get_address: function () {
@@ -36,14 +36,14 @@ var PyObject = Class.extend({
     },
 
     call: function (name, args, kwargs) {
-        var method = this.cls.lookup(name);
+        var method = this.__class__.lookup(name);
         if (method) {
             if (isinstance(method, py_classmethod)) {
-                return call(method.func, [this.cls].concat(args || []), kwargs);
+                return call(method.func, [this.__class__].concat(args || []), kwargs);
             } else if (isinstance(method, py_staticmethod)) {
                 return call(method.func, args, kwargs);
             } else if (name == '__new__') {
-                return call(method, [this.cls].concat(args || []), kwargs);
+                return call(method, [this.__class__].concat(args || []), kwargs);
             }
             return call(method, [this].concat(args || []), kwargs);
         } else {
@@ -54,7 +54,7 @@ var PyObject = Class.extend({
     },
 
     setattr: function (name, value) {
-        if (!this.dict) {
+        if (!this.__dict__) {
             raise(TypeError, 'object does not support attribute access');
         }
         if (name instanceof Str) {
@@ -62,11 +62,11 @@ var PyObject = Class.extend({
         } else if (typeof name != 'string') {
             raise(TypeError, 'native attribute name must be a string');
         }
-        this.dict[name] = value;
+        this.__dict__[name] = value;
     },
 
     getattr: function (name) {
-        if (!this.dict) {
+        if (!this.__dict__) {
             raise(TypeError, 'object does not support attribute access');
         }
         if (name instanceof Str) {
@@ -74,7 +74,7 @@ var PyObject = Class.extend({
         } else if (typeof name != 'string') {
             raise(TypeError, 'native attribute name must be a string');
         }
-        return this.dict[name]
+        return this.__dict__[name]
     },
 
     is: function (other) {
@@ -82,7 +82,7 @@ var PyObject = Class.extend({
     },
 
     repr: function () {
-        return '<' + this.cls.name + ' object at 0x' + this.get_address() + '>';
+        return '<' + this.__class__.name + ' object at 0x' + this.get_address() + '>';
     },
 
 
@@ -108,8 +108,8 @@ PyObject.prototype.toString = PyObject.prototype.repr;
 
 function isinstance(object, cls) {
     var index;
-    for (index = 0; index < object.cls.mro.length; index++) {
-        if (object.cls.mro[index] === cls) {
+    for (index = 0; index < object.__class__.mro.length; index++) {
+        if (object.__class__.mro[index] === cls) {
             return true;
         }
     }

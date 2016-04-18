@@ -72,7 +72,7 @@ function unpack_bool(object, fallback) {
     if ((object === None || !object) && fallback) {
         return fallback;
     }
-    if (!(object.cls === py_bool)) {
+    if (!(object.__class__ === py_bool)) {
         raise(TypeError, 'unable to unpack bool from object');
     }
     return object === True;
@@ -135,7 +135,7 @@ function unpack(object, fallback) {
     if (!(object instanceof PyObject)) {
         raise(TypeError, 'object to unpack is not a python object');
     }
-    if (object.cls === py_bool) {
+    if (object.__class__ === py_bool) {
         return unpack_bool(object);
     } else if (object === None) {
         return null;

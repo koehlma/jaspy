@@ -23,7 +23,7 @@ Int.cls.$def('__new__', function (cls, initializer, base, state, frame) {
                 return Int.pack(Math.floor(initializer.value), cls);
             }
             if (initializer instanceof Int) {
-                if (initializer.cls == cls) {
+                if (initializer.__class__ == cls) {
                     return initializer;
                 } else {
                     return Int.pack(initializer.value, cls);

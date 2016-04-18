@@ -22,7 +22,7 @@ Method.$def('__repr__', function (self, state, frame) {
             }
         case 1:
             if (vm.return_value) {
-                return new Str('<bound method ' + self.self.cls.name + '.' + self.func.name + ' of ' + vm.return_value.string() + '>');
+                return new Str('<bound method ' + self.self.__class__.name + '.' + self.func.name + ' of ' + vm.return_value.string() + '>');
             }
     }
 });

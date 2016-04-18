@@ -38,7 +38,7 @@ py_type.$def('__call__', function (cls, args, kwargs, state, frame) {
                 return null;
             }
             frame.instance = vm.return_value;
-            if (vm.return_value.cls.lookup('__init__')) {
+            if (vm.return_value.__class__.lookup('__init__')) {
                 if (vm.return_value.call('__init__', args, kwargs)) {
                     return 2;
                 }

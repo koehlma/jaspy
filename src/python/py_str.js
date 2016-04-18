@@ -21,7 +21,7 @@ Str.$def('__new__', function (cls, initializer, state, frame) {
                 raise(TypeError, 'class is not an subclass of str');
             }
             if (initializer instanceof Str) {
-                if (initializer.cls == cls) {
+                if (initializer.__class__ == cls) {
                     return initializer;
                 } else {
                     return Str.pack(initializer.value, cls);

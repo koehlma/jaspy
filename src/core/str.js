@@ -101,7 +101,7 @@ var Str = $Class('str', {
     },
 
     is: function (other) {
-        if (other instanceof PyObject && other.cls !== Str.cls) {
+        if (other instanceof PyObject && other.__class__ !== Str.cls) {
             return false;
         }
         return this.equals(other);

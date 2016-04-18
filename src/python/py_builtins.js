@@ -15,7 +15,7 @@
 
 var build_class = $def(function (func, name, bases, metaclass, keywords, state, frame) {
     var possible_meta_classes, index, good;
-    if (!(func.cls == Func.cls)) {
+    if (!(func.__class__ == Func.__class__)) {
         raise(TypeError, 'invalid type of \'func\' argument');
     }
     if (!(name instanceof Str)) {
@@ -37,7 +37,7 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
                 }
                 for (index = 0; index < bases.length; index++) {
                     if (bases.value[index] instanceof PyType) {
-                        possible_meta_classes.push(bases[index].cls)
+                        possible_meta_classes.push(bases[index].__class__)
                     } else {
                         raise(TypeError, 'invalid type of base');
                     }
@@ -66,8 +66,8 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
             if (!vm.return_value) {
                 return null;
             }
-            frame.dict = vm.return_value;
-            if (call(func, undefined, undefined, undefined, undefined, undefined, frame.dict)) {
+            frame.__dict__ = vm.return_value;
+            if (call(func, undefined, undefined, undefined, undefined, undefined, frame.__dict__)) {
                 return 2;
             }
         case 2:
@@ -79,7 +79,7 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
             } else {
                 bases = bases.value;
             }
-            if (frame.metaclass.cls.call('__call__', [name, pack_tuple(bases), frame.dict], keywords)) {
+            if (frame.metaclass.__class__.call('__call__', [name, pack_tuple(bases), frame.__dict__], keywords)) {
                 return 3;
             }
         case 3:
@@ -167,7 +167,7 @@ var builtins = {
 
 
 var module_builtins = module('builtins', function ($, module) {
-    module.dict = builtins;
+    module.__dict__ = builtins;
 });
 
 module('js', function ($, module) {
@@ -187,7 +187,7 @@ module_builtins.$def('__import__', function (name, globals, locals, fromlist, le
                 raise(ImportError, 'unable to import module ' + name);
             }
             if (modules[name] instanceof NativeModule) {
-                return new PyModule(modules[name].dict);
+                return new PyModule(modules[name].__dict__);
             }
             if (modules[name].wrapper) {
                 return modules[name].wrapper;
@@ -196,7 +196,7 @@ module_builtins.$def('__import__', function (name, globals, locals, fromlist, le
                 return 1;
             }
         case 1:
-            var module = new PyModule(modules[name].dict);
+            var module = new PyModule(modules[name].__dict__);
             modules[name].wrapper = module;
             return module;
     }
@@ -213,7 +213,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 frame.index = 0;
                 if (objects.length) {
                     object = objects[0];
-                    if (object.cls === Str.cls) {
+                    if (object.__class__ === Str.cls) {
                         vm.return_value = object;
                     } else if (object.call('__str__')) {
                         return 1;
@@ -231,7 +231,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 frame.index++;
                 if (frame.index < objects.length) {
                     object = objects[frame.index];
-                    if (object.cls == Str.cls) {
+                    if (object.__class__ == Str.cls) {
                         vm.return_value = object;
                     } else if (object.call('__str__')) {
                         return 1;
@@ -239,7 +239,7 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                     break;
                 }
             case 2:
-                if (sep.cls == Str.cls) {
+                if (sep.__class__ == Str.cls) {
                     vm.return_value = sep;
                 } else if (sep.call('__str__')) {
                     return 3;
@@ -265,7 +265,7 @@ module_builtins.$def('abs', function (object, state, frame) {
              }
          case 1:
              if (except(MethodNotFoundError)) {
-                 raise(TypeError, 'Bad operand type for abs(): \'' + object.cls.name + '\'');
+                 raise(TypeError, 'Bad operand type for abs(): \'' + object.__class__.name + '\'');
              }
              return vm.return_value;
      }
@@ -280,7 +280,7 @@ module_builtins.$def('len', function (object, state, frame) {
             }
         case 1:
             if (except(MethodNotFoundError)) {
-                raise(TypeError, 'Object of type \'' + object.cls.name + '\' has no len().');
+                raise(TypeError, 'Object of type \'' + object.__class__.name + '\' has no len().');
             }
             return vm.return_value;
     }

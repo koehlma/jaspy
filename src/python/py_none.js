@@ -15,14 +15,14 @@
 
 var NONE_STR = Str.pack('None');
 
-None.cls.$def('__new__', function (cls) {
+None.__class__.$def('__new__', function (cls) {
     return None;
 });
 
-None.cls.$def('__repr__', function (self) {
+None.__class__.$def('__repr__', function (self) {
     return NONE_STR;
 });
 
-None.cls.$def('__bool__', function (self) {
+None.__class__.$def('__bool__', function (self) {
     return False;
 });

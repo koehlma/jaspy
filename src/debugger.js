@@ -102,7 +102,7 @@ var debug_get_frame_locals = new NativeCode(function (in_frame, state, frame) {
                 } else {
                     name = frame.names[frame.index++];
                     frame.result[name] = {
-                        type: in_frame.locals[name].cls.name,
+                        type: in_frame.locals[name].__class__.name,
                         value: vm.return_value.toString()
                     };
                 }
