@@ -602,7 +602,7 @@ Str.pack = function (value) {
 };
 
 Str.unpack = function (object, fallback) {
-    if ((object === None || !object) && fallback != undefined) {
+    if ((object === None || !object) && fallback !== undefined) {
         return fallback;
     }
     if (object instanceof Str) {

@@ -14,10 +14,22 @@
  */
 
 
+var CollisionNode = Class({
+    constructor: function (key, value, next) {
+        this.key = key;
+        this.value = value;
+        this.next = next;
+    }
+});
+
+
 var Dict = $Class('dict', {
-    constructor: function (namespace, cls) {
+    constructor: function (table, cls) {
         PyObject.call(this, cls || Dict.cls);
-        this.table = namespace || {};
+        if (!issubclass(this.cls, Dict.cls)) {
+            raise(TypeError, 'unable to create dict with non dict subclass');
+        }
+        this.table = table || {};
         if (!(this.table instanceof Object)) {
             raise(TypeError, 'invalid type of native dict initializer');
         }
@@ -29,28 +41,55 @@ var Dict = $Class('dict', {
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
         }
-        return this.table[str_key] || fallback || null;
+        var entry = this.table[str_key];
+        while (entry) {
+            if (Str.unpack(entry.key, None) == str_key) {
+                return entry.value;
+            }
+            entry = entry.next;
+        }
+        return fallback;
     },
 
     set: function (str_key, value) {
-        if (typeof str_key == 'string') {
-            str_key = Str.pack(str_key);
-        } else if (!(str_key instanceof Str)) {
-            raise(TypeError, 'invalid native dict key type');
-        }
-        this.table[str_key] = value;
-    },
-
-    pop: function (str_key) {
-        var value;
         if (str_key instanceof Str) {
             str_key = str_key.value;
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
         }
-        value = this.table[str_key];
-        delete this.table[str_key];
-        return value;
+        var entry = this.table[str_key];
+        while (entry) {
+            if (Str.unpack(entry.key, None) == str_key) {
+                entry.value = value;
+                return;
+            }
+            entry = entry.next;
+        }
+        this.table[str_key] = new CollisionNode(new Str(str_key), value, this.table[str_key]);
+    },
+
+    pop: function (str_key) {
+        var entry, previous;
+        if (str_key instanceof Str) {
+            str_key = str_key.value;
+        } else if (typeof str_key != 'string') {
+            raise(TypeError, 'invalid native dict key type');
+        }
+        entry = this.table[str_key];
+        while (entry) {
+            if (Str.unpack(entry.key, None) == str_key) {
+                if (previous) {
+                    previous.next = entry.next;
+                } else if (entry.next) {
+                    this.table[str_key] = entry.next;
+                } else {
+                    delete this.table[str_key];
+                }
+                return entry.value;
+            }
+            previous = entry;
+            entry = entry.next;
+        }
     }
 });
 
