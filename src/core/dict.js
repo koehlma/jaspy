@@ -14,15 +14,6 @@
  */
 
 
-var CollisionNode = Class({
-    constructor: function (key, value, next) {
-        this.key = key;
-        this.value = value;
-        this.next = next;
-    }
-});
-
-
 var Dict = $Class('dict', {
     constructor: function (table, cls) {
         PyObject.call(this, cls || Dict.cls);
@@ -65,7 +56,7 @@ var Dict = $Class('dict', {
             }
             entry = entry.next;
         }
-        this.table[str_key] = new CollisionNode(new Str(str_key), value, this.table[str_key]);
+        this.table[str_key] = new Dict.Entry(new Str(str_key), value, this.table[str_key]);
     },
 
     pop: function (str_key) {
@@ -90,6 +81,30 @@ var Dict = $Class('dict', {
             previous = entry;
             entry = entry.next;
         }
+    },
+
+    entries: function () {
+        var hash, entry;
+        var entries = new List();
+        for (hash in this.table) {
+            if (this.table.hasOwnProperty(hash)) {
+                entry = this.table[hash];
+                while (entry) {
+                    entries.append(entry);
+                    entry = entry.next;
+                }
+            }
+        }
+        return entries;
+    }
+});
+
+
+Dict.Entry = Class({
+    constructor: function (key, value, next) {
+        this.key = key;
+        this.value = value;
+        this.next = next;
     }
 });
 
