@@ -192,8 +192,22 @@ Dict.$map('__len__');
 
 Dict.$map('copy');
 Dict.$map('clear');
+Dict.$map('keys');
+Dict.$map('items');
+Dict.$map('values');
 
 
 Dict.Values.$map('__len__');
 Dict.Keys.$map('__len__');
+
 Dict.Items.$map('__len__');
+Dict.Items.$map('__iter__');
+Dict.Items.Iterator.$map('__iter__');
+Dict.Items.Iterator.$def('__next__', function (self) {
+    Dict.Items.Iterator.check(self);
+    var next = self.next();
+    if (!next) {
+        raise(StopIteration, 'iteration has been stopped');
+    }
+    return next;
+});

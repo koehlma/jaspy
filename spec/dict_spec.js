@@ -30,14 +30,14 @@ describe('Dict', function () {
     it('entries', function () {
         var dict = new jaspy.Dict();
 
-        expect(dict.entries().size, 0);
+        expect(dict.entries().length, 0);
 
         dict.set('abc', 42);
         dict.set('abc', 31415);
 
-        expect(dict.entries().size, 1);
-        expect(dict.entries().get(0).key.equals('abc')).toBe(jaspy.True);
-        expect(dict.entries().get(0).value).toBe(31415);
+        expect(dict.entries().length, 1);
+        expect(dict.entries()[0].key.equals('abc')).toBe(jaspy.True);
+        expect(dict.entries()[0].value).toBe(31415);
     });
 
     it('size', function () {

@@ -70,6 +70,8 @@ example_dict = {
 }
 
 if example_dict['123'] == 'abc' and example_dict[123] == 'xyz':
+    for key, value in example_dict.items():
+        print(key, value)
     if 123 in example_dict and True not in example_dict:
         del example_dict['123']
         try:

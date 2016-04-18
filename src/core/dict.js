@@ -25,9 +25,6 @@ var Dict = $Class('dict', {
         if (!(this.table instanceof Object)) {
             raise(TypeError, 'invalid type of native dict initializer');
         }
-        this.keys = new Dict.Keys(this);
-        this.values = new Dict.Values(this);
-        this.items = new Dict.Items(this);
     },
 
     get: function (str_key, fallback) {
@@ -91,17 +88,29 @@ var Dict = $Class('dict', {
 
     entries: function () {
         var hash, entry;
-        var entries = new List();
+        var entries = [];
         for (hash in this.table) {
             if (this.table.hasOwnProperty(hash)) {
                 entry = this.table[hash];
                 while (entry) {
-                    entries.append(entry);
+                    entries.push(entry);
                     entry = entry.next;
                 }
             }
         }
         return entries;
+    },
+
+    keys: function () {
+        return new Dict.Keys(this);
+    },
+
+    values: function () {
+        return new Dict.Values(this);
+    },
+
+    items: function () {
+        return new Dict.Items(this);
     },
 
     copy: function () {
@@ -172,6 +181,29 @@ Dict.Items = $Class('dict_items', {
 
     __len__: function () {
         return this.dict.size;
+    },
+
+    __iter__: function () {
+        return new Dict.Items.Iterator(this.dict);
+    }
+});
+
+Dict.Items.Iterator = $Class('dict_itemiterator', {
+    constructor: function (dict) {
+        PyObject.call(this, Dict.Items.Iterator.cls);
+        this.entries = dict.entries();
+        this.position = 0;
+    },
+
+    next: function () {
+        var entry;
+        if (entry = this.entries[this.position++]) {
+            return new Tuple([entry.key, entry.value]);
+        }
+    },
+
+    __iter__: function () {
+        return this;
     }
 });
 
