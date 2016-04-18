@@ -30,8 +30,26 @@ var Tuple = $Class('tuple', {
 
     len: function () {
         return this.array.length;
+    },
+
+    __iter__: function () {
+        return new Tuple.Iterator(this);
     }
 });
 
+
+Tuple.Iterator = $Class('tuple_iterator', {
+    constructor: function (tuple) {
+        PyObject.call(this, Tuple.Iterator.cls);
+        this.tuple = tuple;
+        this.position = 0;
+    },
+
+    next: function () {
+        if (this.position < this.tuple.array.length) {
+            return this.tuple.array[this.position++];
+        }
+    }
+});
 
 $.Tuple = Tuple;

@@ -13,30 +13,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'boot.js'
 
-// #include 'py_object.js'
-// #include 'py_type.js'
-// #include 'py_dict.js'
-// #include 'py_int.js'
-// #include 'py_bool.js'
-// #include 'py_float.js'
-// #include 'py_str.js'
-// #include 'py_bytes.js'
-// #include 'py_list.js'
-// #include 'py_function.js'
-// #include 'generator.js'
-// #include 'py_method.js'
-// #include 'py_property.js'
-// #include 'py_slice.js'
-// #include 'py_module.js'
-// #include 'py_none.js'
-// #include 'py_exception.js'
+Tuple.$map('__iter__');
 
-// #include 'tuple.js'
-
-// #include 'py_builtins.js'
-
-// #include 'py_helpers.js'
-
-// #include 'py_wrapper.js'
+Tuple.Iterator.$def('__next__', function (self) {
+    Tuple.Iterator.check(self);
+    var next = self.next();
+    if (!next) {
+        raise(StopIteration, 'iteration has been stopped');
+    }
+    return next;
+});
