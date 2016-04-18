@@ -38,5 +38,25 @@ describe('Dict', function () {
         expect(dict.entries().size, 1);
         expect(dict.entries().get(0).key.equals('abc')).toBe(jaspy.True);
         expect(dict.entries().get(0).value).toBe(31415);
+    });
+
+    it('size', function () {
+        var dict = new jaspy.Dict();
+
+        expect(dict.size).toBe(0);
+
+        dict.set('abc', 42);
+        dict.set('abc', 31415);
+        dict.set('xyz', 4242);
+
+        expect(dict.size).toBe(2);
+
+        dict.pop('abc');
+
+        expect(dict.size).toBe(1);
+
+        dict.pop('xyz');
+
+        expect(dict.size).toBe(0);
     })
 });

@@ -21,6 +21,7 @@ var Dict = $Class('dict', {
             raise(TypeError, 'unable to create dict with non dict subclass');
         }
         this.table = table || {};
+        this.size = 0;
         if (!(this.table instanceof Object)) {
             raise(TypeError, 'invalid type of native dict initializer');
         }
@@ -57,6 +58,7 @@ var Dict = $Class('dict', {
             entry = entry.next;
         }
         this.table[str_key] = new Dict.Entry(new Str(str_key), value, this.table[str_key]);
+        this.size++;
     },
 
     pop: function (str_key) {
@@ -76,6 +78,7 @@ var Dict = $Class('dict', {
                 } else {
                     delete this.table[str_key];
                 }
+                this.size--;
                 return entry.value;
             }
             previous = entry;
