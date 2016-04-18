@@ -70,11 +70,12 @@ example_dict = {
 }
 
 if example_dict['123'] == 'abc' and example_dict[123] == 'xyz':
-    del example_dict['123']
-    try:
-        print('Error:', example_dict['123'])
-    except KeyError:
-        print('Dictionaries are working!')
+    if 123 in example_dict and True not in example_dict:
+        del example_dict['123']
+        try:
+            print('Error:', example_dict['123'])
+        except KeyError:
+            print('Dictionaries are working!')
 
 
 # multiple threads

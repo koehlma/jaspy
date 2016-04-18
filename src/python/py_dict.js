@@ -176,3 +176,19 @@ Dict.$def('pop', function (self, key, state, frame) {
 Dict.$def('__delitem__', function (self, key) {
     return self.call('pop', [key]);
 }, ['key']);
+
+Dict.$def('__contains__', function (self, key, state, frame) {
+    switch (state) {
+        case 0:
+            self.call('__getitem__', [key]);
+            return 1;
+        case 1:
+            return except(KeyError) ? False : True;
+    }
+}, ['key']);
+
+
+Dict.$map('__len__');
+
+Dict.$map('copy');
+Dict.$map('clear');

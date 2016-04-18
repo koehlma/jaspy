@@ -99,6 +99,31 @@ var Dict = $Class('dict', {
             }
         }
         return entries;
+    },
+
+    copy: function () {
+        var hash, entry;
+        var dict = new Dict();
+        dict.size = this.size;
+        for (hash in this.table) {
+            if (this.table.hasOwnProperty(hash)) {
+                entry = this.table[hash];
+                while (entry) {
+                    dict.table[hash] = new Dict.Entry(entry.key, entry.value, dict.table[hash]);
+                    entry = entry.next;
+                }
+            }
+        }
+        return dict;
+    },
+
+    clear: function () {
+        this.table = {};
+        this.size = 0;
+    },
+
+    __len__: function () {
+        return new Int(this.size);
     }
 });
 
