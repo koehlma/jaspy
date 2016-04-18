@@ -705,6 +705,26 @@ PythonFrame.prototype.execute = function() {
                         }
                         break;
 
+                    case COMPARE_OPS.IN:
+                    case COMPARE_OPS.NIN:
+                        switch (this.state) {
+                            case 0:
+                                right = this.pop();
+                                left = this.pop();
+                                if (right.call('__contains__', [left])) {
+                                    return 1;
+                                }
+                            case 1:
+                                if (vm.return_value) {
+                                    if (vm.return_value.bool()) {
+                                        this.push(instruction.argument == COMPARE_OPS.IN ? True : False)
+                                    } else {
+                                        this.push(instruction.argument == COMPARE_OPS.NIN ? True : False)
+                                    }
+                                }
+                        }
+                        break;
+
                     default:
                         error('unsupported comparison operator');
                 }
