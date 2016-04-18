@@ -25,6 +25,9 @@ var Dict = $Class('dict', {
         if (!(this.table instanceof Object)) {
             raise(TypeError, 'invalid type of native dict initializer');
         }
+        this.keys = new Dict.Keys(this);
+        this.values = new Dict.Values(this);
+        this.items = new Dict.Items(this);
     },
 
     get: function (str_key, fallback) {
@@ -140,6 +143,11 @@ Dict.Entry = Class({
 Dict.Values = $Class('dict_values', {
     constructor: function (dict) {
         PyObject.call(this, Dict.Values.cls);
+        this.dict = dict;
+    },
+
+    __len__: function () {
+        return this.dict.size;
     }
 });
 
@@ -147,8 +155,24 @@ Dict.Values = $Class('dict_values', {
 Dict.Keys = $Class('dict_keys', {
     constructor: function (dict) {
         PyObject.call(this, Dict.Values.cls);
-    }
+        this.dict = dict;
+    },
 
+    __len__: function () {
+        return this.dict.size;
+    }
+});
+
+
+Dict.Items = $Class('dict_items', {
+    constructor: function (dict) {
+        PyObject.call(this, Dict.Items.cls);
+        this.dict = dict;
+    },
+
+    __len__: function () {
+        return this.dict.size;
+    }
 });
 
 

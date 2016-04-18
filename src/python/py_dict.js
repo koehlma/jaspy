@@ -192,3 +192,8 @@ Dict.$map('__len__');
 
 Dict.$map('copy');
 Dict.$map('clear');
+
+
+Dict.Values.$map('__len__');
+Dict.Keys.$map('__len__');
+Dict.Items.$map('__len__');
