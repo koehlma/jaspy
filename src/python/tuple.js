@@ -15,12 +15,3 @@
 
 
 Tuple.$map('__iter__');
-
-Tuple.Iterator.$def('__next__', function (self) {
-    Tuple.Iterator.check(self);
-    var next = self.next();
-    if (!next) {
-        raise(StopIteration, 'iteration has been stopped');
-    }
-    return next;
-});

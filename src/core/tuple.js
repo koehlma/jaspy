@@ -38,7 +38,7 @@ var Tuple = $Class('tuple', {
 });
 
 
-Tuple.Iterator = $Class('tuple_iterator', {
+Tuple.Iterator = Iterator.extend('tuple_iterator', {
     constructor: function (tuple) {
         PyObject.call(this, Tuple.Iterator.cls);
         this.tuple = tuple;

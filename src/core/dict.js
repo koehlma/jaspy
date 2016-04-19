@@ -14,6 +14,13 @@
  */
 
 
+var DICT_ITERATOR_TYPES = {
+    KEYS: 0,
+    VALUES: 1,
+    ITEMS: 2
+};
+
+
 var Dict = $Class('dict', {
     constructor: function (table, cls) {
         PyObject.call(this, cls || Dict.cls);
@@ -149,14 +156,26 @@ Dict.Entry = Class({
 });
 
 
-Dict.Values = $Class('dict_values', {
-    constructor: function (dict) {
-        PyObject.call(this, Dict.Values.cls);
-        this.dict = dict;
+Dict.Iterator = Iterator.extend('dict_iterator', {
+    constructor: function (dict, type) {
+        PyObject.call(this, Dict.Iterator.cls);
+        this.entries = dict.entries();
+        this.position = 0;
+        this.type = type;
     },
 
-    __len__: function () {
-        return this.dict.size;
+    next: function () {
+        var entry;
+        if (entry = this.entries[this.position++]) {
+            switch (this.type) {
+                case DICT_ITERATOR_TYPES.KEYS:
+                    return entry.key;
+                case DICT_ITERATOR_TYPES.VALUES:
+                    return entry.value;
+                case DICT_ITERATOR_TYPES.ITEMS:
+                    return new Tuple([entry.key, entry.value]);
+            }
+        }
     }
 });
 
@@ -169,6 +188,26 @@ Dict.Keys = $Class('dict_keys', {
 
     __len__: function () {
         return this.dict.size;
+    },
+
+    __iter__: function () {
+        return new Dict.Iterator(this.dict, DICT_ITERATOR_TYPES.KEYS);
+    }
+});
+
+
+Dict.Values = $Class('dict_values', {
+    constructor: function (dict) {
+        PyObject.call(this, Dict.Values.cls);
+        this.dict = dict;
+    },
+
+    __len__: function () {
+        return this.dict.size;
+    },
+
+    __iter__: function () {
+        return new Dict.Iterator(this.dict, DICT_ITERATOR_TYPES.VALUES);
     }
 });
 
@@ -184,26 +223,7 @@ Dict.Items = $Class('dict_items', {
     },
 
     __iter__: function () {
-        return new Dict.Items.Iterator(this.dict);
-    }
-});
-
-Dict.Items.Iterator = $Class('dict_itemiterator', {
-    constructor: function (dict) {
-        PyObject.call(this, Dict.Items.Iterator.cls);
-        this.entries = dict.entries();
-        this.position = 0;
-    },
-
-    next: function () {
-        var entry;
-        if (entry = this.entries[this.position++]) {
-            return new Tuple([entry.key, entry.value]);
-        }
-    },
-
-    __iter__: function () {
-        return this;
+        return new Dict.Iterator(this.dict, DICT_ITERATOR_TYPES.ITEMS);
     }
 });
 

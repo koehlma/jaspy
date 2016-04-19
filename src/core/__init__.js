@@ -21,6 +21,8 @@ py_object.__class__ = py_type;
 py_type.__class__ = py_type;
 
 
+// #include 'iterator.js'
+
 // #include 'dict.js'
 
 // #include 'int.js'

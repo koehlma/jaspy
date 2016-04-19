@@ -13,31 +13,25 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include 'boot.js'
 
-// #include 'py_object.js'
-// #include 'py_type.js'
-// #include 'py_dict.js'
-// #include 'py_int.js'
-// #include 'py_bool.js'
-// #include 'py_float.js'
-// #include 'py_str.js'
-// #include 'py_bytes.js'
-// #include 'py_list.js'
-// #include 'py_function.js'
-// #include 'generator.js'
-// #include 'py_method.js'
-// #include 'py_property.js'
-// #include 'py_slice.js'
-// #include 'py_module.js'
-// #include 'py_none.js'
-// #include 'py_exception.js'
-// #include 'iterator.js'
+var Iterator = $Class('iterator', {
+    constructor: function (cls) {
+        PyObject.call(this, cls);
+    },
 
-// #include 'tuple.js'
+    next: function () {
+        raise(NotImplemented, 'next not implemented by native iterator');
+    },
 
-// #include 'py_builtins.js'
+    __next__: function () {
+        var value = this.next();
+        if (!value) {
+            raise(StopIteration);
+        }
+        return value;
+    },
 
-// #include 'py_helpers.js'
-
-// #include 'py_wrapper.js'
+    __iter__: function () {
+        return this;
+    }
+});
