@@ -198,7 +198,7 @@ var Code = $Class('code', {
 });
 
 
-var PythonCode = Code.extend({
+var PythonCode = Code.extend('code', {
     constructor: function (bytecode, options) {
         this.bytecode = bytecode;
 
@@ -249,7 +249,7 @@ var PythonCode = Code.extend({
     }
 });
 
-var NativeCode = Code.extend({
+var NativeCode = Code.extend('code', {
     constructor: function (func, options, spec) {
         this.func = func;
 

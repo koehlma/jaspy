@@ -50,7 +50,7 @@ var Frame = $Class('frame', {
 });
 
 
-var PythonFrame = Frame.extend({
+var PythonFrame = Frame.extend('frame', {
     constructor: function (code, options) {
         var index;
 
@@ -234,7 +234,7 @@ var PythonFrame = Frame.extend({
 });
 
 
-var NativeFrame = Frame.extend({
+var NativeFrame = Frame.extend('frame', {
     constructor: function (code, options) {
         options = options || {};
         Frame.call(this, code, options);

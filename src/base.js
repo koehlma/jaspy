@@ -56,8 +56,8 @@ Class.extend = function (attributes) {
 };
 
 
-function $Class(name, attributes, bases) {
-    var constructor = Class(attributes, PyObject);
+function $Class(name, attributes, bases, superclass) {
+    var constructor = Class(attributes, superclass || PyObject);
     constructor.cls = $class(name, bases);
     constructor.check = function (object) {
         if (!(object instanceof constructor)) {
@@ -83,6 +83,11 @@ function $Class(name, attributes, bases) {
             "   return self." + name + "(" + args.join(', ') + ");" +
             "})";
         constructor.cls.$def(name, eval(source), spec, options);
+    };
+    constructor.extend = function (name, attributes, bases) {
+        bases = bases || [];
+        bases.push(constructor.cls);
+        return $Class(name, attributes, bases, constructor);
     };
     return constructor;
 }
