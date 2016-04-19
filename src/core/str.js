@@ -54,11 +54,11 @@ var Str = $Class('str', {
         this.value = Str.unpack(value, '');
     },
 
-    bool: function () {
+    to_bool: function () {
         return this.value === '' ? False : True;
     },
 
-    string: function () {
+    to_string: function () {
         return this.value;
     },
 

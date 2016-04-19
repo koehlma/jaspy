@@ -73,7 +73,7 @@ function unpack_bool(object, fallback) {
         return fallback;
     }
     if (!(object.__class__ === py_bool)) {
-        raise(TypeError, 'unable to unpack bool from object');
+        raise(TypeError, 'unable to unpack to_bool from object');
     }
     return object === True;
 }

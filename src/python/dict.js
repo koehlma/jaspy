@@ -41,7 +41,7 @@ Dict.$def('__getitem__', function (self, key, state, frame) {
                     if (!vm.return_value) {
                         return;
                     }
-                    frame.locals.entry = self.table[vm.return_value.string()];
+                    frame.locals.entry = self.table[vm.return_value.to_string()];
                 case 2:
                     if (!frame.locals.entry) {
                         state = 4;
@@ -54,7 +54,7 @@ Dict.$def('__getitem__', function (self, key, state, frame) {
                     if (!vm.return_value) {
                         return;
                     }
-                    if (vm.return_value.bool()) {
+                    if (vm.return_value.to_bool()) {
                         return frame.locals.entry.value;
                     } else {
                         state = 2;
@@ -85,7 +85,7 @@ Dict.$def('__setitem__', function (self, key, value, state, frame) {
                     if (!vm.return_value) {
                         return;
                     }
-                    frame.locals.hash = vm.return_value.string();
+                    frame.locals.hash = vm.return_value.to_string();
                     frame.locals.entry = self.table[frame.locals.hash];
                 case 2:
                     if (!frame.locals.entry) {
@@ -99,7 +99,7 @@ Dict.$def('__setitem__', function (self, key, value, state, frame) {
                     if (!vm.return_value) {
                         return;
                     }
-                    if (vm.return_value.bool()) {
+                    if (vm.return_value.to_bool()) {
                         frame.locals.entry.value = value;
                         return;
                     } else {
@@ -136,7 +136,7 @@ Dict.$def('pop', function (self, key, state, frame) {
                     if (!vm.return_value) {
                         return;
                     }
-                    frame.locals.hash = vm.return_value.string();
+                    frame.locals.hash = vm.return_value.to_string();
                     frame.locals.entry = self.table[frame.locals.hash];
                     frame.locals.previous = null;
                 case 2:
@@ -151,7 +151,7 @@ Dict.$def('pop', function (self, key, state, frame) {
                     if (!vm.return_value) {
                         return;
                     }
-                    if (vm.return_value.bool()) {
+                    if (vm.return_value.to_bool()) {
                         if (frame.locals.previous) {
                             frame.locals.previous.next = frame.locals.entry.next;
                         } else if (frame.locals.entry.next) {

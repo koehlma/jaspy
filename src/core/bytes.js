@@ -45,7 +45,7 @@ var Bytes = $Class('bytes', {
         return new Str(result.join(''));
     },
 
-    repr: function () {
+    __repr__: function () {
         return new Str('b' + this.str().repr().value);
     },
 

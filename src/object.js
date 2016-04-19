@@ -81,33 +81,141 @@ var PyObject = Class.extend({
         return this === other;
     },
 
-    repr: function () {
-        return '<' + this.__class__.name + ' object at 0x' + this.get_address() + '>';
-    },
 
+    /* low level implicit conversions */
 
-    bool: function () {
+    to_bool: function () {
         return true;
     },
 
-    number: function () {
-        raise(TypeError, 'unable to convert object to native number');
+    to_number: function () {
+        raise(TypeError, 'unable to convert object to native number implicitly');
     },
 
-    string: function () {
-        raise(TypeError, 'unable to convert object to native string');
+    to_string: function () {
+        raise(TypeError, 'unable to convert object to native string implicitly');
     },
 
-    iter: function () {
-        return this.__iter__();
+
+    /* expose special methods to native code */
+
+    repr: function () {
+        return this.__repr__();
+    },
+
+    str: function () {
+        return this.__str__();
     },
 
     len: function () {
         return this.__len__();
     },
 
+    iter: function () {
+        return this.__iter__();
+    },
+
+    add: function (other) {
+        return this.__add__(other);
+    },
+
+    sub: function (other) {
+        return this.__sub__(other);
+    },
+
+    mul: function (other) {
+        return this.__mul__(other);
+    },
+
+    truediv: function (other) {
+        return this.__truediv__(other);
+    },
+
+    floordiv: function (other) {
+        return this.__floordiv__(other);
+    },
+
+    mod: function (other) {
+        return this.__mod__(other);
+    },
+
+    divmod: function (other) {
+        return this.__divmod__(other);
+    },
+
+    lshift: function (other) {
+        return this.__lshift__(other);
+    },
+
+    rshift: function (other) {
+        return this.__rshift__(other);
+    },
+
+    and: function (other) {
+        return this.__and__(other);
+    },
+
+    xor: function (other) {
+        return this.__xor__(other);
+    },
+
+    or: function (other) {
+        return this.__or__(other);
+    },
+
+    neg: function () {
+        return this.__neg__();
+    },
+
+    pos: function () {
+        return this.__pos__();
+    },
+
+    abs: function () {
+        return this.__abs__();
+    },
+
+    invert: function () {
+        return this.__invert__();
+    },
+
+    hash: function () {
+        return this.__hash__();
+    },
+
+    eq: function (other) {
+        return this.__eq__(other);
+    },
+
+    ne: function (other) {
+        return this.__ne__(other);
+    },
+
+    gt: function (other) {
+        return this.__gt__(other);
+    },
+
+    ge: function (other) {
+        return this.__ge__(other);
+    },
+
+    lt: function (other) {
+        return this.__lt__(other);
+    },
+
+    le: function (other) {
+        return this.__le__(other);
+    },
+
+
+    /* special methods */
+
     __repr__: function () {
-        return this.repr();
+        return '<' + this.__class__.name + ' object at 0x' + this.get_address() + '>';
+    },
+
+    __str__: function () {
+        return this.__repr__();
     }
 });
 

@@ -31,11 +31,11 @@ var Int = $Class('int', {
         return this.number();
     },
 
-    bool: function () {
+    to_bool: function () {
         return this.value.neq(0);
     },
 
-    string: function () {
+    to_string: function () {
         return this.value.toString();
     },
 
@@ -46,7 +46,7 @@ var Int = $Class('int', {
         return false;
     },
 
-    number: function () {
+    to_number: function () {
         var number = this.value.toJSNumber();
         if (number == Infinity || number == -Infinity) {
             raise(OverflowError, 'int too large to convert to float');
@@ -55,53 +55,54 @@ var Int = $Class('int', {
     },
 
     float: function () {
-        return new Float(this.number());
+        return new Float(this.to_number());
     },
 
-    abs: function () {
+
+    __abs__: function () {
         return new Int(this.value.abs());
     },
 
-    pos: function () {
+    __pos__: function () {
         return this;
     },
 
-    neg: function () {
+    __neg__: function () {
         return new Int(this.value.negate());
     },
 
-    invert: function () {
+    __invert__: function () {
         return new Int(this.value.not());
     },
 
-    add: function (other) {
+    __add__: function (other) {
         return new Int(this.value.add(other.value));
     },
 
-    sub: function (other) {
+    __sub__: function (other) {
         return new Int(this.value.subtract(other.value));
     },
 
-    pow: function (other) {
+    __pow__: function (other) {
         if (other < 0) {
-            return Float.pack(Math.pow(this.number(), other.number()));
+            return Float.pack(Math.pow(this.to_number(), other.to_number()));
         }
         return new Int(this.value.pow(other.value));
     },
 
-    mul: function (other) {
+    __mul__: function (other) {
         return new Int(this.value.multiply(other.value));
     },
 
-    floordiv: function (other) {
+    __floordiv__: function (other) {
         return new Int(this.value.divide(other.value));
     },
 
-    truediv: function (other) {
-        return Float.pack(this.number() / other.number());
+    __truediv__: function (other) {
+        return Float.pack(this.to_number() / other.to_number());
     },
 
-    mod: function (other) {
+    __mod__: function (other) {
         if (!this.value.sign && other.value.sign) {
             return new Int(this.value.mod(other.value).substract(other.value));
         } else if (this.value.sign && !other.value.sign) {
@@ -110,56 +111,52 @@ var Int = $Class('int', {
         return new Int(this.value.mod(other.value));
     },
 
-    lshift: function (other) {
+    __lshift__: function (other) {
         return new Int(this.value.shiftLeft(other.value));
     },
 
 
-    rshift: function (other) {
+    __rshift__: function (other) {
         return new Int(this.value.shiftRight(other.value));
     },
 
-    and: function (other) {
+    __and__: function (other) {
         return new Int(this.value.and(other.value));
     },
 
-    xor: function (other) {
+    __xor__: function (other) {
         return new Int(this.value.xor(other.value));
     },
 
-    or: function (other) {
+    __or__: function (other) {
         return new Int(this.value.or(other.value));
     },
 
-    lt: function (other) {
+    __lt__: function (other) {
         return this.value.lt(other.value);
     },
 
-    le: function (other) {
+    __le__: function (other) {
         return this.value.leq(other.value);
     },
 
-    eq: function (other) {
+    __eq__: function (other) {
         if (!(other instanceof Int)) {
             return false;
         }
         return this.value.eq(other.value);
     },
 
-    ne: function (other) {
+    __ne__: function (other) {
         return this.value.neq(other.value);
     },
 
-    gt: function (other) {
+    __gt__: function (other) {
         return this.value.gt(other.value);
     },
 
-    ge: function (other) {
+    __ge__: function (other) {
         return this.value.geq(other.value);
-    },
-
-    __abs__: function () {
-        return new Int(this.value.abs());
     },
 
     __hash__: function () {
@@ -180,7 +177,7 @@ Int.unpack = function (object, fallback) {
         return fallback;
     }
     if (object instanceof Int) {
-        return object.number();
+        return object.to_number();
     } else if (typeof object == 'number') {
         return object | 0;
     } else {

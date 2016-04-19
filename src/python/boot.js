@@ -14,7 +14,7 @@
  */
 
 
-var py_bool = PyType.native('bool', [Int.cls]);
+var py_bool = PyType.native('to_bool', [Int.cls]);
 
 var py_js_object = PyType.native('JSObject');
 var py_js_array = PyType.native('JSArray', [py_js_object]);

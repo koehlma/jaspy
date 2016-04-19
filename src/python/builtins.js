@@ -180,7 +180,7 @@ module_builtins.$def('__import__', function (name, globals, locals, fromlist, le
     name = Str.unpack(name);
     switch (state) {
         case 0:
-            if (level.gt(ZERO)) {
+            if (level.gt(Int.ZERO)) {
                 raise(ImportError, 'relative imports are not supported')
             }
             if (!(name in modules)) {

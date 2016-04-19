@@ -364,7 +364,7 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.WITH_CLEANUP_FINISH:
-                if (this.pop().bool()) {
+                if (this.pop().to_bool()) {
                     if (this.why == CAUSES.EXCEPTION) {
                         this.why = CAUSES.RUN;
                     }
@@ -716,7 +716,7 @@ PythonFrame.prototype.execute = function() {
                                 }
                             case 1:
                                 if (vm.return_value) {
-                                    if (vm.return_value.bool()) {
+                                    if (vm.return_value.to_bool()) {
                                         this.push(instruction.argument == COMPARE_OPS.IN ? True : False)
                                     } else {
                                         this.push(instruction.argument == COMPARE_OPS.NIN ? True : False)
@@ -732,7 +732,7 @@ PythonFrame.prototype.execute = function() {
 
             case OPCODES.POP_JUMP_IF_TRUE:
                 if (this.top0().__class__ === Int.__class__) {
-                    if (this.pop().bool()) {
+                    if (this.pop().to_bool()) {
                         this.position = instruction.target;
                     }
                     break;
@@ -757,7 +757,7 @@ PythonFrame.prototype.execute = function() {
                             break;
                         } else if (vm.return_value) {
                             if (vm.return_value instanceof Int) {
-                                if (vm.return_value.bool()) {
+                                if (vm.return_value.to_bool()) {
                                     this.position = instruction.target;
                                     break;
                                 }
@@ -771,7 +771,7 @@ PythonFrame.prototype.execute = function() {
 
             case OPCODES.POP_JUMP_IF_FALSE:
                 if (this.top0().__class__ === py_bool || this.top0().__class__ === Int.__class__) {
-                    if (!this.pop().bool()) {
+                    if (!this.pop().to_bool()) {
                         this.position = instruction.target;
                     }
                     break;
@@ -794,7 +794,7 @@ PythonFrame.prototype.execute = function() {
                         this.pop();
                         if (!except(MethodNotFoundError)) {
                             if (vm.return_value instanceof Int) {
-                                if (!vm.return_value.bool()) {
+                                if (!vm.return_value.to_bool()) {
                                     this.position = instruction.target;
                                     break;
                                 }
@@ -808,7 +808,7 @@ PythonFrame.prototype.execute = function() {
 
             case OPCODES.JUMP_IF_TRUE_OR_POP:
                 if (this.top0().__class__ === Int.__class__) {
-                    if (this.top0().bool()) {
+                    if (this.top0().to_bool()) {
                         this.position = instruction.target;
                     } else {
                         this.pop();
@@ -834,7 +834,7 @@ PythonFrame.prototype.execute = function() {
                             this.position = instruction.target;
                         } else if (vm.return_value) {
                             if (vm.return_value instanceof Int) {
-                                if (vm.return_value.bool()) {
+                                if (vm.return_value.to_bool()) {
                                     this.position = instruction.target;
                                 } else {
                                     this.pop();
@@ -852,7 +852,7 @@ PythonFrame.prototype.execute = function() {
 
             case OPCODES.JUMP_IF_FALSE_OR_POP:
                 if (this.top0().__class__ === Int.__class__) {
-                    if (!this.top0().bool()) {
+                    if (!this.top0().to_bool()) {
                         this.position = instruction.target;
                     } else {
                         this.pop();
@@ -877,7 +877,7 @@ PythonFrame.prototype.execute = function() {
                     case 2:
                         if (!except(MethodNotFoundError)) {
                             if (vm.return_value instanceof Int) {
-                                if (!vm.return_value.bool()) {
+                                if (!vm.return_value.to_bool()) {
                                     this.position = instruction.target;
                                 } else {
                                     this.pop();

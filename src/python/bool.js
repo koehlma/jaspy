@@ -21,7 +21,7 @@ py_bool.$def('__new__', function (cls, initializer, state, frame) {
         case 0:
             // FIXME: subclassing bool is not allowed
             if (!(issubclass(cls, py_bool))) {
-                raise(TypeError, 'class is not an subclass of bool');
+                raise(TypeError, 'class is not an subclass of to_bool');
             }
             if (initializer.call('__bool__')) {
                 return 1;

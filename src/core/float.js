@@ -28,7 +28,7 @@ var Float = $Class('float', {
         return new Float(Math.abs(this.value));
     },
 
-    number: function () {
+    to_number: function () {
         return this.value;
     },
 
@@ -72,7 +72,7 @@ Float.unpack = function (object, fallback) {
     if (!(object instanceof Int) && !(object instanceof Float)) {
         raise(TypeError, 'unable to unpack number from object');
     }
-    return object.number();
+    return object.to_number();
 };
 
 $.Float = Float;
