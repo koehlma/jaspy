@@ -98,6 +98,14 @@ var PyObject = Class.extend({
         raise(TypeError, 'unable to convert object to native string');
     },
 
+    iter: function () {
+        return this.__iter__();
+    },
+
+    len: function () {
+        return this.__len__();
+    },
+
     __repr__: function () {
         return this.repr();
     }
