@@ -89,6 +89,8 @@ If you like the ideas of Jaspy feel free to join, there are many things to do:
 - complete and adjust the implementation of the Python bytecode VM
 - support for Apache Cordova (Jaspy for cross platform mobile applications)
 - implement a neat UI library on top of Jaspy (using a flexbox based grid)
+- implement a just-in-time compiler to speed things up
+- add a virtual file system (consider using: `BrowserFS <https://github.com/jvilk/BrowserFS>`_)
 - … and, of course, your own great ideas and cool features
 
 
