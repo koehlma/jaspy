@@ -75,11 +75,15 @@ integrated debugger and the flexible, preprocessor based architecture.
 State
 -----
 This project is still in an alpha state. The APIs are unstable, it is untested and not
-ready for productive use. Some of the features listed above aren't yet implemented.
+ready for productive use. Some of the features listed above are not yet implemented.
+
+I started this project in my semester break and now, as the new semester started, I have
+much less spare time. Therefor it might take a while until I will be able to invest much
+more time into it. However I very welcome all sorts of contributions.
 
 
-Todo
-----
+Contributions
+-------------
 If you like the ideas of Jaspy feel free to join, there are many things to do:
 
 - implement all the batteries-included-builtin stuff of Python
@@ -92,6 +96,8 @@ If you like the ideas of Jaspy feel free to join, there are many things to do:
 - implement a just-in-time compiler to speed things up
 - add a virtual file system (consider using: `BrowserFS <https://github.com/jvilk/BrowserFS>`_)
 - … and, of course, your own great ideas and cool features
+
+Do not hesitate to contribute or ask if there is anything unclear about the code.
 
 
 Structure
