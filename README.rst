@@ -78,7 +78,7 @@ This project is still in an alpha state. The APIs are unstable, it is untested a
 ready for productive use. Some of the features listed above are not yet implemented.
 
 I started this project in my semester break and now, as the new semester started, I have
-much less spare time. Therefor it might take a while until I will be able to invest much
+much less spare time. Therefore it might take a while until I will be able to invest much
 more time into it. However I very welcome all sorts of contributions.
 
 
