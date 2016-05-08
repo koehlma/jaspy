@@ -28,6 +28,10 @@ print(sys.argv)
 print('Hello ', sys.argv[1])
 
 
+for x in ['abc', 1, 2, True, None]:
+    print(x)
+
+
 # dom manipulation
 p = dom.Element('p')
 p.text = 'Hello ' + sys.argv[1]

@@ -162,6 +162,29 @@ var List = $Class('list', {
 
     copy: function () {
         return this.concat([]);
+    },
+
+    __iter__: function () {
+        return new List.Iterator(this);
+    },
+
+    __len__: function () {
+        return new Int(this.size);
+    }
+});
+
+
+List.Iterator = Iterator.extend('list_iterator', {
+    constructor: function (list) {
+        Iterator.call(this, List.Iterator.cls);
+        this.list = list;
+        this.position = 0;
+    },
+
+    next: function () {
+        if (this.position < this.list.size) {
+            return this.list.value[this.position++];
+        }
     }
 });
 
