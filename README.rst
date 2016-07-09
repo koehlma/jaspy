@@ -27,20 +27,19 @@ Quickstart
 ----------
 Jaspy comes with an integrated development server and interactive debugger!
 
-First clone the repository and build the interpreter:
-
-.. code:: sh
-
-    git clone --recursive https://github.com/koehlma/jaspy.git; cd jaspy
-    python3 build.py  # compile the interpreter
-
-Install dependencies for the interactive console, if they are not installed already:
+First install the dependencies, if they are not installed already:
 
 .. code:: sh
 
     pip3 install --user -r requirements.txt
     pip3 install --user ptpython pygments
 
+Clone the repository and build the interpreter:
+
+.. code:: sh
+
+    git clone --recursive https://github.com/koehlma/jaspy.git; cd jaspy
+    python3 build.py  # build the interpreter
 
 Switch to the example directory and start the server in interactive mode:
 
