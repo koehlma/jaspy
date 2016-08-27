@@ -93,6 +93,10 @@ var threading = {
             return true;
         }
 
+        if (!threading.thread) {
+            return true;
+        }
+
         if (threading.thread.counter > threading.limit / threading.queue.length) {
             threading.thread.counter = 0;
             threading.thread.save();
