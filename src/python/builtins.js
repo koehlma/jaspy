@@ -15,7 +15,7 @@
 
 var build_class = $def(function (func, name, bases, metaclass, keywords, state, frame) {
     var possible_meta_classes, index, good;
-    if (!(func.__class__ == Func.__class__)) {
+    if (!(func.__class__ == Func.cls)) {
         raise(TypeError, 'invalid type of \'func\' argument');
     }
     if (!(name instanceof Str)) {
