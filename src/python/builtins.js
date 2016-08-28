@@ -102,6 +102,7 @@ var builtins = {
     str: Str.cls,
     bytes: Bytes.cls,
     tuple: Tuple.cls,
+    bool: py_bool,
 
     None: None,
     NotImplemented: NotImplemented,
