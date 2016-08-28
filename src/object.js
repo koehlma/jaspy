@@ -62,7 +62,11 @@ var PyObject = Class.extend({
         } else if (typeof name != 'string') {
             raise(TypeError, 'native attribute name must be a string');
         }
-        this.__dict__[name] = value;
+        if (this.__dict__ instanceof Dict) {
+            return this.__dict__.set(name, value);
+        } else {
+            this.__dict__[name] = value;
+        }
     },
 
     getattr: function (name) {
@@ -74,7 +78,11 @@ var PyObject = Class.extend({
         } else if (typeof name != 'string') {
             raise(TypeError, 'native attribute name must be a string');
         }
-        return this.__dict__[name]
+        if (this.__dict__ instanceof Dict) {
+            return this.__dict__.get(name);
+        } else {
+            return this.__dict__[name];
+        }
     },
 
     is: function (other) {

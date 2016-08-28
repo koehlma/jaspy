@@ -24,7 +24,7 @@ py_type.$def('__new__', function (mcs, name, bases, attributes) {
     if (!(attributes instanceof Dict)) {
         raise(TypeError, 'invalid type of \'attributes\' argument');
     }
-    return new PyType(Str.unpack(name), unpack_tuple(bases), attributes.table, mcs);
+    return new PyType(Str.unpack(name), unpack_tuple(bases), attributes, mcs);
 }, ['name', 'bases', 'attributes']);
 
 py_type.$def('__call__', function (cls, args, kwargs, state, frame) {
