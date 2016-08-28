@@ -32,8 +32,10 @@ py_bool.$def('__new__', function (cls, initializer, state, frame) {
                     return 2;
                 }
             } else {
-                // FIXME: create object of class cls
-                return new vm.return_value;
+                if (vm.return_value && vm.return_value.__class__ !== py_bool) {
+                    raise(TypeError, '__bool__ should return bool');
+                }
+                return vm.return_value;
             }
         case 2:
             if (except(MethodNotFoundError)) {
