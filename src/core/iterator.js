@@ -35,3 +35,6 @@ var Iterator = $Class('iterator', {
         return this;
     }
 });
+
+
+$.Iterator = Iterator;
