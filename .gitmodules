@@ -4,3 +4,6 @@
 [submodule "libs/text-encoding"]
 	path = libs/text-encoding
 	url = https://github.com/inexorabletash/text-encoding
+[submodule "libs/siphash-js"]
+	path = libs/siphash
+	url = git@github.com:jedisct1/siphash-js.git
