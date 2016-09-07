@@ -16,7 +16,20 @@
 
 var object_id_counter = 0;
 
-
+/**
+ * Python Object
+ * =============
+ * Base class of all Python objects.
+ *
+ * __class___: PyType
+ *   Type of the Python object.
+ *
+ * __addr__: null | JS.Number
+ *   Virtual memory address of the object.
+ *
+ * __dict__: Dict | JS.Object
+ *   Mapping containing instance attributes.
+ */
 var PyObject = Class.extend({
     constructor: function (cls, dict) {
         this.__class__ = cls;
