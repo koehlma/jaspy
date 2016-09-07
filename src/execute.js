@@ -1049,7 +1049,7 @@ PythonFrame.prototype.execute = function() {
                     options.defaults[this.pop().value] = value;
                 }
                 for (index = 0; index < low; index++) {
-                    options.defaults[code.signature.argnames[index]] = this.pop();
+                    options.defaults[code.signature.argnames[code.signature.poscount - low + index]] = this.pop();
                 }
                 this.push(new Func(Str.unpack(name), code, options));
                 break;
