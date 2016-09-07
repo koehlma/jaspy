@@ -123,13 +123,13 @@ function main(module, argv, synchronous) {
         vm.frame.thread.last_exception = null;
 
         vm.frame.thread.enqueue();
-        threading.resume();
 
         if (synchronous) {
             vm.synchronous = true;
             threading.wakeup();
         } else {
             vm.synchronous = false;
+            threading.resume();
         }
     // -- else
         return run();
