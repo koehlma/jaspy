@@ -67,6 +67,7 @@ button.css('color', 'black')
 
 dom.get_body().append(button)
 
+print(hash('abc'))
 
 example_dict = {
     '123': 'abc',

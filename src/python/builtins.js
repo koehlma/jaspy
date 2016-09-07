@@ -329,6 +329,10 @@ var repr = module_builtins.$def('repr', function (object) {
     return object.call('__repr__') || vm.return_value;
 }, ['object']);
 
+var hash = module_builtins.$def('hash', function (object) {
+    return object.call('__hash__') || vm.return_value;
+}, ['object']);
+
 
 $.builtins = builtins;
 
