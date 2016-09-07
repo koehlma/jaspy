@@ -686,8 +686,6 @@ PythonFrame.prototype.execute = function() {
                                 }
                             case 1:
                                 if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                                    console.log(left, right, slot);
-                                    debugger;
                                     raise(TypeError, 'unsupported boolean operator');
                                 } else if (vm.return_value) {
                                     this.push(vm.return_value);
