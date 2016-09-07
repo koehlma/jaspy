@@ -193,6 +193,30 @@ var Str = $Class('str', {
         return this.repr()
     },
 
+    __eq__: function (other) {
+        return this.value == Str.unpack(other);
+    },
+
+    __getitem__: function (index) {
+        return new Str(this.value.charAt(Int.unpack(index)));
+    },
+
+    __ge__: function (other) {
+        return this.value >= other.value;
+    },
+
+    __gt__: function (other) {
+        return this.value > other.value;
+    },
+
+    __le__: function (other) {
+        return this.value <= other.value;
+    },
+
+    __lt__: function (other) {
+        return this.value < other.value;
+    },
+
 
     /* Python Methods */
 

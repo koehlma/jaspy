@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Jaspy — PyStone</title>
+
+    <!-- load the interpreter -->
+    <script src="/jaspy.js"></script>
+
+    <!-- load required native modules -->
+    <script src="/modules/time.js"></script>
+
+    <!-- load the compiled python code -->
+    <script src="/load/pystone"></script>
+
+    <script>
+        function on_run() {
+            jaspy.main(jaspy.get_module('pystone'), []);
+        }
+    </script>
+</head>
+<body>
+    <button onclick="on_run()">Run</button>
+</body>
+</html>

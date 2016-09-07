@@ -50,9 +50,23 @@ List.$map('append', ['item']);
 List.cls.$def('__getitem__', function (self, index_or_slice) {
     List.cls.check(self);
     // TODO: do conversion with __index__ and support slice
-    return self.get(Int.unpack(index_or_slice));
+    if (index_or_slice instanceof Slice) {
+        var start = Int.unpack(index_or_slice.start, 0);
+        var stop = Int.unpack(index_or_slice.stop, self.value.length);
+        var step = Int.unpack(index_or_slice.step, 1);
+        return self.slice(start, stop, step);
+    } else {
+        return self.get(Int.unpack(index_or_slice));
+    }
 }, ['index_or_slice']);
+
+List.cls.$def('__setitem__', function (self, index_or_slice, item) {
+    List.cls.check(self);
+    return self.set(Int.unpack(index_or_slice), item);
+}, ['index_or_slice', 'item']);
 
 
 List.$map('__iter__');
 List.$map('__len__');
+
+List.$map('__mul__', ['other']);

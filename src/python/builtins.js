@@ -334,6 +334,14 @@ var hash = module_builtins.$def('hash', function (object) {
     return object.call('__hash__') || vm.return_value;
 }, ['object']);
 
+var chr = module_builtins.$def('chr', function (char) {
+    return new Str(String.fromCharCode(Int.unpack(char)));
+}, ['char']);
+
+var ord = module_builtins.$def('ord', function (char) {
+    return new Int(Str.unpack(char).charCodeAt(0));
+}, ['char']);
+
 
 $.builtins = builtins;
 

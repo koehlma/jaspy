@@ -105,7 +105,7 @@ PythonFrame.prototype.execute = function() {
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type');
+                            raise(TypeError, 'unsupported operand type (unary operator)');
                         } else if (vm.return_value) {
                             this.push(vm.return_value);
                         }
@@ -152,7 +152,7 @@ PythonFrame.prototype.execute = function() {
                         }
                     case 2:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type');
+                            raise(TypeError, 'unsupported operand type (binary operator)');
                         } else if (vm.return_value) {
                             this.push(vm.return_value);
                         }
@@ -183,7 +183,7 @@ PythonFrame.prototype.execute = function() {
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type');
+                            raise(TypeError, 'unsupported operand type (inplace operator)');
                         } else if (vm.return_value && instruction.opcode != OPCODES.DELETE_SUBSCR) {
                             this.push(vm.return_value);
                         }
@@ -202,7 +202,7 @@ PythonFrame.prototype.execute = function() {
                         }
                     case 1:
                         if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type');
+                            raise(TypeError, 'unsupported operand type (setitem)');
                         }
                         break;
                 }
@@ -686,6 +686,8 @@ PythonFrame.prototype.execute = function() {
                                 }
                             case 1:
                                 if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                                    console.log(left, right, slot);
+                                    debugger;
                                     raise(TypeError, 'unsupported boolean operator');
                                 } else if (vm.return_value) {
                                     this.push(vm.return_value);

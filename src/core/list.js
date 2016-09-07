@@ -174,6 +174,20 @@ var List = $Class('list', {
 
     __hash__: function () {
         return Int.MINUSONE;
+    },
+
+    __mul__: function (other) {
+        if (!(other instanceof Int)) {
+            raise(UnsupportedOperation, 'unsupported operation')
+        }
+        var result = new List();
+        var iterations = Int.unpack(other);
+        for (var iteration = 0; iteration < iterations; iteration++) {
+            for (var index = 0; index < this.size; index++) {
+                result.append(this.value[index]);
+            }
+        }
+        return result;
     }
 });
 

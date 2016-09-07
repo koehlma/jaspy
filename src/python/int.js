@@ -56,6 +56,10 @@ Int.cls.$def('__bool__', function (self) {
     return pack_bool(self.ne(False));
 });
 
+Int.$def('__not__', function (self) {
+    return pack_bool(!self.ne(False));
+});
+
 Int.cls.$def('__neg__', function (self) {
     return self.neg();
 });

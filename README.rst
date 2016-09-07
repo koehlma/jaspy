@@ -71,6 +71,23 @@ Jaspy, which are the fully suspendable interpreter with threading support, the
 integrated debugger and the flexible, preprocessor based architecture.
 
 
+Speed
+-----
+Just to get an impression how slow Jaspy really is!
+
++----------------------------------------------+------------------+
+|                                              | pystones/second  |
++==============================================+==================+
+| Jaspy (disabled Debugger, enabled Threading) | 199              |
++----------------------------------------------+------------------+
+| Brython                                      | 4184             |
++----------------------------------------------+------------------+
+| PyPy.js (cold)                               | 41425            |
++----------------------------------------------+------------------+
+| PyPy.js (warm)                               | 847457           |
++----------------------------------------------+------------------+
+
+
 State
 -----
 This project is still in an alpha state. The APIs are unstable, it is untested and not

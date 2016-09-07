@@ -62,6 +62,32 @@ Str.cls.$def_alias('__add__', '__radd__');
 Str.$map('__repr__');
 Str.$map('__hash__');
 
+Str.$def('__eq__', function (self, other) {
+    return pack_bool(self.eq(other));
+}, ['other']);
+
+Str.$def('__ne__', function (self, other) {
+    return pack_bool(!self.eq(other));
+}, ['other']);
+
+Str.$def('__ge__', function (self, other) {
+    return pack_bool(self.ge(other));
+}, ['other']);
+
+Str.$def('__gt__', function (self, other) {
+    return pack_bool(self.gt(other));
+}, ['other']);
+
+Str.$def('__le__', function (self, other) {
+    return pack_bool(self.le(other));
+}, ['other']);
+
+Str.$def('__lt__', function (self, other) {
+    return pack_bool(self.lt(other));
+}, ['other']);
+
+Str.$map('__getitem__', ['index']);
+
 Str.$map('__add__', ['other']);
 
 Str.$map('capitalize');
