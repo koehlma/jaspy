@@ -170,6 +170,10 @@ var List = $Class('list', {
 
     __len__: function () {
         return new Int(this.size);
+    },
+
+    __hash__: function () {
+        return Int.MINUSONE;
     }
 });
 

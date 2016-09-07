@@ -17,6 +17,17 @@
 var Integer = bigInt;
 
 
+var SIPHASH_KEY = [Math.random() * Math.pow(2, 32) >>> 0,
+                   Math.random() * Math.pow(2, 32) >>> 0,
+                   Math.random() * Math.pow(2, 32) >>> 0,
+                   Math.random() * Math.pow(2, 32) >>> 0];
+
+function siphash(string) {
+    var hash = SipHash.hash(SIPHASH_KEY, Str.unpack(string));
+    return new Int(Integer(hash.h).shiftLeft(32).or(hash.l));
+}
+
+
 function error(message) {
     throw new Error('[FATAL ERROR] ' + (message || 'fatal interpreter error'));
 }
@@ -97,6 +108,8 @@ function $Class(name, attributes, bases, superclass) {
 
 
 $.Integer = Integer;
+
+$.siphash = siphash;
 
 $.error = error;
 $.raise = raise;

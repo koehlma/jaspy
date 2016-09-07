@@ -160,7 +160,11 @@ var Int = $Class('int', {
     },
 
     __hash__: function () {
-        return this;
+        if (this.value.eq(-1)) {
+            return Int.pack(-2);
+        } else {
+            return this;
+        }
     }
 });
 
@@ -191,5 +195,6 @@ Int.pack = function (value) {
 
 Int.ZERO = new Int(0);
 Int.ONE = new Int(1);
+Int.MINUSONE = Int(-1);
 
 $.Int = Int;

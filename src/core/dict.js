@@ -143,6 +143,10 @@ var Dict = $Class('dict', {
 
     __len__: function () {
         return new Int(this.size);
+    },
+
+    __hash__: function () {
+        return Int.MINUSONE;
     }
 });
 

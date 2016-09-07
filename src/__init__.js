@@ -21,6 +21,10 @@
     // #include '../libs/text-encoding/lib/encoding.js'
 // >>
 
+// << if INCLUDE_SIPHASH
+    // #include '../libs/siphash/lib/siphash.js'
+// >>
+
 window['jaspy'] = (function () {
     'use strict';
 

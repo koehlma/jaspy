@@ -185,6 +185,11 @@ var Str = $Class('str', {
     },
 
 
+    __hash__: function () {
+        return siphash(this);
+    },
+
+
     /* Python Methods */
 
     capitalize: function () {

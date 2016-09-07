@@ -35,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug-threading', action='store_true', default=False)
 
     parser.add_argument('--exclude-bigint', action='store_true', default=False)
+    parser.add_argument('--exclude-siphash', action='store_true', default=False)
 
     parser.add_argument('--include-encoding', action='store_true', default=False)
 
@@ -54,6 +55,7 @@ if __name__ == '__main__':
         'DEBUG_THREADING': arguments.debug_threading,
 
         'INCLUDE_BIGINT': not arguments.exclude_bigint,
+        'INCLUDE_SIPHASH': not arguments.exclude_siphash,
         'INCLUDE_ENCODING': arguments.include_encoding,
 
         'ENABLE_DEBUGGER': not arguments.disable_debugger,

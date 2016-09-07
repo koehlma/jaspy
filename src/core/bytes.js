@@ -49,6 +49,10 @@ var Bytes = $Class('bytes', {
         return new Str('b' + this.str().repr().value);
     },
 
+    __hash__: function () {
+        return siphash(this.str());
+    },
+
     decode: function (encoding) {
         var decoder, result;
         if (!TextDecoder) {

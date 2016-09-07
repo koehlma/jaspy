@@ -237,6 +237,10 @@ var PyObject = Class.extend({
 
     __str__: function () {
         return this.__repr__();
+    },
+
+    __hash__: function () {
+        return siphash(this.get_address());
     }
 });
 
