@@ -60,9 +60,9 @@ var Signature = Class.extend({
         }
         if (this.var_args) {
             if (namespace) {
-                namespace[this.argnames[index]] = args.slice(this.poscount);
+                namespace[this.argnames[index]] = new Tuple(args.slice(this.poscount));
             } else {
-                result.push(args.slice(this.poscount));
+                result.push(new Tuple(args.slice(this.poscount)));
             }
             index++;
         } else if (index < args.length) {
