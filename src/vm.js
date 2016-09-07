@@ -20,7 +20,9 @@ var vm = {
     return_value: None,
     last_exception: null,
 
-    simple_depth: 0
+    simple_depth: 0,
+
+    synchronous: false
 };
 
 
@@ -88,7 +90,7 @@ function run() {
 }
 
 
-function main(module, argv) {
+function main(module, argv, synchronous) {
     if (vm.frame) {
         raise(RuntimeError, 'interpreter is already running');
     }
@@ -121,8 +123,14 @@ function main(module, argv) {
         vm.frame.thread.last_exception = null;
 
         vm.frame.thread.enqueue();
-
         threading.resume();
+
+        if (synchronous) {
+            vm.synchronous = true;
+            threading.wakeup();
+        } else {
+            vm.synchronous = false;
+        }
     // -- else
         return run();
     // >>

@@ -17,12 +17,19 @@ import argparse
 import os
 
 from jaspy import metadata
+from jaspy.converter import convert
 from jaspy.preprocessor import process
 
 
 __path__ = os.path.dirname(__file__)
 if __path__:
     os.chdir(__path__)
+
+
+with open(os.path.join(__path__, 'modules', '_builtins.py')) as builtins:
+    code = compile(builtins.read(), '<builtins>', 'exec')
+    source = convert(code)
+    builtins_source = 'jaspy.module(%r, %s);' % ('_builtins', source)
 
 
 if __name__ == '__main__':
@@ -65,7 +72,9 @@ if __name__ == '__main__':
 
         'modules': arguments.modules or [],
 
-        'metadata': metadata
+        'metadata': metadata,
+
+        '_builtins': builtins_source
     }
 
     if not os.path.exists('build'):

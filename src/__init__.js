@@ -71,6 +71,12 @@ window['jaspy'] = (function () {
 
 // #include 'sys.js'
 
+/* {{ _builtins }} */
+
+jaspy.main(jaspy.get_module('_builtins'), [], true);
+jaspy.update(jaspy.builtins, jaspy.get_module('_builtins').__dict__);
+jaspy.builtins['__name__'] = 'builtins';
+
 // << if ENABLE_THREADING
     // #include '../modules/_thread.js'
 // >>

@@ -80,6 +80,10 @@ var threading = {
     },
 
     step: function () {
+        if (vm.synchronous) {
+            return false;
+        }
+
         if (threading.counter > threading.limit) {
             threading.counter = 0;
             threading.resumeing = true;
@@ -140,9 +144,11 @@ var threading = {
     },
 
     wakeup: function (event) {
-        if (event.source == window && event.data == 'jaspy-resume') {
+        if (!event || (event.source == window && event.data == 'jaspy-resume')) {
+            if (event) {
+                event.stopPropagation();
+            }
             threading.resumeing = false;
-            event.stopPropagation();
             if (!threading.thread) {
                 threading.thread = threading.queue.shift();
             }

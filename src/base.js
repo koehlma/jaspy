@@ -116,4 +116,6 @@ $.raise = raise;
 $.assert = assert;
 $.assign = update;
 
+$.update = update;
+
 $.Class = Class;
