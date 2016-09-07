@@ -40,7 +40,8 @@ var Dict = $Class('dict', {
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
         }
-        var entry = this.table[str_key];
+        var hash = siphash(str_key);
+        var entry = this.table[hash];
         while (entry) {
             if (entry.key instanceof Str && entry.key.value == str_key) {
                 return entry.value;
@@ -56,7 +57,8 @@ var Dict = $Class('dict', {
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
         }
-        var entry = this.table[str_key];
+        var hash = siphash(str_key);
+        var entry = this.table[hash];
         while (entry) {
             if (entry.key instanceof Str && entry.key.value == str_key) {
                 entry.value = value;
@@ -64,26 +66,27 @@ var Dict = $Class('dict', {
             }
             entry = entry.next;
         }
-        this.table[str_key] = new Dict.Entry(new Str(str_key), value, this.table[str_key]);
+        this.table[hash] = new Dict.Entry(new Str(str_key), value, this.table[hash]);
         this.size++;
     },
 
     pop: function (str_key) {
-        var entry, previous;
+        var hash, entry, previous;
         if (str_key instanceof Str) {
             str_key = str_key.value;
         } else if (typeof str_key != 'string') {
             raise(TypeError, 'invalid native dict key type');
         }
-        entry = this.table[str_key];
+        hash = siphash(str_key);
+        entry = this.table[hash];
         while (entry) {
             if (entry.key instanceof Str && entry.key.value == str_key) {
                 if (previous) {
                     previous.next = entry.next;
                 } else if (entry.next) {
-                    this.table[str_key] = entry.next;
+                    this.table[hash] = entry.next;
                 } else {
-                    delete this.table[str_key];
+                    delete this.table[hash];
                 }
                 this.size--;
                 return entry.value;

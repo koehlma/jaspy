@@ -24,7 +24,6 @@ Dict.$def('__getitem__', function (self, key, state, frame) {
         switch (state) {
                 case 0:
                     Dict.check(self);
-
                     if (key instanceof Str) {
                         value = self.get(key);
                         if (value) {
@@ -40,6 +39,12 @@ Dict.$def('__getitem__', function (self, key, state, frame) {
                 case 1:
                     if (!vm.return_value) {
                         return;
+                    }
+                    if (!(vm.return_value instanceof Int)) {
+                        raise(TypeError, '__hash__ should return an integer');
+                    }
+                    if (vm.return_value.eq(Int.MINUSONE)) {
+                        raise(TypeError, 'unhashable type');
                     }
                     frame.locals.entry = self.table[vm.return_value.to_string()];
                 case 2:
@@ -84,6 +89,12 @@ Dict.$def('__setitem__', function (self, key, value, state, frame) {
                 case 1:
                     if (!vm.return_value) {
                         return;
+                    }
+                    if (!(vm.return_value instanceof Int)) {
+                        raise(TypeError, '__hash__ should return an integer');
+                    }
+                    if (vm.return_value.eq(Int.MINUSONE)) {
+                        raise(TypeError, 'unhashable type');
                     }
                     frame.locals.hash = vm.return_value.to_string();
                     frame.locals.entry = self.table[frame.locals.hash];

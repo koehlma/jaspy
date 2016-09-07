@@ -195,6 +195,6 @@ Int.pack = function (value) {
 
 Int.ZERO = new Int(0);
 Int.ONE = new Int(1);
-Int.MINUSONE = Int(-1);
+Int.MINUSONE = new Int(-1);
 
 $.Int = Int;

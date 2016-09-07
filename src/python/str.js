@@ -58,13 +58,9 @@ Str.$def('__len__', function (self)  {
 Str.cls.$def_alias('__add__', '__iadd__');
 Str.cls.$def_alias('__add__', '__radd__');
 
-Str.$def('__hash__', function (self) {
-    return self;
-});
-
-
 
 Str.$map('__repr__');
+Str.$map('__hash__');
 
 Str.$map('__add__', ['other']);
 
