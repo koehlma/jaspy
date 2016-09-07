@@ -21,6 +21,7 @@ var build_class = $def(function (func, name, bases, metaclass, keywords, state, 
     if (!(name instanceof Str)) {
         raise(TypeError, 'invalid type of \'name\' argument');
     }
+    bases = bases.array;
     if (!(bases instanceof Array)) {
         raise(TypeError, 'invalid type of \'bases\' argument');
     }
