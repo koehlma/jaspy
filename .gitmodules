@@ -6,4 +6,4 @@
 	url = https://github.com/inexorabletash/text-encoding
 [submodule "libs/siphash-js"]
 	path = libs/siphash
-	url = git@github.com:jedisct1/siphash-js.git
+	url = https://github.com/jedisct1/siphash-js.git
