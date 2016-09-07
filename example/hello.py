@@ -74,6 +74,9 @@ print(any([0, False, None]))
 for x, y in zip([1, 2, 3], ('a', 'b', 'c')):
     print('zip', x, y)
 
+print(sum([1, 2, 4]))
+print([item for item in enumerate(('a', 'b', 'c'))])
+
 example_dict = {
     '123': 'abc',
     123: 'xyz'
