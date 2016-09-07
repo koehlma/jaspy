@@ -35,6 +35,7 @@ window['jaspy'] = (function () {
     // #include 'base.js'
 
     // #include 'future.js'
+    // #include 'vfs.js'
 
     // #include 'object.js'
     // #include 'type.js'

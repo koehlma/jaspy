@@ -101,4 +101,14 @@ def button_animation():
             state = True
 
 
+class ABC:
+    def __bool__(self):
+        return 'abc'
+
+print(ABC)
+try:
+    print(bool(ABC()))
+except TypeError:
+    print('It works!')
+
 thread = _thread.start_new_thread(button_animation)
