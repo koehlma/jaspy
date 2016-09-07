@@ -30,7 +30,7 @@ py_type.$def('__new__', function (mcs, name, bases, attributes) {
 py_type.$def('__call__', function (cls, args, kwargs, state, frame) {
     switch (state) {
         case 0:
-            if (cls.call_classmethod('__new__', args, kwargs)) {
+            if (cls.call_classmethod('__new__', Tuple.unpack(args), kwargs)) {
                 return 1;
             }
         case 1:

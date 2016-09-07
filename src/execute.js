@@ -696,12 +696,12 @@ PythonFrame.prototype.execute = function() {
 
                     case COMPARE_OPS.IS:
                     case COMPARE_OPS.NIS:
-                        right = this.pop();
                         left = this.pop();
+                        right = this.pop();
                         if (right.is(left)) {
                             this.push(instruction.argument == COMPARE_OPS.IS ? True : False)
                         } else {
-                            this.push(instruction.argument == COMPARE_OPS.NIS ? False : True)
+                            this.push(instruction.argument == COMPARE_OPS.NIS ? True : False)
                         }
                         break;
 

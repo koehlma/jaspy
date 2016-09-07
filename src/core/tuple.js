@@ -16,6 +16,9 @@
 
 var Tuple = $Class('tuple', {
     constructor: function (array, cls) {
+        if (array instanceof Tuple) {
+            array = array.array;
+        }
         if (!(array instanceof Array)) {
             raise(TypeError, 'invalid type of native tuple initializer');
         }
@@ -51,5 +54,20 @@ Tuple.Iterator = Iterator.extend('tuple_iterator', {
         }
     }
 });
+
+Tuple.unpack = function (object, fallback) {
+    if ((object === None || !object) && fallback !== undefined) {
+        return fallback;
+    }
+    if (object instanceof Tuple) {
+        return object.array;
+    } else if (Array.isArray(object)) {
+        return object;
+    } else {
+        raise(TypeError, 'unable to unpack array from object');
+    }
+};
+
+Tuple.EMPTY = new Tuple([]);
 
 $.Tuple = Tuple;

@@ -14,6 +14,19 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
+NULL = object()
+
+
+def next(iterator, default=NULL):
+    if default is NULL:
+        return iterator.__next__()
+    else:
+        try:
+            return iterator.__next__()
+        except StopIteration:
+            return default
+
+
 def all(iterable):
     for element in iterable:
         if not element:
@@ -26,3 +39,15 @@ def any(iterable):
         if element:
             return True
     return False
+
+
+def zip(*iterables):
+    iterators = [iter(iterable) for iterable in iterables]
+    while iterators:
+        result = []
+        for iterator in iterators:
+            try:
+                result.append(iterator.__next__())
+            except StopIteration:
+                return
+        yield tuple(result)

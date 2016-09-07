@@ -212,8 +212,8 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
             case 0:
                 frame.strings = [];
                 frame.index = 0;
-                if (objects.length) {
-                    object = objects[0];
+                if (objects.array.length) {
+                    object = objects.array[0];
                     if (object.__class__ === Str.cls) {
                         vm.return_value = object;
                     } else if (object.call('__str__')) {
@@ -230,8 +230,8 @@ module_builtins.$def('print', function (objects, sep, end, file, flush, state, f
                 }
                 frame.strings.push(Str.unpack(vm.return_value));
                 frame.index++;
-                if (frame.index < objects.length) {
-                    object = objects[frame.index];
+                if (frame.index < objects.array.length) {
+                    object = objects.array[frame.index];
                     if (object.__class__ == Str.cls) {
                         vm.return_value = object;
                     } else if (object.call('__str__')) {

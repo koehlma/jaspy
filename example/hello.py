@@ -69,6 +69,11 @@ dom.get_body().append(button)
 
 print(hash('abc'))
 
+print(any([0, False, None]))
+
+for x, y in zip([1, 2, 3], ('a', 'b', 'c')):
+    print('zip', x, y)
+
 example_dict = {
     '123': 'abc',
     123: 'xyz'

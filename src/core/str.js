@@ -189,6 +189,10 @@ var Str = $Class('str', {
         return siphash(this);
     },
 
+    __repr__: function () {
+        return this.repr()
+    },
+
 
     /* Python Methods */
 

@@ -13,5 +13,50 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+Tuple.$def('__new__', function (cls, initializer, state, frame) {
+    switch (state) {
+        case 0:
+            if (initializer === None) {
+                return Tuple.EMPTY;
+            }
+            if (call(unpack_sequence, [initializer])) {
+                return 1;
+            }
+        case 1:
+            if (vm.return_value) {
+                return vm.return_value;
+            }
+    }
+}, ['initializer'], {defaults: {initializer: None}});
+
+Tuple.$def('__repr__', function (self, state, frame) {
+    while (true) {
+        switch (state) {
+            case 0:
+                Tuple.check(self);
+                frame.parts = new Array(self.array.length);
+                frame.index = 0;
+            case 1:
+                if (frame.index < self.array.length) {
+                    if (self.array[frame.index].call('__repr__')) {
+                        return 2;
+                    }
+                } else {
+                    state = 3;
+                    break;
+                }
+            case 2:
+                if (!vm.return_value) {
+                    return;
+                }
+                frame.parts[frame.index] = vm.return_value.toString();
+                frame.index++;
+                state = 1;
+                break;
+            case 3:
+                return Str.pack('(' + frame.parts.join(', ') + ')');
+        }
+    }
+});
 
 Tuple.$map('__iter__');
