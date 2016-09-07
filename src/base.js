@@ -14,6 +14,9 @@
  */
 
 
+var Integer = bigInt;
+
+
 function error(message) {
     throw new Error('[FATAL ERROR] ' + (message || 'fatal interpreter error'));
 }
@@ -92,6 +95,8 @@ function $Class(name, attributes, bases, superclass) {
     return constructor;
 }
 
+
+$.Integer = Integer;
 
 $.error = error;
 $.raise = raise;
