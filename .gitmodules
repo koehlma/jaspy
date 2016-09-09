@@ -7,3 +7,6 @@
 [submodule "libs/siphash-js"]
 	path = libs/siphash
 	url = https://github.com/jedisct1/siphash-js.git
+[submodule "libs/unicode"]
+	path = libs/unicode
+	url = https://github.com/qsantos/unicode.js
