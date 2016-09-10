@@ -139,7 +139,6 @@ var PythonFrame = Frame.extend('frame', {
     },
 
     set_state: function (state) {
-        this.position--;
         this.state = state;
     },
 

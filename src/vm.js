@@ -217,6 +217,7 @@ function call(object, args, kwargs, defaults, closure, globals, namespace) {
             return vm.frame;
         } else {
             raise(TypeError, 'invalid low level callable \'' + object + '\'', null, true);
+            /* {{ debugger }} */
         }
     }
 }

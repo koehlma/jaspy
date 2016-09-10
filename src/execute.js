@@ -26,18 +26,35 @@ import opcode
 // >>
 
 
-PythonFrame.prototype.execute = function() {
+PythonFrame.prototype.execute = function () {
+    if (!this.generator) {
+        this.generator = this._execute();
+    }
+    while (true) {
+        var temp = this.generator.next(vm.return_value).value;
+        if (temp === undefined) {
+            return;
+        } else if (temp instanceof Frame) {
+            return 1;
+        }
+    }
+};
+
+
+PythonFrame.prototype._execute = function* () {
     var slot, right, left, name, key, value, block, exc_type, exc_value, exc_tb, temp;
     var low, mid, high, args, kwargs, index, code, defaults, globals, func, instruction;
 
+    var result;
+
     while (vm.frame === this) {
-        if (!vm.return_value && this.why != CAUSES.EXCEPTION && this.state == 0) {
+        if (!vm.return_value && this.why != CAUSES.EXCEPTION) {
             this.raise();
         }
 
         // << if ENABLE_THREADING
             if (threading.step()) {
-                return;
+                yield undefined;
             }
         // >>
 
@@ -49,7 +66,7 @@ PythonFrame.prototype.execute = function() {
             }
 
             if (debugging.step()) {
-                return;
+                yield undefined;
             }
         // >>
 
@@ -98,18 +115,11 @@ PythonFrame.prototype.execute = function() {
             case OPCODES.UNARY_NOT:
             case OPCODES.UNARY_INVERT:
             case OPCODES.GET_ITER:
-                switch (this.state) {
-                    case 0:
-                        if (this.pop().call(OPCODES_EXTRA[instruction.opcode])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type (unary operator)');
-                        } else if (vm.return_value) {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                yield this.pop().call(OPCODES_EXTRA[instruction.opcode]);
+                if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                    raise(TypeError, 'unsupported operand type (unary operator)');
+                } else if (vm.return_value) {
+                    this.push(vm.return_value);
                 }
                 break;
 
@@ -127,36 +137,25 @@ PythonFrame.prototype.execute = function() {
             case OPCODES.BINARY_AND:
             case OPCODES.BINARY_XOR:
             case OPCODES.BINARY_OR:
-                switch (this.state) {
-                    case 0:
-                        slot = OPCODES_EXTRA[instruction.opcode];
-                        right = this.top0();
-                        left = this.top1();
-                        if (left.call('__' + slot + '__', [right])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            slot = OPCODES_EXTRA[instruction.opcode];
-                            right = this.pop();
-                            left = this.pop();
-                            if (right.call('__r' + slot + '__', [left])) {
-                                return 2;
-                            }
-                        } else {
-                            this.popn(2);
-                            if (vm.return_value) {
-                                this.push(vm.return_value);
-                            }
-                            break;
-                        }
-                    case 2:
-                        if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type (binary operator)');
-                        } else if (vm.return_value) {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                slot = OPCODES_EXTRA[instruction.opcode];
+                right = this.top0();
+                left = this.top1();
+                yield left.call('__' + slot + '__', [right]);
+                if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                    slot = OPCODES_EXTRA[instruction.opcode];
+                    right = this.pop();
+                    left = this.pop();
+                    yield right.call('__r' + slot + '__', [left]);
+                    if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                        raise(TypeError, 'unsupported operand type (binary operator)');
+                    } else if (vm.return_value) {
+                        this.push(vm.return_value);
+                    }
+                } else {
+                    this.popn(2);
+                    if (vm.return_value) {
+                        this.push(vm.return_value);
+                    }
                 }
                 break;
 
@@ -174,37 +173,23 @@ PythonFrame.prototype.execute = function() {
             case OPCODES.INPLACE_XOR:
             case OPCODES.INPLACE_OR:
             case OPCODES.DELETE_SUBSCR:
-                switch (this.state) {
-                    case 0:
-                        right = this.pop();
-                        left = this.pop();
-                        if (left.call(OPCODES_EXTRA[instruction.opcode], [right])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type (inplace operator)');
-                        } else if (vm.return_value && instruction.opcode != OPCODES.DELETE_SUBSCR) {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                right = this.pop();
+                left = this.pop();
+                yield left.call(OPCODES_EXTRA[instruction.opcode], [right]);
+                if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                    raise(TypeError, 'unsupported operand type (inplace operator)');
+                } else if (vm.return_value && instruction.opcode != OPCODES.DELETE_SUBSCR) {
+                    this.push(vm.return_value);
                 }
                 break;
 
             case OPCODES.STORE_SUBSCR:
-                switch (this.state) {
-                    case 0:
-                        name = this.pop();
-                        left = this.pop();
-                        right = this.pop();
-                        if (left.call('__setitem__', [name, right])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                            raise(TypeError, 'unsupported operand type (setitem)');
-                        }
-                        break;
+                name = this.pop();
+                left = this.pop();
+                right = this.pop();
+                yield left.call('__setitem__', [name, right]);
+                if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                    raise(TypeError, 'unsupported operand type (setitem)');
                 }
                 break;
 
@@ -221,40 +206,19 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.SET_ADD:
-                switch (this.state) {
-                    case 0:
-                        value = this.pop();
-                        if (this.peek(instruction.argument).call('add', [value])) {
-                            return 1;
-                        }
-                    case 1:
-                        break;
-                }
+                value = this.pop();
+                yield this.peek(instruction.argument).call('add', [value]);
                 break;
 
             case OPCODES.LIST_APPEND:
-                switch (this.state) {
-                    case 0:
-                        value = this.pop();
-                        if (this.peek(instruction.argument).call('append', [value])) {
-                            return 1;
-                        }
-                    case 1:
-                        break;
-                }
+                value = this.pop();
+                yield this.peek(instruction.argument).call('append', [value]);
                 break;
 
             case OPCODES.MAP_ADD:
-                switch (this.state) {
-                    case 0:
-                        key = this.pop();
-                        value = this.pop();
-                        if (this.peek(instruction.argument).call('__setitem__', [key, value])) {
-                            return 1;
-                        }
-                    case 1:
-                        break;
-                }
+                key = this.pop();
+                value = this.pop();
+                yield this.peek(instruction.argument).call('__setitem__', [key, value]);
                 break;
 
             case OPCODES.RETURN_VALUE:
@@ -263,17 +227,12 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.YIELD_VALUE:
-                switch (this.state) {
-                    case 0:
-                        vm.return_value = this.pop();
-                        vm.frame = this.back;
-                        this.why = CAUSES.YIELD;
-                        return 1;
-                    case 1:
-                        this.push(vm.return_value);
-                        this.why = CAUSES.RUN;
-                        break;
-                }
+                vm.return_value = this.pop();
+                vm.frame = this.back;
+                this.why = CAUSES.YIELD;
+                yield vm.frame;
+                this.push(vm.return_value);
+                this.why = CAUSES.RUN;
                 break;
 
             case OPCODES.YIELD_FROM:
@@ -310,57 +269,42 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.SETUP_WITH:
-                switch (this.state) {
-                    case 0:
-                        if (call(getattr, [this.top0(), Str.pack('__exit__')])) {
-                            return 1;
-                        }
-                    case 1:
-                        temp = this.pop();
-                        if (!vm.return_value) {
-                            break;
-                        }
-                        this.push(vm.return_value);
-                        if (temp.call('__enter__')) {
-                            return 2;
-                        }
-                    case 2:
-                        if (!vm.return_value) {
-                            this.pop();
-                            break;
-                        }
-                        this.push(vm.return_value);
-                        this.push_block(BLOCK_TYPES.FINALLY, instruction.target);
+                yield call(getattr, [this.top0(), Str.pack('__exit__')])
+                temp = this.pop();
+                if (!vm.return_value) {
+                    break;
                 }
+                this.push(vm.return_value);
+                yield temp.call('__enter__');
+                if (!vm.return_value) {
+                    this.pop();
+                    break;
+                }
+                this.push(vm.return_value);
+                this.push_block(BLOCK_TYPES.FINALLY, instruction.target);
                 break;
 
             case OPCODES.WITH_CLEANUP_START:
-                switch (this.state) {
-                    case 0:
-                        switch (this.why) {
-                            case CAUSES.EXCEPTION:
-                                args = [this.pop(), this.pop(), this.pop()];
-                                break;
-                            case CAUSES.RETURN:
-                            case CAUSES.CONTINUE:
-                            case CAUSES.BREAK:
-                                args = [None, None, None];
-                                break;
-                            default:
-                                args = [None, None, None];
-                                this.pop();
-                        }
-                        this.return_value = vm.return_value;
-                        vm.return_value = None;
-                        if (call(this.pop(), args)) {
-                            return 1;
-                        }
-                    case 1:
-                        if (!vm.return_value) {
-                            break;
-                        }
-                        this.push(vm.return_value);
+                switch (this.why) {
+                    case CAUSES.EXCEPTION:
+                        args = [this.pop(), this.pop(), this.pop()];
+                        break;
+                    case CAUSES.RETURN:
+                    case CAUSES.CONTINUE:
+                    case CAUSES.BREAK:
+                        args = [None, None, None];
+                        break;
+                    default:
+                        args = [None, None, None];
+                        this.pop();
                 }
+                this.return_value = vm.return_value;
+                vm.return_value = None;
+                yield call(this.pop(), args);
+                if (!vm.return_value) {
+                    break;
+                }
+                this.push(vm.return_value);
                 break;
 
             case OPCODES.WITH_CLEANUP_FINISH:
@@ -392,23 +336,16 @@ PythonFrame.prototype.execute = function() {
                     name = this.code.names[instruction.argument];
                 }
                 if (this.namespace) {
-                    switch (this.state) {
-                        case 0:
-                            if (instruction.opcode === OPCODES.STORE_NAME) {
-                                slot = '__setitem__';
-                                args = [Str.pack(name), this.pop()];
-                            } else {
-                                slot = '__delitem__';
-                                args = [Str.pack(name)];
-                            }
-                            if (this.namespace.call(slot, args)) {
-                                return 1;
-                            }
-                        case 1:
-                            if (except(MethodNotFoundError)) {
-                                raise(TypeError, 'invalid namespace');
-                            }
-                            break;
+                    if (instruction.opcode === OPCODES.STORE_NAME) {
+                        slot = '__setitem__';
+                        args = [Str.pack(name), this.pop()];
+                    } else {
+                        slot = '__delitem__';
+                        args = [Str.pack(name)];
+                    }
+                    yield this.namespace.call(slot, args);
+                    if (except(MethodNotFoundError)) {
+                        raise(TypeError, 'invalid namespace');
                     }
                 } else {
                     if (instruction.opcode === OPCODES.STORE_NAME || instruction.opcode === OPCODES.STORE_FAST) {
@@ -429,24 +366,17 @@ PythonFrame.prototype.execute = function() {
                     name = this.code.names[instruction.argument];
                 }
                 if (this.namespace) {
-                    switch (this.state) {
-                        case 0:
-                            if (this.namespace.call('__getitem__', [Str.pack(name)])) {
-                                return 1;
-                            }
-                        case 1:
-                            if (vm.return_value) {
-                                this.push(vm.return_value);
-                            } else if (except(MethodNotFoundError) || except(KeyError)) {
-                                if (name in this.globals) {
-                                    this.push(this.globals[name]);
-                                } else if (name in this.builtins) {
-                                    this.push(this.builtins[name]);
-                                } else {
-                                    raise(NameError, 'name \'' + name + '\' is not defined');
-                                }
-                            }
-                            break;
+                    yield this.namespace.call('__getitem__', [Str.pack(name)]);
+                    if (vm.return_value) {
+                        this.push(vm.return_value);
+                    } else if (except(MethodNotFoundError) || except(KeyError)) {
+                        if (name in this.globals) {
+                            this.push(this.globals[name]);
+                        } else if (name in this.builtins) {
+                            this.push(this.builtins[name]);
+                        } else {
+                            raise(NameError, 'name \'' + name + '\' is not defined');
+                        }
                     }
                 } else {
                     if (name in this.locals) {
@@ -489,103 +419,74 @@ PythonFrame.prototype.execute = function() {
             case OPCODES.STORE_ATTR:
             case OPCODES.DELETE_ATTR:
                 name = this.code.names[instruction.argument];
-                switch (this.state) {
-                    case 0:
-                        temp = this.pop();
-                        if (instruction.opcode === OPCODES.STORE_ATTR) {
-                            slot = '__setattr__';
-                            args = [Str.pack(name), this.pop()];
-                        } else {
-                            slot = '__delattr__';
-                            args = [Str.pack(name)];
-                        }
-                        if (temp.call(slot, args)) {
-                            return 1;
-                        }
-                    case 1:
-                        if (except(MethodNotFoundError)) {
-                            if (instruction.opcode === OPCODES.STORE_ATTR) {
-                                raise(TypeError, 'object does not support attribute assignment');
-                            } else {
-                                raise(TypeError, 'object does not support attribute deletion');
-                            }
-                        }
-                        break;
+                temp = this.pop();
+                if (instruction.opcode === OPCODES.STORE_ATTR) {
+                    slot = '__setattr__';
+                    args = [Str.pack(name), this.pop()];
+                } else {
+                    slot = '__delattr__';
+                    args = [Str.pack(name)];
+                }
+                yield temp.call(slot, args);
+                if (except(MethodNotFoundError)) {
+                    if (instruction.opcode === OPCODES.STORE_ATTR) {
+                        raise(TypeError, 'object does not support attribute assignment');
+                    } else {
+                        raise(TypeError, 'object does not support attribute deletion');
+                    }
                 }
                 break;
 
             case OPCODES.LOAD_ATTR:
                 name = this.code.names[instruction.argument];
-                switch (this.state) {
-                    case 0:
-                        if (this.top0().call('__getattribute__', [Str.pack(name)])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value) {
-                            this.pop();
-                            this.push(vm.return_value);
-                            break;
-                        }
-                        if (except(AttributeError) || except(MethodNotFoundError)) {
-                            if (this.pop().call('__getattr__', [Str.pack(name)])) {
-                                return 2;
-                            }
-                        } else {
-                            this.pop();
-                            break;
-                        }
-                    case 2:
-                        if (except(MethodNotFoundError)) {
-                            raise(TypeError, 'object does not support attribute access');
-                        } else if (vm.return_value) {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                yield this.top0().call('__getattribute__', [Str.pack(name)]);
+                if (vm.return_value) {
+                    this.pop();
+                    this.push(vm.return_value);
+                    break;
+                }
+                if (except(AttributeError) || except(MethodNotFoundError)) {
+                    yield this.pop().call('__getattr__', [Str.pack(name)]);
+                } else {
+                    this.pop();
+                    break;
+                }
+                if (except(MethodNotFoundError)) {
+                    raise(TypeError, 'object does not support attribute access');
+                } else if (vm.return_value) {
+                    this.push(vm.return_value);
                 }
                 break;
 
             case OPCODES.UNPACK_SEQUENCE:
-                switch (this.state) {
-                    case 0:
-                        if (call(unpack_sequence, [this.pop(), Int.pack(instruction.argument)])) {
-                            return 1;
+                yield call(unpack_sequence, [this.pop(), Int.pack(instruction.argument)]);
+                if (vm.return_value) {
+                    if (vm.return_value.len() != instruction.argument) {
+                        raise(TypeError, 'not enough values to unpack (expected ' + instruction.argument + ', got ' + vm.return_value.len() + ')');
+                    } else {
+                        for (index = vm.return_value.len() - 1; index >= 0; index--) {
+                            this.push(vm.return_value.get(index));
                         }
-                    case 1:
-                        if (vm.return_value) {
-                            if (vm.return_value.len() != instruction.argument) {
-                                raise(TypeError, 'not enough values to unpack (expected ' + instruction.argument + ', got ' + vm.return_value.len() + ')');
-                            } else {
-                                for (index = vm.return_value.len() - 1; index >= 0; index--) {
-                                    this.push(vm.return_value.get(index));
-                                }
-                            }
-                        }
+                    }
                 }
                 break;
 
             case OPCODES.UNPACK_EX:
-                switch (this.state) {
-                    case 0:
-                        if (call(unpack_sequence, [this.pop()])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value) {
-                            low = instruction.argument & 0xFF;
-                            high = instruction.argument >> 8;
-                            if (vm.return_value.len() < low + high) {
-                                raise(TypeError, 'not enough values to unpack (expected at least' + (low + high) + ', got ' + vm.return_value.len() + ')');
-                            }
-                            temp = vm.return_value.len() - high;
-                            for (index = vm.return_value.len() - 1; index >= temp; index--) {
-                                this.push(vm.return_value.get(index));
-                            }
-                            this.push(new List(vm.return_value.array.slice(low, temp)));
-                            for (index = low - 1; index >= 0; index--) {
-                                this.push(vm.return_value.get(index));
-                            }
-                        }
+                yield call(unpack_sequence, [this.pop()]);
+                if (vm.return_value) {
+                    low = instruction.argument & 0xFF;
+                    high = instruction.argument >> 8;
+                    if (vm.return_value.len() < low + high) {
+                        raise(TypeError, 'not enough values to unpack (expected at least' + (low + high) + ', got ' + vm.return_value.len() + ')');
+                    }
+                    temp = vm.return_value.len() - high;
+                    for (index = vm.return_value.len() - 1; index >= temp; index--) {
+                        this.push(vm.return_value.get(index));
+                    }
+                    this.push(new List(vm.return_value.array.slice(low, temp)));
+                    for (index = low - 1; index >= 0; index--) {
+                        this.push(vm.return_value.get(index));
+                    }
                 }
                 break;
 
@@ -602,39 +503,33 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.BUILD_MAP:
-                switch (this.state) {
-                    case 0:
-                        this.build_map_dict = new Dict();
-                        this.build_map_items = this.popn(instruction.argument * 2);
-                        this.build_map_index = 0;
-                    case 1:
-                        if (vm.return_value) {
-                            if (this.build_map_index < this.build_map_items.length) {
-                                this.build_map_dict.call('__setitem__', [this.build_map_items[this.build_map_index++], this.build_map_items[this.build_map_index++]])
-                                return 1;
-                            }
-                            this.push(this.build_map_dict);
+                this.build_map_dict = new Dict();
+                this.build_map_items = this.popn(instruction.argument * 2);
+                this.build_map_index = 0;
+                if (vm.return_value) {
+                    while (this.build_map_index < this.build_map_items.length) {
+                        result = yield this.build_map_dict.call('__setitem__', [this.build_map_items[this.build_map_index++], this.build_map_items[this.build_map_index++]]);
+                        if (!result) {
+                            break;
                         }
-                        this.build_map_dict = null;
-                        this.build_map_items = null;
-                        this.build_map_index = null;
+                    }
+                    this.push(this.build_map_dict);
                 }
+                this.build_map_dict = null;
+                this.build_map_items = null;
+                this.build_map_index = null;
                 break;
 
             case OPCODES.IMPORT_NAME:
-                switch (this.state) {
-                    case 0:
-                        name = this.code.names[instruction.argument];
-                        if (!('__import__' in this.builtins)) {
-                            raise(ImportError, '__import__ not found');
-                            break;
-                        } else if (call(this.builtins['__import__'], [Str.pack(name), new Dict(this.globals), new Dict(this.locals)].concat(this.popn(2).reverse()))) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value) {
-                            this.push(vm.return_value);
-                        }
+                name = this.code.names[instruction.argument];
+                if (!('__import__' in this.builtins)) {
+                    raise(ImportError, '__import__ not found');
+                    break;
+                } else {
+                    yield call(this.builtins['__import__'], [Str.pack(name), new Dict(this.globals), new Dict(this.locals)].concat(this.popn(2).reverse()))
+                }
+                if (vm.return_value) {
+                    this.push(vm.return_value);
                 }
                 break;
 
@@ -676,21 +571,14 @@ PythonFrame.prototype.execute = function() {
                     case COMPARE_OPS.GE:
                     case COMPARE_OPS.EQ:
                     case COMPARE_OPS.NE:
-                        switch (this.state) {
-                            case 0:
-                                slot = COMPARE_SLOTS[instruction.argument];
-                                right = this.pop();
-                                left = this.pop();
-                                if (left.call(slot, [right])) {
-                                    return 1;
-                                }
-                            case 1:
-                                if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
-                                    raise(TypeError, 'unsupported boolean operator');
-                                } else if (vm.return_value) {
-                                    this.push(vm.return_value);
-                                }
-                                break;
+                        slot = COMPARE_SLOTS[instruction.argument];
+                        right = this.pop();
+                        left = this.pop();
+                        yield left.call(slot, [right]);
+                        if (vm.return_value === NotImplemented || except(MethodNotFoundError)) {
+                            raise(TypeError, 'unsupported boolean operator');
+                        } else if (vm.return_value) {
+                            this.push(vm.return_value);
                         }
                         break;
 
@@ -707,21 +595,15 @@ PythonFrame.prototype.execute = function() {
 
                     case COMPARE_OPS.IN:
                     case COMPARE_OPS.NIN:
-                        switch (this.state) {
-                            case 0:
-                                right = this.pop();
-                                left = this.pop();
-                                if (right.call('__contains__', [left])) {
-                                    return 1;
-                                }
-                            case 1:
-                                if (vm.return_value) {
-                                    if (vm.return_value.to_bool()) {
-                                        this.push(instruction.argument == COMPARE_OPS.IN ? True : False)
-                                    } else {
-                                        this.push(instruction.argument == COMPARE_OPS.NIN ? True : False)
-                                    }
-                                }
+                        right = this.pop();
+                        left = this.pop();
+                        yield right.call('__contains__', [left]);
+                        if (vm.return_value) {
+                            if (vm.return_value.to_bool()) {
+                                this.push(instruction.argument == COMPARE_OPS.IN ? True : False)
+                            } else {
+                                this.push(instruction.argument == COMPARE_OPS.NIN ? True : False)
+                            }
                         }
                         break;
 
@@ -731,189 +613,128 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.POP_JUMP_IF_TRUE:
-                if (this.top0().__class__ === Int.__class__) {
+                if (this.top0() instanceof Int) {
                     if (this.pop().to_bool()) {
                         this.position = instruction.target;
                     }
-                    break;
-                }
-                switch (this.state) {
-                    case 0:
-                        if (this.top0().call('__bool__')) {
-                            return 1;
-                        }
-                    case 1:
-                        if (except(MethodNotFoundError)) {
-                            if (this.pop().call('__len__')) {
-                                return 2;
+                } else {
+                    result = yield this.top0().call('__bool__');
+                    if (except(MethodNotFoundError)) {
+                       result = yield this.top0().call('__len__')
+                    }
+                    this.pop();
+                    if (except(MethodNotFoundError)) {
+                        this.position = instruction.target;
+                    } else if (result) {
+                        if (result instanceof Int) {
+                            if (result.to_bool()) {
+                                this.position = instruction.target;
                             }
+                        } else {
+                            raise(TypeError, 'invalid result type of boolean conversion');
                         }
-                    case 2:
-                        if (!vm.return_value) {
-                            break;
-                        }
-                        if (except(MethodNotFoundError)) {
-                            this.position = instruction.target;
-                            break;
-                        } else if (vm.return_value) {
-                            if (vm.return_value instanceof Int) {
-                                if (vm.return_value.to_bool()) {
-                                    this.position = instruction.target;
-                                    break;
-                                }
-                            } else {
-                                raise(TypeError, 'invalid result type of boolean conversion');
-                            }
-                        }
-                        break;
+                    }
                 }
                 break;
 
             case OPCODES.POP_JUMP_IF_FALSE:
-                if (this.top0().__class__ === py_bool || this.top0().__class__ === Int.__class__) {
+                if (this.top0() instanceof Int) {
                     if (!this.pop().to_bool()) {
                         this.position = instruction.target;
                     }
-                    break;
-                }
-                switch (this.state) {
-                    case 0:
-                        if (this.top0().call('__bool__')) {
-                            return 1;
-                        }
-                    case 1:
-                        if (except(MethodNotFoundError)) {
-                            if (this.top0().call('__len__')) {
-                                return 2;
+                } else {
+                    result = yield this.top0().call('__bool__');
+                    if (except(MethodNotFoundError)) {
+                       result = yield this.top0().call('__len__')
+                    }
+                    this.pop();
+                    if (except(MethodNotFoundError)) {
+                        this.position = instruction.target;
+                    } else if (result) {
+                        if (result instanceof Int) {
+                            if (!result.to_bool()) {
+                                this.position = instruction.target;
                             }
-                        } else if (!vm.return_value) {
-                            this.pop();
-                            break;
+                        } else {
+                            raise(TypeError, 'invalid result type of boolean conversion');
                         }
-                    case 2:
-                        this.pop();
-                        if (!except(MethodNotFoundError)) {
-                            if (vm.return_value instanceof Int) {
-                                if (!vm.return_value.to_bool()) {
-                                    this.position = instruction.target;
-                                    break;
-                                }
-                            } else if (vm.return_value) {
-                                raise(TypeError, 'invalid result type of boolean conversion');
-                            }
-                        }
-                        break;
+                    }
                 }
                 break;
 
             case OPCODES.JUMP_IF_TRUE_OR_POP:
-                if (this.top0().__class__ === Int.__class__) {
+                if (this.top0() instanceof Int) {
                     if (this.top0().to_bool()) {
                         this.position = instruction.target;
                     } else {
                         this.pop();
                     }
-                    break;
-                }
-                switch (this.state) {
-                    case 0:
-                        if (this.top0().call('__bool__')) {
-                            return 1;
-                        }
-                    case 1:
-                        if (except(MethodNotFoundError)) {
-                            if (this.top0().call('__len__')) {
-                                return 2;
-                            }
-                        } else if (!vm.return_value) {
-                            this.pop();
-                            break;
-                        }
-                    case 2:
-                        if (except(MethodNotFoundError)) {
-                            this.position = instruction.target;
-                        } else if (vm.return_value) {
-                            if (vm.return_value instanceof Int) {
-                                if (vm.return_value.to_bool()) {
-                                    this.position = instruction.target;
-                                } else {
-                                    this.pop();
-                                }
+                } else {
+                    result = yield this.top0().call('__bool__');
+                    if (except(MethodNotFoundError)) {
+                        result = yield this.top0().call('__len__');
+                    }
+                    if (except(MethodNotFoundError)) {
+                        this.position = instruction.target;
+                    } else if (result) {
+                        if (result instanceof Int) {
+                            if (result.to_bool()) {
+                                this.position = instruction.target;
                             } else {
                                 this.pop();
-                                raise(TypeError, 'invalid result type of boolean conversion');
                             }
                         } else {
                             this.pop();
+                            raise(TypeError, 'invalid result type of boolean conversion');
                         }
-                        break;
+                    } else {
+                        this.pop();
+                    }
                 }
                 break;
 
             case OPCODES.JUMP_IF_FALSE_OR_POP:
-                if (this.top0().__class__ === Int.__class__) {
+                if (this.top0() instanceof Int) {
                     if (!this.top0().to_bool()) {
                         this.position = instruction.target;
                     } else {
                         this.pop();
                     }
-                    break;
-                }
-                switch (this.state) {
-                    case 0:
-                        if (this.top0().call('__bool__')) {
-                            return 1;
-                        }
-                    case 1:
-                        if (except(MethodNotFoundError)) {
-                            if (this.top0().call('__len__')) {
-                                return 2;
-                            }
-                        } else if (!vm.return_value) {
-                            this.pop();
-                            this.raise();
-                            break;
-                        }
-                    case 2:
-                        if (!except(MethodNotFoundError)) {
-                            if (vm.return_value instanceof Int) {
-                                if (!vm.return_value.to_bool()) {
-                                    this.position = instruction.target;
-                                } else {
-                                    this.pop();
-                                }
-                            } else if (vm.return_value) {
-                                this.pop();
-                                raise(TypeError, 'invalid result type of boolean conversion');
-                                this.raise();
+                } else {
+                    result = yield this.top0().call('__bool__');
+                    if (except(MethodNotFoundError)) {
+                        result = yield this.top0().call('__len__');
+                    }
+                    if (except(MethodNotFoundError)) {
+                        this.position = instruction.target;
+                    } else if (result) {
+                        if (result instanceof Int) {
+                            if (!result.to_bool()) {
+                                this.position = instruction.target;
                             } else {
                                 this.pop();
-                                this.raise();
                             }
+                        } else {
+                            this.pop();
+                            raise(TypeError, 'invalid result type of boolean conversion');
                         }
-                        break;
+                    } else {
+                        this.pop();
+                    }
                 }
                 break;
 
             case OPCODES.FOR_ITER:
-                switch (this.state) {
-                    case 0:
-                        if (this.top0().call('__next__')) {
-                            return 1;
-                        }
-                    case 1:
-                        if (!vm.return_value) {
-                            this.pop();
-                            if (except(MethodNotFoundError)) {
-                                raise(TypeError, 'object does not support iteration');
-                            } else if (except(StopIteration)) {
-                                this.position = instruction.target;
-                                break;
-                            }
-                        } else {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                result = yield this.top0().call('__next__');
+                if (!result) {
+                    this.pop();
+                    if (except(MethodNotFoundError)) {
+                        raise(TypeError, 'object does not support iteration');
+                    } else if (except(StopIteration)) {
+                        this.position = instruction.target;
+                    }
+                } else {
+                    this.push(result);
                 }
                 break;
 
@@ -969,53 +790,35 @@ PythonFrame.prototype.execute = function() {
                 break;
 
             case OPCODES.CALL_FUNCTION:
-                switch (this.state) {
-                    case 0:
-                        low = instruction.argument & 0xFF;
-                        high = instruction.argument >> 8;
-                        kwargs = {};
-                        for (index = 0; index < high; index++) {
-                            value = this.pop();
-                            kwargs[this.pop().value] = value;
-                        }
-                        args = this.popn(low);
-                        if (call(this.pop(), args, kwargs)) {
-                            return 1;
-                        }
-                    case 1:
-                        if (vm.return_value) {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                low = instruction.argument & 0xFF;
+                high = instruction.argument >> 8;
+                kwargs = {};
+                for (index = 0; index < high; index++) {
+                    value = this.pop();
+                    kwargs[this.pop().value] = value;
+                }
+                args = this.popn(low);
+                result = yield call(this.pop(), args, kwargs);
+                if (result) {
+                    this.push(result);
                 }
                 break;
 
             case OPCODES.CALL_FUNCTION_VAR:
-                switch (this.state) {
-                    case 0:
-                        if (call(unpack_sequence, [this.pop()])) {
-                            return 1;
-                        }
-                    case 1:
-                        if (!vm.return_value) {
-                            break;
-                        }
-                        low = instruction.argument & 0xFF;
-                        high = instruction.argument >> 8;
-                        kwargs = {};
-                        for (index = 0; index < high; index++) {
-                            value = this.pop();
-                            kwargs[this.pop().value] = value;
-                        }
-                        args = this.popn(low).concat(vm.return_value.array);
-                        if (call(this.pop(), args, kwargs)) {
-                            return 2;
-                        }
-                    case 3:
-                        if (vm.return_value) {
-                            this.push(vm.return_value);
-                        }
-                        break;
+                result = yield call(unpack_sequence, [this.pop()]);
+                if (result) {
+                    low = instruction.argument & 0xFF;
+                    high = instruction.argument >> 8;
+                    kwargs = {};
+                    for (index = 0; index < high; index++) {
+                        value = this.pop();
+                        kwargs[this.pop().value] = value;
+                    }
+                    args = this.popn(low).concat(result.array);
+                    result = yield call(this.pop(), args, kwargs);
+                    if (result) {
+                        this.push(vm.return_value);
+                    }
                 }
                 break;
 

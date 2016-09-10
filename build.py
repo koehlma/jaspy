@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', default=False)
     parser.add_argument('--debug-instructions', action='store_true', default=False)
     # TODO: disable DEBUG_EXCEPTIONS when production ready
-    parser.add_argument('--debug-exceptions', action='store_true', default=True)
+    parser.add_argument('--debug-exceptions', action='store_true', default=False)
     parser.add_argument('--debug-threading', action='store_true', default=False)
 
     parser.add_argument('--exclude-bigint', action='store_true', default=False)
@@ -73,6 +73,8 @@ if __name__ == '__main__':
         'modules': arguments.modules or [],
 
         'metadata': metadata,
+
+        'debugger': 'debugger;',
 
         '_builtins': builtins_source
     }
