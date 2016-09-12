@@ -100,15 +100,15 @@ var tokenizer = (function () {
         var operator = any('(\\*\\*|//|<<|>>)=?', '[><!=+\\-*/%@&|^]=?', '[~<>]');
 
         var bracket = '[\\[\\](){}]';
-        var special = any(bracket, ',', ':', '\\.', ';');
+        var special = any(bracket, ',', ':', '\\.\\.\\.', '\\.', ';');
 
         var comment = '#.*';
 
         var name = '\\w+';
         var newline = '(\n|\r\n)';
-        var whitespace = '[ \f\t]+';
+        var whitespace = '([ \f\t]|\\\\\n|\\\\\r\n)+';
 
-        var token = any(literal, operator, bracket, special, name, comment, newline, whitespace);
+        var token = any(literal, operator, bracket, special, name, comment, whitespace, newline);
 
         return {
             token: compile(token),
