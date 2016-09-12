@@ -14,15 +14,15 @@
  */
 
 // << if INCLUDE_BIGINT
-    // #include '../libs/biginteger/BigInteger.js'
+    // #include '../../libs/biginteger/BigInteger.js'
 // >>
 
 // << if INCLUDE_ENCODING
-    // #include '../libs/text-encoding/lib/encoding.js'
+    // #include '../../libs/text-encoding/lib/encoding.js'
 // >>
 
 // << if INCLUDE_SIPHASH
-    // #include '../libs/siphash/lib/siphash.js'
+    // #include '../../libs/siphash/lib/siphash.js'
 // >>
 
 window['jaspy'] = (function () {
@@ -78,9 +78,9 @@ jaspy.update(jaspy.builtins, jaspy.get_module('_builtins').__dict__);
 jaspy.builtins['__name__'] = 'builtins';
 
 // << if ENABLE_THREADING
-    // #include '../modules/_thread.js'
+    // #include '../../modules/_thread.js'
 // >>
 
 // << for module in modules
-    // #include '../modules/' + module + '.js'
+    // #include '../../modules/' + module + '.js'
 // >>
