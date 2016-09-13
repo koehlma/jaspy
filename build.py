@@ -70,6 +70,8 @@ if __name__ == '__main__':
 
         'THREADING_LIMIT': arguments.threading_limit,
 
+        'UNICODE_SUPPORT': True,
+
         'modules': arguments.modules or [],
 
         'metadata': metadata,
@@ -82,3 +84,7 @@ if __name__ == '__main__':
 
     with open('build/jaspy.js', 'w') as output:
         output.write(process('src/runtime/__init__.js', namespace))
+
+    with open('build/language.js', 'w') as output:
+        output.write(process('src/language/__init__.js', namespace))
+
