@@ -150,15 +150,21 @@ var tokenizer = (function () {
     var newline_regex = compile(exact(NEWLINE));
 
 
-    var unicode_escape_regex = /\\N\{[^}]+}/g;
-    var general_escape_regex = /(\\[0-7]{3}|\\x[0-9A-Fa-f]{2}|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}|\\(\n|\r\n|[^N]))/g;
+    var unicode_escape_regex = /(\\N\{[^}]+}|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})/g;
+    var general_escape_regex = /(\\[0-7]{3}|\\x[0-9A-Fa-f]{2}|\\(\n|\r\n|[^N]))/g;
 
     var invalid_escape_sequence = false;
 
-    var valid_bytes_regex = '^[\x00-\xff]*$';
+    var valid_bytes_regex = /^[\x00-\xff]*$/g;
 
     function replace_unicode_escape(match) {
-        throw new Error('SyntaxError: Unsupported unicode character escape sequence!');
+        switch (match.charAt(1)) {
+            case 'N':
+            case 'U':
+                throw new Error('SyntaxError: Unsupported unicode character escape sequence!');
+            case 'u':
+                return String.fromCharCode(parseInt(match.substr(2), 16));
+        }
     }
 
     function replace_general_escape(match) {
@@ -185,10 +191,7 @@ var tokenizer = (function () {
             case 'v':
                 return '\v';
             case 'x':
-            case 'u':
                 return String.fromCharCode(parseInt(match.substr(2), 16));
-            case 'U':
-                throw new Error('SyntaxError: Unsupported unicode character escape sequence!');
             default:
                 if (match.charAt(1) >= '1' && match.charAt(1) <= '7') {
                     return String.fromCharCode(parseInt(match.substr(1), 8));
@@ -199,14 +202,15 @@ var tokenizer = (function () {
         }
     }
 
-    function parse_string(value) {
+    function parse_string(token) {
         var index;
+
         var raw = false;
         var format = false;
         var bytes = false;
 
-        loop: for (index = 0; index < value.length; index++) {
-            switch (value.charAt(index).toLowerCase()) {
+        loop: for (index = 0; index < token.length; index++) {
+            switch (token.charAt(index).toLowerCase()) {
                 case "'":
                 case '"':
                     break loop;
@@ -224,18 +228,21 @@ var tokenizer = (function () {
             }
         }
 
-        switch (value.substr(index, 3)) {
+        switch (token.substr(index, 3)) {
             case '"""':
             case "'''":
-                value = value.substr(index + 3, value.length - index - 6);
+                token = token.substr(index + 3, token.length - index - 6);
                 break;
             default:
-                value = value.substr(index + 1, value.length - index - 2);
+                token = token.substr(index + 1, token.length - index - 2);
                 break;
         }
 
         if (!raw) {
-            value = value.replace(unicode_escape_regex, replace_unicode_escape).replace(general_escape_regex, replace_general_escape);
+            if (!bytes) {
+                token = token.replace(unicode_escape_regex, replace_unicode_escape)
+            }
+            token = token.replace(general_escape_regex, replace_general_escape);
         }
 
         if (invalid_escape_sequence) {
@@ -244,18 +251,18 @@ var tokenizer = (function () {
         }
 
         if (bytes) {
-            if (value.match(valid_bytes_regex)) {
-                return {type: LITERAL_TYPES.BYTES, value: value};
+            if (token.match(valid_bytes_regex)) {
+                return {type: LITERAL_TYPES.BYTES, value: token};
             }
             throw new Error('SyntaxError: Bytes can only contain ASCII literal characters!');
         }
-        return {type: LITERAL_TYPES.STRING, value: value, format: format};
+        return {type: LITERAL_TYPES.STRING, value: token, format: format};
     }
 
 
-    function parse_integer(value) {
+    function parse_integer(token) {
         var base = 10;
-        switch (value.charAt(1).toLowerCase()) {
+        switch (token.charAt(1).toLowerCase()) {
             case 'x':
                 base = 16;
                 break;
@@ -267,19 +274,19 @@ var tokenizer = (function () {
                 break;
         }
         if (base != 10) {
-            value = value.substr(2);
+            token = token.substr(2);
         }
-        return {type: LITERAL_TYPES.INTEGER, value: value.replace('_', ''), base: base};
+        return {type: LITERAL_TYPES.INTEGER, value: token.replace('_', ''), base: base};
     }
 
 
-    function parse_float(value) {
-        return {type: LITERAL_TYPES.FLOAT, value: parseFloat(value.replace('_', ''))};
+    function parse_float(token) {
+        return {type: LITERAL_TYPES.FLOAT, value: parseFloat(token.replace('_', ''))};
     }
 
 
-    function parse_complex(value) {
-        var literal = parse_float(value.substr(0, value.length - 1));
+    function parse_complex(token) {
+        var literal = parse_float(token.substr(0, token.length - 1));
         literal.type = LITERAL_TYPES.COMPLEX;
         return literal;
     }
@@ -310,19 +317,39 @@ var tokenizer = (function () {
 
 
     function decide(token) {
-        if (token.match(whitespace_regex)) return TOKEN_TYPES.WHITESPACE;
-        if (token.match(string_regex)) return TOKEN_TYPES.STRING;
-        if (token.match(complex_regex)) return TOKEN_TYPES.COMPLEX;
-        if (token.match(float_regex)) return TOKEN_TYPES.FLOAT;
-        if (token.match(integer_regex)) return TOKEN_TYPES.INTEGER;
-        if (token.match(operator_regex)) return TOKEN_TYPES.OPERATOR;
-        if (token.match(bracket_regex)) return TOKEN_TYPES.BRACKET;
-        if (token.match(special_regex)) return TOKEN_TYPES.SPECIAL;
+        if (token.match(whitespace_regex)) {
+            return TOKEN_TYPES.WHITESPACE;
+        }
+        if (token.match(string_regex)) {
+            return TOKEN_TYPES.STRING;
+        }
+        if (token.match(complex_regex)) {
+            return TOKEN_TYPES.COMPLEX;
+        }
+        if (token.match(float_regex)) {
+            return TOKEN_TYPES.FLOAT;
+        }
+        if (token.match(integer_regex)) {
+            return TOKEN_TYPES.INTEGER;
+        }
+        if (token.match(operator_regex)) {
+            return TOKEN_TYPES.OPERATOR;
+        }
+        if (token.match(bracket_regex)) {
+            return TOKEN_TYPES.BRACKET;
+        }
+        if (token.match(special_regex)) {
+            return TOKEN_TYPES.SPECIAL;
+        }
         if (token.match(name_regex)) {
             return is_keyword(token) ? TOKEN_TYPES.KEYWORD : TOKEN_TYPES.IDENTIFIER;
         }
-        if (token.match(comment_regex)) return TOKEN_TYPES.COMMENT;
-        if (token.match(newline_regex)) return TOKEN_TYPES.NEWLINE;
+        if (token.match(comment_regex)) {
+            return TOKEN_TYPES.COMMENT;
+        }
+        if (token.match(newline_regex)) {
+            return TOKEN_TYPES.NEWLINE;
+        }
         return TOKEN_TYPES.ERROR;
     }
 
@@ -347,14 +374,16 @@ var tokenizer = (function () {
     }
 
     function tokenize(source) {
-        var tokens, match, t, type, position, row, column;
+        var tokens, match, t, type, position, row, column, token, indentations;
         tokens = [];
         t = '';
         position = 0;
         row = 0;
         column = 0;
+        token = {raw: ''};
+        indentations = [];
         while (match = token_regex.exec(source)) {
-            if (match.index != position + t.length) {
+            if (match.index != position + token.raw.length) {
                 console.error('error: ', row, column);
             }
             var pos_info = feed(match[0]);
@@ -366,20 +395,40 @@ var tokenizer = (function () {
             }
 
             position = match.index;
-            t = match[0];
-            type = decide(t);
 
-            console.log(type, t);
-            switch (type) {
+            token = {};
+            token.raw = match[0];
+            token.type = decide(token.raw);
+
+            switch (token.type) {
                 case TOKEN_TYPES.STRING:
+                    token.type = TOKEN_TYPES.LITERAL;
+                    token.value = parse_string(token.raw);
+                    break;
                 case TOKEN_TYPES.INTEGER:
+                    token.type = TOKEN_TYPES.LITERAL;
+                    token.value = parse_integer(token.raw);
+                    break;
                 case TOKEN_TYPES.FLOAT:
+                    token.type = TOKEN_TYPES.LITERAL;
+                    token.value = parse_float(token.raw);
+                    break;
                 case TOKEN_TYPES.COMPLEX:
-                    console.info('literal', parse_map[type](t));
+                    token.type = TOKEN_TYPES.COMPLEX;
+                    token.value = parse_complex(token.raw);
+                    break;
+                case TOKEN_TYPES.WHITESPACE:
+                    if (tokens[tokens.length - 1]) {
+
+                    }
                     break;
                 default:
                     break;
             }
+
+            tokens.push(token);
+
+            console.log(token);
 
         }
         console.log(tokens);
@@ -393,3 +442,4 @@ var tokenizer = (function () {
 })();
 
 
+$.tokenizer = tokenizer;
