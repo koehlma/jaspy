@@ -121,7 +121,8 @@ If you like the ideas of Jaspy feel free to join, there are many things to do:
 - add a virtual file system (consider using: `BrowserFS <https://github.com/jvilk/BrowserFS>`_)
 - … and, of course, your own great ideas and cool features
 
-Do not hesitate to contribute or ask if there is anything unclear about the code.
+Do not hesitate to contribute or ask if there is anything unclear about the code or the
+process of contributing in general.
 
 
 Structure
