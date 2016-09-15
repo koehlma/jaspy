@@ -13,74 +13,38 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// << if INCLUDE_BIGINT
-    // #include '../../libs/biginteger/BigInteger.js'
+
+// << if ENABLE_DEBUGGER
+    console.info('Jaspy Python Interpreter\nDebugging Mode!');
 // >>
 
-// << if INCLUDE_ENCODING
-    // #include '../../libs/text-encoding/lib/encoding.js'
-// >>
+// #include 'constants.js'
+// #include 'base.js'
 
-// << if INCLUDE_SIPHASH
-    // #include '../../libs/siphash/lib/siphash.js'
-// >>
+// #include 'future.js'
 
-window['jaspy'] = (function () {
-    'use strict';
+// #include 'object.js'
+// #include 'type.js'
 
-    var $ = {};
-    var jaspy = $;
+// #include 'core/__init__.js'
 
-    // << if ENABLE_DEBUGGER
-        console.info('Jaspy Python Interpreter\nDebugging Mode!');
-    // >>
+// #include 'code.js'
+// #include 'module.js'
 
-    // #include 'constants.js'
-    // #include 'base.js'
+// #include 'bridge.js'
 
-    // #include 'future.js'
+// #include 'python/__init__.js'
 
-    // #include 'object.js'
-    // #include 'type.js'
+// #include 'dis.js'
 
-    // #include 'core/__init__.js'
-
-    // #include 'code.js'
-    // #include 'module.js'
-
-    // #include 'bridge.js'
-
-    // #include 'python/__init__.js'
-
-    // #include 'dis.js'
-
-    // #include 'frame.js'
-    // #include 'execute.js'
-    // #include 'vm.js'
-
-    // << if ENABLE_THREADING
-        // #include 'threading.js'
-    // >>
-
-    // << if ENABLE_DEBUGGER
-        // #include 'debugger.js'
-    // >>
-
-    return jaspy;
-})();
-
-// #include 'sys.js'
-
-/* {{ _builtins }} */
-
-jaspy.main(jaspy.get_module('_builtins'), [], true);
-jaspy.update(jaspy.builtins, jaspy.get_module('_builtins').__dict__);
-jaspy.builtins['__name__'] = 'builtins';
+// #include 'frame.js'
+// #include 'execute.js'
+// #include 'vm.js'
 
 // << if ENABLE_THREADING
-    // #include '../../modules/_thread.js'
+    // #include 'threading.js'
 // >>
 
-// << for module in modules
-    // #include '../../modules/' + module + '.js'
+// << if ENABLE_DEBUGGER
+    // #include 'debugger.js'
 // >>
