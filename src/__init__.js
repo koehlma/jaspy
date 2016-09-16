@@ -54,6 +54,15 @@
 
 var jaspy = {};
 
+
+(function () {
+    var $ = jaspy;
+
+    // #include 'base.js'
+    // #include 'executor.js'
+})();
+
+
 // #include 'runtime/__init__.js'
 // #include 'language/__init__.js'
 

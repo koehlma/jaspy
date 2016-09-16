@@ -72,6 +72,8 @@ if __name__ == '__main__':
         'ENABLE_DEBUGGER': not arguments.disable_debugger,
         'ENABLE_THREADING': not arguments.disable_threading,
 
+        'ENABLE_ASSERTIONS': True,
+
         'THREADING_LIMIT': arguments.threading_limit,
 
         'UNICODE_SUPPORT': True,

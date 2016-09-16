@@ -102,9 +102,13 @@ var METHOD_NOT_FOUND = {
 var UnpackError = new PyType('UnpackError', [TypeError]);
 var PackError = new PyType('PackError', [TypeError]);
 
+var ExecutorError = new PyType('ExecutorError', [RuntimeError]);
+
 var JSError = new PyType('JSError', [py_exception]);
 
 var ZERO = new Int(0);
 var ONE = new Int(1);
 
 var EMPTY_TUPLE = new Tuple([]);
+
+$.ExecutorError = ExecutorError;

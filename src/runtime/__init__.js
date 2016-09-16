@@ -16,6 +16,7 @@
 
 jaspy.runtime = (function () {
     var $ = jaspy;
+    var _ = $._;
 
     // << if ENABLE_DEBUGGER
         console.info('Jaspy Python Interpreter\nDebugging Mode!');

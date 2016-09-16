@@ -30,7 +30,7 @@
  *
  * Motivation
  * ----------
- * Prior to the Jaspy executor one has to write explicit state machines to allow the code
+ * Prior to the Jaspy Executor one has to write explicit state machines to allow the code
  * to be suspendable. This led to unreadable und unmaintainable code. The new execution
  * model allows to write sequentially looking code which is suspendable. This should speed
  * up development and improve maintainability.
@@ -64,63 +64,161 @@
  */
 
 
+
+var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+
+
 /**
  * Suspension
  * ----------
- * When a coroutine yields a suspension the execution of the current Microthread is
+ * When a executable yields a suspension the execution of the current Microthread is
  * suspended.
  *
  * Futures, Preemption, …
  */
-var Suspension = $.Class({
+$.Suspension = $.Class({
     constructor: function () {
+        this.pending = true;
+        this.result = null;
+        this.exception = null;
+        this.microthread = null;
+    },
+
+    success: function (result) {
+
+    },
+
+    error: function (exception) {
 
     }
 });
 
 
 /**
- * Coroutine
+ * Executable
  * ---------
- * Coroutines are the basic executable entities.
+ * Coroutines are basic executable entities which are suspendable.
  */
-var Coroutine = $.Class({
+$.Executable = $.Class({
     constructor: function (generator) {
         this.generator = generator;
     }
 });
 
 
-var executor = {
-    mode: 'synchronous'
-};
 
 
-function set_mode() {
 
-}
+/**
+ * Executor
+ * --------
+ * Singleton class which controls the execution of executables.
+ */
+var Executor = $.Class({
+    constructor: function () {
+        this.mode_stack = [];
+        this.mode = Executor.MODES.SYNCHRONOUS;
+    },
+
+    enter_asynchronous_mode: function () {
+        this.mode_stack.push(this.mode);
+        this.mode = Executor.MODES.ASYNCHRONOUS;
+    },
+
+    leave_asynchronous_mode: function () {
+        // << if ENABLE_ASSERTIONS
+            $.assert(this.mode == Executor.MODES.ASYNCHRONOUS, 'Leave asynchronous mode while being in synchronous mode!');
+            $.assert(this.mode_stack.length > 0, 'Empty mode stack in leave asynchronous!');
+        // >>
+        this.mode = this.mode_stack.pop();
+    },
+
+    enter_synchronous_mode: function () {
+        this.mode_stack.push(this.mode);
+        this.mode = Executor.MODES.SYNCHRONOUS;
+    },
+
+    leave_synchronous_mode: function () {
+        // << if ENABLE_ASSERTIONS
+            $.assert(this.mode == Executor.MODES.SYNCHRONOUS, 'Leave synchronous mode while being in asynchronous mode!');
+            $.assert(this.mode_stack.length > 0, 'Empty mode stack in leave synchronous!');
+        // >>
+        this.mode = this.mode_stack.pop();
+    }
+});
+
+Executor.MODES = Object.freeze({
+    SYNCHRONOUS: 'synchronous',
+    ASYNCHRONOUS: 'asynchronous'
+});
 
 
-function coroutine(func) {
-    function wrapper() {
-        var generator = func.apply(null, arguments);
-        var state = generator.next();
+$.executor = new Executor();
 
-        if (executor.mode == 'synchronous') {
-            while (!state.done) {
-                state = generator.next(state.value);
-                if (state.value instanceof Future) {
-                    if (state.value.pending) {
-                        throw new Error('future returned in synchronous mode');
-                    } else {
-                        // TODO: extract value/exception from future
-                    }
+
+/**
+ * Microthread
+ * ===========
+ *
+ */
+$.Microthread = $.Class({
+    constructor: function (func) {
+        $.executor.enter_asynchronous_mode();
+        try {
+            this.stack = [func.apply(null, Array.prototype.slice.call(arguments, 1))];
+        } finally {
+            $.executor.leave_asynchronous_mode();
+        }
+    },
+
+    run: function (result) {
+        var executable;
+
+        var state = {value: result};
+
+        $.executor.enter_asynchronous_mode();
+        try {
+            while (this.stack.length > 0) {
+                executable = this.stack[this.stack.length - 1];
+                state = executable.generator.next(state.value);
+                if (state.done) {
+                    this.stack.pop();
+                }
+                if (state.value instanceof $.Executable) {
+                    this.stack.push(state.value);
+                } else if (state.value instanceof $.Suspension) {
+                    return state.value;
                 }
             }
-            // TODO: return result
+            return state.value;
+        } finally {
+            $.executor.leave_asynchronous_mode();
         }
-        return new Coroutine(generator);
     }
-    return wrapper;
-}
+});
 
+
+$._ = $.executable = function (func) {
+    $.assert(func instanceof GeneratorFunction, 'Function is not an instance of GeneratorFunction!');
+    return (function () {
+        var state = {done: false, value: null};
+
+        var generator = func.apply(null, arguments);
+
+        switch ($.executor.mode) {
+            case Executor.MODES.SYNCHRONOUS:
+                while (!state.done) {
+                    state = generator.next(state.value);
+                    if (state.value instanceof $.Suspension) {
+                        if (state.value.pending) {
+                            $.raise($.ExecutorError, 'Unable to suspend executor in synchronous mode!');
+                        }
+                        state.value = state.value.result;
+                    }
+                }
+                return state.value;
+            case Executor.MODES.ASYNCHRONOUS:
+                return new $.Executable(generator);
+        }
+    });
+};
