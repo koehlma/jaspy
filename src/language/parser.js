@@ -13,27 +13,3 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * use node.js for offline compilation...
- *
- * - Tokenizer
- * - Parser
- * - Backends
- *   - Bytecode (needs VM)
- *   - Speedy (only needs Runtime, no Threading, Debugging, Greenlets and IO)
- *   - ASM.js (needs neither VM nor Runtime)
- *
- * Requires: base, runtime
- */
-
-
-jaspy.language = (function () {
-    var $ = jaspy;
-
-    // #include 'tokenizer.js'
-    // #include 'parser.js'
-
-    return {
-        tokenize: tokenizer.tokenize
-    }
-})();

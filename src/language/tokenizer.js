@@ -14,6 +14,22 @@
  */
 
 
+var Token = $.Class({
+    constructor: function (type, value, start, end, line, string) {
+        this.type = type;
+        this.value = value;
+        this.start = start;
+        this.end = end;
+        this.line = line;
+        this.string = string;
+    }
+});
+
+Token.TYPES = {
+
+};
+
+
 var tokenizer = (function () {
     var index;
 
@@ -276,7 +292,7 @@ var tokenizer = (function () {
         if (base != 10) {
             token = token.substr(2);
         }
-        return {type: LITERAL_TYPES.INTEGER, value: token.replace('_', ''), base: base};
+        return Int.parse(token.replace('_', ''), Int.pack(base));
     }
 
 
@@ -374,7 +390,7 @@ var tokenizer = (function () {
     }
 
     function tokenize(source) {
-        var tokens, match, t, type, position, row, column, token, indentations;
+        var tokens, match, t, type, position, row, column, token, indentations, brackets;
         tokens = [];
         t = '';
         position = 0;
@@ -382,6 +398,7 @@ var tokenizer = (function () {
         column = 0;
         token = {raw: ''};
         indentations = [];
+        brackets = [];
         while (match = token_regex.exec(source)) {
             if (match.index != position + token.raw.length) {
                 console.error('error: ', row, column);
@@ -418,8 +435,8 @@ var tokenizer = (function () {
                     token.value = parse_complex(token.raw);
                     break;
                 case TOKEN_TYPES.WHITESPACE:
-                    if (tokens[tokens.length - 1]) {
-
+                    if (tokens[tokens.length - 1] == TOKEN_TYPES.NEWLINE && brackets.length == 0) {
+                        console.log('indent/dedent')
                     }
                     break;
                 default:
