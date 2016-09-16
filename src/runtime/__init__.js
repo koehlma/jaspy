@@ -14,37 +14,41 @@
  */
 
 
-// << if ENABLE_DEBUGGER
-    console.info('Jaspy Python Interpreter\nDebugging Mode!');
-// >>
+jaspy.runtime = (function () {
+    var $ = jaspy;
 
-// #include 'constants.js'
-// #include 'base.js'
+    // << if ENABLE_DEBUGGER
+        console.info('Jaspy Python Interpreter\nDebugging Mode!');
+    // >>
 
-// #include 'future.js'
+    // #include 'constants.js'
+    // #include 'base.js'
 
-// #include 'object.js'
-// #include 'type.js'
+    // #include 'future.js'
 
-// #include 'core/__init__.js'
+    // #include 'object.js'
+    // #include 'type.js'
 
-// #include 'code.js'
-// #include 'module.js'
+    // #include 'core/__init__.js'
 
-// #include 'bridge.js'
+    // #include 'code.js'
+    // #include 'module.js'
 
-// #include 'python/__init__.js'
+    // #include 'bridge.js'
 
-// #include 'dis.js'
+    // #include 'python/__init__.js'
 
-// #include 'frame.js'
-// #include 'execute.js'
-// #include 'vm.js'
+    // #include 'dis.js'
 
-// << if ENABLE_THREADING
-    // #include 'threading.js'
-// >>
+    // #include 'frame.js'
+    // #include 'execute.js'
+    // #include 'vm.js'
 
-// << if ENABLE_DEBUGGER
-    // #include 'debugger.js'
-// >>
+    // << if ENABLE_THREADING
+        // #include 'threading.js'
+    // >>
+
+    // << if ENABLE_DEBUGGER
+        // #include 'debugger.js'
+    // >>
+})();
