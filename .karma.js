@@ -7,10 +7,10 @@ module.exports = function (config) {
             'build/jaspy.js',
             'spec/*.js'
         ],
-        browsers: ['PhantomJS'],
+        browsers: ['Firefox'],
         singleRun: true,
         reporters: ['progress', 'coverage'],
-        preprocessors: {'buiald/jaspy.js': ['coverage']},
+        preprocessors: {'build/jaspy.js': ['coverage']},
         coverageReporter: {
             type: 'lcov',
             dir: 'coverage/',
