@@ -55,15 +55,19 @@ if __name__ == '__main__':
 
     arguments = parser.parse_args()
 
+    libs = []
+    if not arguments.exclude_bigint:
+        libs.append('biginteger/BigInteger.js')
+    if not arguments.exclude_siphash:
+        libs.append('siphash/lib/siphash.js')
+    if arguments.include_encoding:
+        libs.append('text-encoding/lib/encoding.js')
+
     namespace = {
         'DEBUG': arguments.debug,
         'DEBUG_INSTRUCTIONS': arguments.debug_instructions,
         'DEBUG_EXCEPTIONS': arguments.debug_exceptions,
         'DEBUG_THREADING': arguments.debug_threading,
-
-        'INCLUDE_BIGINT': not arguments.exclude_bigint,
-        'INCLUDE_SIPHASH': not arguments.exclude_siphash,
-        'INCLUDE_ENCODING': arguments.include_encoding,
 
         'ENABLE_DEBUGGER': not arguments.disable_debugger,
         'ENABLE_THREADING': not arguments.disable_threading,
@@ -75,6 +79,8 @@ if __name__ == '__main__':
         'modules': arguments.modules or [],
 
         'metadata': metadata,
+
+        'libs': libs,
 
         '_builtins': builtins_source
     }
