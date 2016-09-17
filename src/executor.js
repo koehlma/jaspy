@@ -81,15 +81,16 @@ $.Suspension = $.Class({
         this.pending = true;
         this.result = null;
         this.exception = null;
-        this.microthread = null;
     },
 
-    success: function (result) {
-
+    set_result: function (result) {
+        this.pending = false;
+        this.result = result;
     },
 
-    error: function (exception) {
-
+    set_exception: function (exception) {
+        this.pending = false;
+        this.exception = exception;
     }
 });
 
@@ -171,26 +172,50 @@ $.Microthread = $.Class({
         }
     },
 
-    run: function (result) {
-        var executable;
+    run: function (suspension) {
+        var executable, result, exception;
 
-        var state = {value: result};
+        var state = {};
+
+        if (suspension) {
+            result = suspension.result;
+            exception = suspension.exception;
+        }
 
         $.executor.enter_asynchronous_mode();
         try {
             while (this.stack.length > 0) {
                 executable = this.stack[this.stack.length - 1];
-                state = executable.generator.next(state.value);
-                if (state.done) {
+
+                try {
+                    if (exception) {
+                        state = executable.generator.throw(exception);
+                        exception = null;
+                    } else {
+                        state = executable.generator.next(result);
+                    }
+                } catch (error) {
+                    exception = error;
+                }
+
+                if (exception || state.done) {
                     this.stack.pop();
                 }
-                if (state.value instanceof $.Executable) {
-                    this.stack.push(state.value);
-                } else if (state.value instanceof $.Suspension) {
-                    return state.value;
+
+                result = state.value;
+
+                if (result instanceof $.Executable) {
+                    this.stack.push(result);
+                } else if (result instanceof $.Suspension) {
+                    return result;
                 }
             }
-            return state.value;
+
+            if (exception) {
+                throw exception;
+            } else {
+                return result;
+            }
         } finally {
             $.executor.leave_asynchronous_mode();
         }
@@ -199,23 +224,35 @@ $.Microthread = $.Class({
 
 
 $._ = $.executable = function (func) {
-    $.assert(func instanceof GeneratorFunction, 'Function is not an instance of GeneratorFunction!');
+    $.assert(func instanceof GeneratorFunction, 'Function is not a generator function!');
     return (function () {
-        var state = {done: false, value: null};
+        var exception, state;
 
         var generator = func.apply(null, arguments);
 
         switch ($.executor.mode) {
             case Executor.MODES.SYNCHRONOUS:
+                state = {};
+
                 while (!state.done) {
-                    state = generator.next(state.value);
+                    if (exception) {
+                        state = generator.throw(exception);
+                        exception = null;
+                    } else {
+                        state = generator.next(state.value);
+                    }
+
                     if (state.value instanceof $.Suspension) {
                         if (state.value.pending) {
                             $.raise($.ExecutorError, 'Unable to suspend executor in synchronous mode!');
                         }
+                        exception = state.value.exception;
                         state.value = state.value.result;
+                    } else if (state.value instanceof $.Executable) {
+                        $.raise($.ExecutorError, 'Executable yielded another executable in synchronous mode!');
                     }
                 }
+
                 return state.value;
             case Executor.MODES.ASYNCHRONOUS:
                 return new $.Executable(generator);

@@ -39,7 +39,8 @@ describe('Executor', function () {
         var thread = new $.Microthread(test);
         var suspension = thread.run();
         expect(suspension instanceof $.Suspension).toBeTruthy();
-        expect(thread.run(42)).toBe(42);
+        suspension.set_result(42);
+        expect(thread.run(suspension)).toBe(42);
 
         expect(function () { test(); }).toThrowError(/ExecutorError/);
     });
