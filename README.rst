@@ -1,16 +1,16 @@
-Jaspy
+**JASPY**
 =====
 
 |pypi| |build| |coverage| |docs| |gitter|
 
-Jaspy is a Python VM written entirely from scratch in JavaScript with some unique
-features. Jaspy supports multiple threads, comes with an integrated debugger which
+**Jaspy** is a Python VM written entirely from scratch in JavaScript with some unique
+features. **Jaspy** supports multiple threads, comes with an integrated debugger which
 offers remote debugging and provides a flexible preprocessor based architecture.
-Speed is explicitly not a main goal of this project. Jaspy aims to illustrate how
+Speed is explicitly not a main goal of this project. **Jaspy** aims to illustrate how the
 web programming on the client side could be done by exploring new ways.
 
 
-Features
+**Features.**
 --------
 - **suspendable** interpreter with support for **threading** and greenlets
 - integrated **debugger** and interactive remote debugging (CLI, PyCharm, …)
@@ -23,7 +23,7 @@ Features
 .. _time: https://github.com/koehlma/jaspy/blob/master/modules/time.js
 .. _dom: https://github.com/koehlma/jaspy/blob/master/modules/dom.js
 
-Quickstart
+**Quickstart.**
 ----------
 Jaspy comes with an integrated development server and interactive debugger!
 
@@ -55,7 +55,7 @@ Visit http://localhost:8080/hello.html in your browser and click run:
     :align: center
 
 
-Alternatives
+**Alternatives.**
 ------------
 There are already many other Python-to-JavaScript approaches out there:
 
@@ -71,7 +71,7 @@ Jaspy, which are the fully suspendable interpreter with threading support, the
 integrated debugger and the flexible, preprocessor based architecture.
 
 
-Speed
+**Speed.**
 -----
 Just to get an impression how slow Jaspy really is!
 
@@ -91,12 +91,12 @@ Just to get an impression how slow Jaspy really is!
 | PyPy.js (warm)                                | 847457           |
 +-----------------------------------------------+------------------+
 
-However this is a somewhat unfair benchmark because no dom manipulation or anything
+However, this is a somewhat unfair benchmark because no dom manipulation or anything
 else browser specific is going on. Surprisingly threading and debugging introduces nearly
 no overhead.
 
 
-State
+**State.**
 -----
 This project is still in an alpha state. The APIs are unstable, it is untested and not
 ready for productive use. Some of the features listed above are not yet implemented.
@@ -106,7 +106,7 @@ much less spare time. Therefore it might take a while until I will be able to in
 more time into it. However I very welcome all sorts of contributions.
 
 
-Contributions
+**Contributions.**
 -------------
 If you like the ideas of Jaspy feel free to join, there are many things to do:
 
@@ -125,7 +125,7 @@ Do not hesitate to contribute or ask if there is anything unclear about the code
 process of contributing in general.
 
 
-Structure
+**Structure.**
 ---------
 
 :libs: third-party dependencies
@@ -134,7 +134,7 @@ Structure
 :jaspy: Python server, converter and remote debugger
 
 
-Credits
+**Credits.**
 -------
 Many thanks to the `Brython <http://www.brython.info/>`_ project for the inspiration for
 many parts of code of the builtin-classes. Many thanks also to the book `“500 Lines or
